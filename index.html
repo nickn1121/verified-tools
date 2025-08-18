@@ -1,135 +1,168 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Verified Electronics — Tools</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
-      --brand:#2a2afc;
-      --text:#222;
-      --muted:#555;
-      --border:#e7e7ef;
-      --soon:#7c7cff;
-      --bg:#fff;
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --text: #17171f;
+      --muted: #63637a;
+      --border: #e8eaf5;
+      --brand: #5e55ff;
+      --brand-2:#8f56ff;
+      --link:#3d36ff;
+      --badge:#7f83ff;
+      --shadow: 0 12px 28px rgba(25, 20, 75, .08);
     }
     *{box-sizing:border-box}
-    body {
-      font-family: Arial, sans-serif;
-      margin: 40px;
-      color: var(--text);
+    html,body{margin:0}
+    body{
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
       background: var(--bg);
+      color: var(--text);
     }
-    #logo {
-      max-width: 280px;
-      margin-bottom: 30px;
-    }
-    h1 {
-      font-size: 28px;
-      margin: 0 0 6px 0;
-    }
-    h2 {
-      font-size: 20px;
-      margin: 0 0 6px 0;
-    }
-    p {
-      margin: 4px 0 14px;
-      line-height: 1.45;
-    }
-    a {
-      color: var(--brand);
-      text-decoration: none;
-      font-weight: bold;
-    }
-    a:hover { text-decoration: underline; }
 
+    /* Header */
+    .hero{
+      background:
+        radial-gradient(1200px 600px at 10% -20%, rgba(143,86,255,.18), transparent 60%),
+        radial-gradient(900px 540px at 90% -30%, rgba(94,85,255,.18), transparent 60%),
+        linear-gradient(#f9faff, #f6f7fb);
+      border-bottom:1px solid var(--border);
+    }
+    .wrap{max-width:1200px; margin:0 auto; padding:28px 22px}
+    .brand{
+      display:flex; gap:16px; align-items:center;
+    }
+    .logo-box{
+      width:64px;height:64px;border-radius:16px;
+      background:#fff;border:1px solid var(--border);
+      display:grid;place-items:center;box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .logo-box img{width:46px;height:auto;display:block}
+    .logo-fallback{display:none;width:46px;height:46px}
+    .logo-fallback svg{width:46px;height:46px;display:block}
+
+    h1{font-size:34px; line-height:1.2; margin:2px 0 4px}
+    .sub{color:var(--muted); font-size:15px}
+
+    /* Grid of cards */
+    .content{max-width:1200px; margin:0 auto; padding:10px 22px 36px}
     .grid{
       display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 18px;
-      margin-top: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(320px,1fr));
+      gap:22px;
     }
-    .tool{
+    .card{
+      background:var(--panel);
       border:1px solid var(--border);
-      border-radius: 12px;
-      padding:16px 16px 14px;
-      background:#fafaff;
+      border-radius:18px;
+      padding:18px 18px 16px;
+      box-shadow: var(--shadow);
+      transition: transform .15s ease, box-shadow .15s ease;
     }
-    .tool h2{
-      display:flex;
-      align-items:center;
-      gap:10px;
+    .card:hover{ transform: translateY(-2px); box-shadow: 0 16px 34px rgba(25, 20, 75, .12); }
+
+    .row{display:flex; gap:12px; align-items:center; margin-bottom:8px}
+    .ico{
+      width:42px;height:42px;border-radius:12px;flex:0 0 42px;
+      background:linear-gradient(135deg, var(--brand), var(--brand-2));
     }
-    .soon{
-      display:inline-block;
-      font-weight:600;
-      color:#fff;
-      background:var(--soon);
-      padding:2px 8px;
-      border-radius:999px;
-      font-size:12px;
-      letter-spacing:.2px;
+    .ico--muted{ background:#ebedff; }
+
+    .title{font-size:18px;font-weight:700;margin:0}
+    .txt{color:var(--muted); margin:6px 0 12px; line-height:1.45}
+    a.btn{color:var(--link); text-decoration:none; font-weight:700}
+    a.btn:hover{text-decoration:underline}
+
+    .pill{
+      margin-left:8px;
+      background:var(--badge); color:#fff;
+      padding:2px 8px; border-radius:999px;
+      font-size:12px; font-weight:700; letter-spacing:.25px;
     }
-    .muted{color:var(--muted)}
-    footer {
-      margin-top: 36px;
-      font-size: 13px;
-      color: var(--muted);
+
+    h3.more{margin:26px 0 8px; padding:0 22px}
+    .note{color:var(--muted); padding:0 22px}
+    code{
+      background:#eef0ff; border:1px solid #dde1ff;
+      padding:2px 6px; border-radius:6px;
     }
-    code{background:#f3f4ff;border:1px solid var(--border);padding:2px 6px;border-radius:6px}
+    footer{color:var(--muted); font-size:13px; padding: 18px 22px 38px}
   </style>
 </head>
 <body>
-
-  <img id="logo" src="assets/logo.png" alt="Verified Electronics Logo">
-
-  <h1>Verified Electronics — Tools</h1>
-  <p class="muted">Internal utilities for sales &amp; operations</p>
-
-  <div class="grid">
-
-    <div class="tool">
-      <h2><a href="so-confirmation/">Sales Order / Invoice PDF</a></h2>
-      <p>Generate branded PDFs with VAT, delivery terms, currency &amp; totals.</p>
-      <p><a href="so-confirmation/">Open tool →</a></p>
+  <!-- HEADER -->
+  <header class="hero">
+    <div class="wrap">
+      <div class="brand">
+        <div class="logo-box">
+          <img src="assets/logo.png" alt="Verified Electronics Logo"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block'">
+          <!-- Fallback SVG if the logo image is missing -->
+          <span class="logo-fallback" aria-hidden="true">
+            <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+                  <stop offset="0" stop-color="#5e55ff"/><stop offset="1" stop-color="#8f56ff"/>
+                </linearGradient>
+              </defs>
+              <rect rx="14" width="64" height="64" fill="url(#g)"/>
+              <path d="M18 34l8 8 20-20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </div>
+        <div>
+          <h1>Verified Electronics — Tools</h1>
+          <div class="sub">Internal utilities for sales &amp; operations</div>
+        </div>
+      </div>
     </div>
+  </header>
 
-    <div class="tool">
-      <h2><a href="excess-checker/">Excess Checker</a></h2>
-      <p>Search parts, import CSV, view supplier counts &amp; availability.</p>
-      <p><a href="excess-checker/">Open tool →</a></p>
-    </div>
+  <!-- CONTENT -->
+  <main class="content">
+    <section class="grid">
 
-    <div class="tool">
-      <h2><a href="coc.index.html">Certificate of Conformance</a></h2>
-      <p>Generate a clean, modern PDF certificate with lot numbers, serials, dates and PO references.</p>
-      <p><a href="coc.index.html">Open tool →</a></p>
-    </div>
+      <!-- Sales Order -->
+      <article class="card">
+        <div class="row">
+          <div class="ico" aria-hidden="true"></div>
+          <h2 class="title">Sales Order / Invoice PDF</h2>
+        </div>
+        <p class="txt">Generate branded PDFs with VAT, delivery terms, currency &amp; totals.</p>
+        <a class="btn" href="so-confirmation/">Open tool →</a>
+      </article>
 
-    <!-- New placeholders -->
-    <div class="tool">
-      <h2>Sales Leaderboard <span class="soon">Coming soon</span></h2>
-      <p class="muted">Team &amp; individual performance ranking with period filters and targets.</p>
-      <p class="muted"><em>Planned: daily/weekly/monthly views, export, and badges.</em></p>
-    </div>
+      <!-- Excess Checker -->
+      <article class="card">
+        <div class="row">
+          <div class="ico" aria-hidden="true"></div>
+          <h2 class="title">Excess Checker</h2>
+        </div>
+        <p class="txt">Search parts, import CSV, view supplier counts &amp; availability.</p>
+        <a class="btn" href="excess-checker/">Open tool →</a>
+      </article>
 
-    <div class="tool">
-      <h2>Call &amp; Email Stats <span class="soon">Coming soon</span></h2>
-      <p class="muted">Outbound calls and email volumes by rep, with response-rate trends.</p>
-      <p class="muted"><em>Planned: source integrations, SLA alerts, and CSV export.</em></p>
-    </div>
+      <!-- CoC -->
+      <article class="card">
+        <div class="row">
+          <div class="ico" aria-hidden="true"></div>
+          <h2 class="title">Certificate of Conformance</h2>
+        </div>
+        <p class="txt">Generate a clean, modern PDF certificate with lot numbers, serials, dates and PO references.</p>
+        <a class="btn" href="coc.index.html">Open tool →</a>
+      </article>
 
-  </div>
+      <!-- Sales Leaderboard - Coming soon -->
+      <article class="card">
+        <div class="row">
+          <div class="ico ico--muted" aria-hidden="
 
-  <h2 style="margin-top:28px;">More tools coming</h2>
-  <p class="muted">Add another app under <code>/new-tool/index.html</code> and put a card here.</p>
-
-  <footer>
-    &copy; 2025 Verified Electronics. Internal use.
-  </footer>
-
-</body>
-</html>
 
 
 
