@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Verified — Simple Document Signer</title>
+<link rel="icon" href="data:;base64,iVBORw0KGgo="/>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Dancing+Script:wght@700&family=Great+Vibes&family=Pacifico&display=swap" rel="stylesheet">
+<style>
+  :root{--brand:#673ab7;--ink:#1c1c1c;--muted:#667085;--line:#e9e9ef;--card:#fff;--bg:#f6f7fb}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial}
+  header{display:flex;gap:12px;align-items:center;padding:16px 18px;background:#fff;border-bottom:1px solid var(--line)}
+  header img{height:36px} h1{margin:0;font-size:18px;font-weight:800}
+  .wrap{max-width:1200px;margin:18px auto;padding:0 16px;display:grid;gap:16px;grid-template-columns:380px 1fr}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.04)}
+  .card h2{margin:0;padding:12px 14px;border-bottom:1px solid var(--line);font-size:15px;background:linear-gradient(180deg,#fff,#fbfbff)}
+  .body{padding:14px}
+  label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
+  input[type="text"],input[type="number"],input[type="file"],select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit}
+  .btn{appearance:none;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;color:#fff;background:var(--brand);box-shadow:0 6px 16px rgba(103,58,183,.25)}
+  .btn.ghost{background:#fff;color:var(--brand);border:1px solid var(--line)}
+  .muted{color:var(--muted)}
+  .tools{display:flex;gap:8px;flex-wrap:wrap}
+  .sig-pad{border:1px dashed #d9d9ef;border-radius:10px;background:#fff}
+
+  .pageWrap{position:relative;margin:10px auto;border-radius:10px;overflow:hidden;background:#fff;border:1px solid #e6e6f6}
+  .pageCanvas{display:block}
+  .stamp{position:absolute;transform:translate(-50%,-50%);border:1px solid #d9d9ef;border-radius:8px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.08);padding:2px 6px;cursor:grab;user-select:none}
+  .stamp img{display:block;max-width:260px;max-height:90px}
+  .stamp--selected{outline:2px solid var(--brand)}
+  .palette{display:flex;gap:8px}
+  .pill{padding:8px 12px;border-radius:999px;border:1px solid #e3ddfb;background:#f5f3ff;color:#4525b2;font-weight:700;cursor:grab;user-select:none}
+  .pill:active{opacity:.9}
+  .notice{font-size:12px;color:#555;margin-top:10px}
+  #hiddenHtml{position:absolute;left:-99999px;top:-99999px;visibility:hidden}
+</style>
+</head>
+<body>
+<header>
+  <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified">
+  <h1>Verified — Simple Document Signer</h1>
+</header>
+
+<div class="wrap">
+  <!-- LEFT: controls -->
+  <section class="card">
+    <h2>1) Upload</h2>
+    <div class="body">
+      <label>Document (PDF or DOCX)</label>
+      <input id="docFile" type="file" accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"/>
+      <div class="notice">DOCX is converted locally to PDF for signing.</div>
+    </div>
+
+    <h2>2) Create signature</h2>
+    <div class="body">
+      <div>
+        <label>Signature type</label>
+        <select id="sigMode">
+          <option value="typed">Typed (auto-generated)</option>
+          <option value="drawn">Drawn (mouse/touch)</option>
+        </select>
+      </div>
+
+      <div id="typedBox">
+        <label>Signer name</label>
+        <input id="signerName" placeholder="Type your full name"/>
+        <label>Style</label>
+        <select id="sigStyle">
+          <option value="Great Vibes">Great Vibes</option>
+          <option value="Dancing Script">Dancing Script</option>
+          <option value="Pacifico">Pacifico</option>
+          <option value="Caveat">Caveat</option>
+        </select>
+        <div style="margin-top:8px">
+          <canvas id="typedPreview" width="420" height="100" class="sig-pad"></canvas>
+        </div>
+      </div>
+
+      <div id="drawnBox" style="display:none">
+        <label>Draw your signature</label>
+        <canvas id="drawPad" width="420" height="120" class="sig-pad"></canvas>
+        <div class="tools">
+          <button id="clearSig" class="btn ghost" type="button">Clear</button>
+        </div>
+      </div>
+
+      <div class="tools" style="margin-top:8px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px">
+          Width:
+          <input id="sigWidth" type="number" min="60" max="600" value="220" style="width:84px"/>
+          px
+        </label>
+      </div>
+
+      <div class="notice">Drag a stamp from the palette onto a page. Reposition by dragging. Select a stamp and press <b>Delete</b> to remove.</div>
+    </div>
+
+    <h2>3) Stamps</h2>
+    <div class="body">
+      <div class="palette">
+        <div class="pill" draggable="true" data-stamp="signature">✍️ Signature</div>
+        <div class="pill" draggable="true" data-stamp="initials">🅘 Initials</div>
+        <div class="pill" draggable="true" data-stamp="date">📅 Date</div>
+      </div>
+    </div>
+
+    <h2>4) Download</h2>
+    <div class="body">
+      <label><input type="checkbox" id="agree"/> I agree to sign this document electronically.</label>
+      <div class="tools" style="margin-top:10px">
+        <button id="finalize" class="btn" type="button" disabled>Download Signed PDF</button>
+      </div>
+      <div class="muted" style="margin-top:8px">No data leaves your browser. The signed PDF is flattened.</div>
+    </div>
+  </section>
+
+  <!-- RIGHT: PDF preview -->
+  <section class="card">
+    <h2>Preview (drag stamps here)</h2>
+    <div class="body" id="preview"></div>
+  </section>
+</div>
+
+<!-- hidden container used for DOCX->HTML->PDF conversion -->
+<div id="hiddenHtml"></div>
+
+<!-- libs -->
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";</script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+
+<script>
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+
+// ===== Signature sources =====
+let sigPad = null;
+let typedCanvas = $('#typedPreview'), typedCtx = typedCanvas.getContext('2d');
+
+function drawTypedPreview(){
+  const name = $('#signerName').value || 'Your Name';
+  const style = $('#sigStyle').value;
+  typedCtx.clearRect(0,0,typedCanvas.width, typedCanvas.height);
+  typedCtx.fillStyle = '#222';
+  typedCtx.textBaseline = 'middle';
+  typedCtx.font = `64px "${style}", "Segoe Script", cursive`;
+  typedCtx.fillText(name, 12, typedCanvas.height/2);
+}
+function getSignatureImage(){
+  const mode = $('#sigMode').value;
+  let canvas = (mode==='typed') ? typedCanvas : $('#drawPad');
+  const targetW = Math.max(60, Math.min(600, +$('#sigWidth').value||220));
+  const scale = targetW / canvas.width;
+  const out = document.createElement('canvas');
+  out.width = targetW;
+  out.height = Math.round(canvas.height * scale);
+  out.getContext('2d').drawImage(canvas, 0, 0, out.width, out.height);
+  return out.toDataURL('image/png');
+}
+function getInitialsImage(){
+  const name = ($('#signerName').value || 'Your Name').trim();
+  const initials = name.split(/\s+/).map(w=>w[0]||'').join('').slice(0,3).toUpperCase() || 'XX';
+  const style = $('#sigStyle').value;
+  const canvas = document.createElement('canvas');
+  canvas.width = 180; canvas.height = 70;
+  const c = canvas.getContext('2d');
+  c.fillStyle='#222'; c.textBaseline='middle';
+  c.font = `54px "${style}", "Segoe Script", cursive`;
+  c.fillText(initials, 10, canvas.height/2);
+  return canvas.toDataURL('image/png');
+}
+function getDateStampText(){
+  return new Date().toLocaleString();
+}
+$('#sigMode').addEventListener('change', ()=>{
+  const typed = $('#sigMode').value==='typed';
+  $('#typedBox').style.display = typed?'block':'none';
+  $('#drawnBox').style.display = typed?'none':'block';
+});
+$('#signerName').addEventListener('input', drawTypedPreview);
+$('#sigStyle').addEventListener('change', drawTypedPreview);
+sigPad = new SignaturePad($('#drawPad'), { backgroundColor:'#fff', penColor:'#111' });
+$('#clearSig').addEventListener('click', ()=>sigPad.clear());
+drawTypedPreview();
+
+// ===== PDF handling =====
+let pdfBytes = null, pdfDocProxy = null;
+let pageViews = [];   // [{wrap, canvas, viewport}]
+let stamps = [];      // [{id,type,pageIndex,x,y,w,h,dataUrl,text}]
+let idSeq = 1;
+
+$('#docFile').addEventListener('change', async (e)=>{
+  const f = e.target.files[0]; if(!f) return;
+  resetAll();
+
+  if (/\.(pdf)$/i.test(f.name)) {
+    pdfBytes = await f.arrayBuffer();
+  } else if (/\.(docx)$/i.test(f.name)) {
+    const buf = await f.arrayBuffer();
+    const res = await mammoth.convertToHtml({arrayBuffer:buf});
+    const holder = $('#hiddenHtml');
+    holder.innerHTML = `<div id="docxHtml" style="width:794px;padding:36px;background:#fff">${res.value}</div>`;
+    const element = $('#docxHtml');
+    const opt = {
+      margin: [12,12,12,12],
+      image: { type:'jpeg', quality:0.98 },
+      html2canvas: { scale: 2, useCORS:true },
+      jsPDF: { unit:'pt', format:'a4', orientation:'portrait' }
+    };
+    const pdfBlob = await html2pdf().set(opt).from(element).toPdf().get('pdf').then(pdf => pdf.output('blob'));
+    pdfBytes = await pdfBlob.arrayBuffer();
+    holder.innerHTML = '';
+  } else {
+    alert('Unsupported file type. Please upload PDF or DOCX.');
+    return;
+  }
+  await renderPdf(pdfBytes);
+});
+
+async function renderPdf(bytes){
+  $('#preview').innerHTML = '';
+  pageViews = [];
+  pdfDocProxy = await pdfjsLib.getDocument({data: bytes}).promise;
+  for(let i=1; i<=pdfDocProxy.numPages; i++){
+    const page = await pdfDocProxy.getPage(i);
+    const viewport = page.getViewport({scale: 1.2});
+    const wrap = document.createElement('div');
+    wrap.className='pageWrap';
+    const canvas = document.createElement('canvas');
+    canvas.className='pageCanvas';
+    canvas.width = viewport.width; canvas.height = viewport.height;
+    wrap.style.width = canvas.width+'px';
+    wrap.style.height = canvas.height+'px';
+    const ctx = canvas.getContext('2d');
+    await page.render({canvasContext: ctx, viewport}).promise;
+    wrap.appendChild(canvas);
+    $('#preview').appendChild(wrap);
+
+    // allow drop from palette
+    enableDrop(wrap, i-1);
+    pageViews.push({wrap, canvas, viewport});
+  }
+  toggleFinalize();
+}
+
+// ===== Drag & Drop from palette =====
+function enableDrop(wrap, pageIndex){
+  wrap.addEventListener('dragover', e=>{ e.preventDefault(); });
+  wrap.addEventListener('drop', e=>{
+    e.preventDefault();
+    const type = e.dataTransfer.getData('text/plain');
+    addStampAt(type, pageIndex, e.offsetX, e.offsetY);
+  });
+}
+$$('.palette .pill').forEach(p=>{
+  p.addEventListener('dragstart', e=>{
+    e.dataTransfer.setData('text/plain', e.target.dataset.stamp);
+  });
+});
+
+// Add stamp helper
+function addStampAt(type, pageIndex, x, y){
+  const page = pageViews[pageIndex];
+  let el = document.createElement('div');
+  el.className='stamp';
+  el.dataset.id = String(idSeq++);
+  el.dataset.page = String(pageIndex);
+  let w=160, h=50, dataUrl=null, text=null;
+
+  if(type==='signature'){
+    dataUrl = getSignatureImage();
+    const img = new Image(); img.src = dataUrl; img.onload = ()=>{
+      // fit within 260x90
+      const ratio = Math.min(260/img.width, 90/img.height, 1);
+      w = Math.round(img.width*ratio); h = Math.round(img.height*ratio);
+      const im = new Image(); im.src = dataUrl; im.style.maxWidth='260px'; im.style.maxHeight='90px';
+      el.innerHTML=''; el.appendChild(im);
+      place();
+    };
+    el.innerHTML='Placing…';
+  } else if(type==='initials'){
+    dataUrl = getInitialsImage();
+    const im = new Image(); im.src = dataUrl; im.style.maxWidth='200px'; im.style.maxHeight='70px';
+    el.appendChild(im); w=140; h=50; place();
+  } else if(type==='date'){
+    text = getDateStampText();
+    el.style.padding='6px 10px';
+    el.style.background='#fff';
+    el.style.border='1px solid #e6e6f6';
+    el.style.font='600 12px system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial';
+    el.textContent = text;
+    w = Math.min(200, 10 + text.length*7); h=28; place();
+  }
+
+  function place(){
+    el.style.left = x+'px'; el.style.top = y+'px';
+    page.wrap.appendChild(el);
+    makeDraggable(el);
+    stamps.push({ id: el.dataset.id, type, pageIndex, x, y, w, h, dataUrl, text, canW: page.canvas.width, canH: page.canvas.height });
+    selectStamp(el);
+    toggleFinalize();
+  }
+}
+
+// Draggable + selectable
+let dragInfo=null, selected=null;
+function makeDraggable(el){
+  el.addEventListener('pointerdown', e=>{
+    selectStamp(el);
+    dragInfo = { el, startX:e.clientX, startY:e.clientY, origLeft:parseFloat(el.style.left), origTop:parseFloat(el.style.top) };
+    el.setPointerCapture(e.pointerId);
+  });
+  el.addEventListener('pointermove', e=>{
+    if(!dragInfo) return;
+    const dx = e.clientX - dragInfo.startX;
+    const dy = e.clientY - dragInfo.startY;
+    const nx = dragInfo.origLeft + dx;
+    const ny = dragInfo.origTop + dy;
+    dragInfo.el.style.left = nx+'px';
+    dragInfo.el.style.top = ny+'px';
+  });
+  el.addEventListener('pointerup', e=>{
+    if(!dragInfo) return;
+    const id = el.dataset.id;
+    const s = stamps.find(x=>x.id===id);
+    s.x = parseFloat(el.style.left);
+    s.y = parseFloat(el.style.top);
+    dragInfo=null;
+  });
+}
+function selectStamp(el){
+  if(selected) selected.classList.remove('stamp--selected');
+  selected = el;
+  el.classList.add('stamp--selected');
+}
+document.addEventListener('keydown', e=>{
+  if((e.key==='Delete' || e.key==='Backspace') && selected){
+    const id = selected.dataset.id;
+    stamps = stamps.filter(s=>s.id!==id);
+    selected.remove(); selected=null;
+    toggleFinalize();
+  }
+});
+
+// ===== Utilities =====
+function resetAll(){
+  $('#preview').innerHTML='';
+  pageViews=[]; stamps=[]; pdfBytes=null; pdfDocProxy=null;
+  toggleFinalize();
+}
+function toggleFinalize(){
+  $('#finalize').disabled = !(pdfBytes && stamps.length && $('#agree').checked);
+}
+$('#agree').addEventListener('change', toggleFinalize);
+
+// ===== Finalize (flatten into PDF) =====
+$('#finalize').addEventListener('click', async ()=>{
+  if(!pdfBytes || !stamps.length || !$('#agree').checked) return;
+
+  const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+  for(const s of stamps){
+    const page = pdfDoc.getPage(s.pageIndex);
+    const { width: pageW, height: pageH } = page.getSize();
+    // convert from canvas pixel coords to PDF points
+    const xRatio = s.x / s.canW, yRatio = s.y / s.canH;
+    const wPt = (s.w / s.canW) * pageW;
+    const hPt = (s.h / s.canH) * pageH;
+    const xPt = xRatio * pageW - wPt/2;
+    const yPt = pageH - (yRatio * pageH) - hPt/2;
+
+    if(s.type==='date'){
+      page.drawText(s.text || getDateStampText(), {
+        x: xPt + 6, y: yPt + 8, size: 10, color: PDFLib.rgb(0.18,0.18,0.18)
+      });
+      // light box outline for date pill
+      page.drawRectangle({ x:xPt, y:yPt, width:wPt, height:hPt, borderColor:PDFLib.rgb(0.9,0.9,0.95), borderWidth:1, color: PDFLib.rgb(1,1,1) });
+    } else {
+      const png = await pdfDoc.embedPng(s.dataUrl);
+      page.drawImage(png, { x:xPt, y:yPt, width:wPt, height:hPt });
+      // optional caption under signature
+      if(s.type==='signature'){
+        const name = ($('#signerName').value || '').trim();
+        if(name) page.drawText(`${name}  •  ${new Date().toLocaleString()}`, { x:xPt, y:yPt-10, size:8, color: PDFLib.rgb(0.22,0.22,0.22) });
+      }
+    }
+  }
+
+  const signedBytes = await pdfDoc.save();
+  const blob = new Blob([signedBytes], {type:'application/pdf'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'Signed.pdf';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+</script>
+</body>
+</html>
