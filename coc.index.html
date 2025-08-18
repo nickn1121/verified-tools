@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Certificate of Conformance / Conformity</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+  <style>
+    :root{
+      --brand:#673ab7;           /* VE purple (matches your other tools) */
+      --ink:#222;
+      --muted:#666;
+      --bg:#fafafa;
+      --card:#ffffff;
+      --line:#e9e9ef;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;
+      color:var(--ink);
+      background:var(--bg);
+    }
+    header{
+      display:flex; align-items:center; gap:14px;
+      padding:16px 18px; border-bottom:1px solid var(--line); background:#fff;
+      position:sticky; top:0; z-index:3;
+    }
+    header img{height:36px}
+    header h1{font-size:18px; margin:0; font-weight:700}
+    header .tag{margin-left:auto; font-size:12px; color:#fff; background:var(--brand); padding:6px 10px; border-radius:999px}
+    .wrap{
+      max-width:1200px; margin:24px auto; padding:0 16px; display:grid; grid-template-columns: 420px 1fr; gap:18px;
+    }
+    .card{
+      background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.03);
+    }
+    .card h2{
+      margin:0; padding:14px 16px; border-bottom:1px solid var(--line); font-size:15px; font-weight:700;
+      background:linear-gradient(180deg,#fff, #fbfbff);
+    }
+    .body{padding:16px}
+    .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    .grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px}
+    label{display:block; font-size:12px; color:var(--muted); margin:8px 0 4px}
+    input,textarea,select{
+      width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font:inherit; background:#fff;
+    }
+    textarea{min-height:84px; resize:vertical}
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .row .grow{flex:1}
+    .subtle{color:var(--muted)}
+    .btn{
+      appearance:none; border:0; border-radius:9px; padding:12px 16px; font-weight:700; cursor:pointer;
+      background:var(--brand); color:#fff; box-shadow:0 6px 16px rgba(103,58,183,.25);
+    }
+    .btn.secondary{background:#f2f0fb; color:var(--brand); box-shadow:none; border:1px solid #e3ddfb}
+    .btn.ghost{background:#fff; color:var(--brand); border:1px solid var(--line)}
+    .toolbar{display:flex; gap:10px; padding:12px 16px; border-top:1px solid var(--line); background:#fff; border-radius:0 0 12px 12px}
+    .footnote{font-size:12px; color:var(--muted)}
+    /* Preview panel */
+    .preview{
+      padding:0; overflow:auto;
+    }
+    .paper{
+      width:794px; /* A4 portrait at 96dpi approx */
+      min-height:1123px;
+      margin:16px auto; background:#fff; color:#000;
+      border:1px solid var(--line); border-radius:12px;
+      box-shadow:0 6px 24px rgba(0,0,0,.06);
+      padding:48px;
+      position:relative;
+    }
+    .paper header{
+      position:relative; top:auto; border:0; background:#fff; padding:0; margin-bottom:18px;
+    }
+    .paper header .brandline{
+      width:64px; height:6px; background:var(--brand); border-radius:999px; margin-top:8px;
+    }
+    .title{
+      font-size:22px; letter-spacing:.2px; font-weight:800; margin:18px 0 4px;
+    }
+    .meta{font-size:12px; color:#444}
+    hr{border:0; border-top:1px solid #ebebf5; margin:18px 0}
+    .cols{display:grid; grid-template-columns:1.2fr .8fr; gap:16px}
+    .k{font-size:11px; color:#666}
+    .v{font-weight:600}
+    .table{width:100%; border:1px solid #ececf6; border-radius:10px; overflow:hidden}
+    .table .row{
+      display:grid; grid-template-columns: 1fr 1.4fr; gap:0; border-top:1px solid #ececf6;
+    }
+    .table .row:first-child{border-top:0}
+    .table .cell{padding:10px 12px; font-size:13px}
+    .table .cell.k{background:#fafaff; color:#555}
+    .blurb{font-size:12.5px; color:#222}
+    .muter{font-size:11.5px; color:#666}
+    .sign{
+      display:grid; grid-template-columns:1.2fr .8fr; gap:16px; align-items:end; margin-top:22px
+    }
+    .sigline{height:44px; border-bottom:1px solid #cfcfe9}
+    .right{ text-align:right }
+    .logo{height:44px}
+    /* Print/PDF tweaks */
+    @media print {
+      .wrap {display:block}
+      .card, .toolbar, .headerbar {display:none!important}
+      .paper {margin:0; border:0; box-shadow:none; page-break-after:always}
+    }
+  </style>
+</head>
+<body>
+  <header class="headerbar">
+    <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified Electronics" />
+    <h1>Certificate of Conformance / Conformity</h1>
+    <span class="tag">PDF Generator</span>
+  </header>
+
+  <div class="wrap">
+    <!-- LEFT: Form -->
+    <section class="card">
+      <h2>Certificate details</h2>
+      <div class="body">
+        <div class="grid">
+          <div>
+            <label>Title</label>
+            <select id="certTitle">
+              <option value="Certificate of Conformance">Certificate of Conformance</option>
+              <option value="Certificate of Conformity">Certificate of Conformity</option>
+            </select>
+          </div>
+          <div>
+            <label>Certificate No.</label>
+            <input id="certNo" placeholder="Auto" />
+          </div>
+        </div>
+
+        <div class="grid" style="margin-top:6px;">
+          <div>
+            <label>Company Name</label>
+            <input id="company" value="Verified Electronics" />
+          </div>
+          <div>
+            <label>Purchase Order No.</label>
+            <input id="po" placeholder="PO number" />
+          </div>
+        </div>
+
+        <div class="grid3">
+          <div>
+            <label>Address</label>
+            <input id="addr1" value="Hull" />
+          </div>
+          <div>
+            <label>State / Region</label>
+            <input id="state" value="" />
+          </div>
+          <div>
+            <label>Postcode / ZIP</label>
+            <input id="zip" value="HU1 3TD" />
+          </div>
+        </div>
+
+        <div class="grid">
+          <div>
+            <label>Manufacturer’s Part No.</label>
+            <input id="mfgPart" placeholder="e.g. XCKU15P-1FFVE1517E" />
+          </div>
+          <div>
+            <label>Manufacturer’s Lot No.</label>
+            <input id="lot" placeholder="e.g. 2229AAI" />
+          </div>
+        </div>
+
+        <div class="grid3">
+          <div>
+            <label>Date of Manufacture</label>
+            <input type="date" id="dom" />
+          </div>
+          <div>
+            <label>Date Shipped</label>
+            <input type="date" id="dateShipped" />
+          </div>
+          <div>
+            <label>Quantity Shipped</label>
+            <input id="qty" type="number" min="0" step="1" />
+          </div>
+        </div>
+
+        <label style="margin-top:10px">Description</label>
+        <textarea id="desc" placeholder="Short part description"></textarea>
+
+        <label>Specifications / Special Processes</label>
+        <textarea id="specs" placeholder="Any specifications, special processes, standards…"></textarea>
+
+        <label>Serial No(s)</label>
+        <textarea id="serials" placeholder="One per line"></textarea>
+
+        <hr/>
+
+        <div class="grid">
+          <div>
+            <label>Signer Name</label>
+            <input id="signName" placeholder="Name" />
+          </div>
+          <div>
+            <label>Sign Date</label>
+            <input type="date" id="signDate" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:12px">
+          <label class="row"><input id="showLogo" type="checkbox" checked />&nbsp;Include logo</label>
+          <div class="grow"></div>
+          <button class="btn ghost" id="saveDefaults">Save defaults</button>
+          <button class="btn secondary" id="resetForm">Reset</button>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="footnote">Tip: everything previews live. When happy, click “Generate PDF”.</div>
+        <div class="grow"></div>
+        <button class="btn" id="makePdf">Generate PDF</button>
+      </div>
+    </section>
+
+    <!-- RIGHT: Live preview (turned into PDF) -->
+    <section class="card preview">
+      <div id="paper" class="paper">
+        <header>
+          <div class="row">
+            <img id="logo" class="logo" alt="Verified Electronics" src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png">
+          </div>
+          <div class="brandline"></div>
+        </header>
+
+        <div class="title" id="p_title">Certificate of Conformance</div>
+        <div class="meta">
+          <span class="k">Certificate No:</span> <span class="v" id="p_certNo"></span>
+        </div>
+
+        <hr/>
+
+        <div class="cols">
+          <div>
+            <div class="muter">COMPANY</div>
+            <div class="v" id="p_company">Verified Electronics</div>
+            <div class="muter" id="p_addr">Hull • HU1 3TD</div>
+          </div>
+          <div class="right">
+            <div><span class="k">PO No:</span> <span class="v" id="p_po"></span></div>
+          </div>
+        </div>
+
+        <div style="height:8px"></div>
+
+        <div class="table">
+          <div class="row">
+            <div class="cell k">Manufacturer’s Part No</div>
+            <div class="cell v" id="p_mfgPart"></div>
+          </div>
+          <div class="row">
+            <div class="cell k">Manufacturer’s Lot No</div>
+            <div class="cell v" id="p_lot"></div>
+          </div>
+          <div class="row">
+            <div class="cell k">Date of Manufacture</div>
+            <div class="cell v" id="p_dom"></div>
+          </div>
+          <div class="row">
+            <div class="cell k">Date Shipped</div>
+            <div class="cell v" id="p_ship"></div>
+          </div>
+          <div class="row">
+            <div class="cell k">Quantity Shipped</div>
+            <div class="cell v" id="p_qty"></div>
+          </div>
+          <div class="row">
+            <div class="cell k">Description</div>
+            <div class="cell v" id="p_desc"></div>
+          </div>
+          <div class="row">
+            <div class="cell k">Specifications / Special Processes</div>
+            <div class="cell v" id="p_specs"></div>
+          </div>
+          <div class="row">
+            <div class="cell k">Serial No(s)</div>
+            <div class="cell v" id="p_serials"></div>
+          </div>
+        </div>
+
+        <div style="height:14px"></div>
+
+        <div class="blurb" id="p_clause">
+          This is to certify that the products and/or services contracted by the purchase order have been manufactured,
+          processed, inspected, and tested in accordance with all requirements of the purchase order and the documents
+          referenced therein. Inspection and test results signify that the items delivered are fully acceptable and in
+          complete conformance to all purchase order requirements. Other data not enclosed with this shipment are
+          maintained on file and are available upon request.
+        </div>
+
+        <div class="sign">
+          <div>
+            <div class="muter">SIGNATURE / NAME</div>
+            <div class="sigline"></div>
+            <div class="v" id="p_signName"></div>
+          </div>
+          <div class="right">
+            <div class="muter">DATE</div>
+            <div class="sigline"></div>
+            <div class="v" id="p_signDate"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- libs -->
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+  <script>
+    // ===== helpers =====
+    const $ = sel => document.querySelector(sel);
+    const fmt = (d) => {
+      if(!d) return "";
+      const x = new Date(d);
+      if (isNaN(x)) return d;
+      return x.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'});
+    }
+    const todayISO = () => new Date().toISOString().slice(0,10);
+    const autoCertNo = () => {
+      const d = new Date();
+      return `VE-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${Math.floor(Math.random()*900+100)}`;
+    }
+
+    // ===== state wiring =====
+    const fields = [
+      'certTitle','certNo','company','po','addr1','state','zip',
+      'mfgPart','lot','dom','dateShipped','qty','desc','specs','serials',
+      'signName','signDate','showLogo'
+    ];
+
+    // defaults
+    if(!localStorage.getItem('coc_defaults')){
+      const seed = {
+        company:'Verified Electronics', addr1:'Hull', state:'', zip:'HU1 3TD',
+        certTitle:'Certificate of Conformance', showLogo:true
+      };
+      localStorage.setItem('coc_defaults', JSON.stringify(seed));
+    }
+
+    function loadDefaults(){
+      const d = JSON.parse(localStorage.getItem('coc_defaults')||'{}');
+      for(const k of Object.keys(d)){
+        const el = document.getElementById(k);
+        if(!el) continue;
+        if(el.type === 'checkbox') el.checked = !!d[k];
+        else el.value = d[k];
+      }
+      if(!$('#certNo').value) $('#certNo').value = autoCertNo();
+      if(!$('#signDate').value) $('#signDate').value = todayISO();
+      if(!$('#dateShipped').value) $('#dateShipped').value = todayISO();
+      if(!$('#dom').value) $('#dom').value = todayISO();
+    }
+
+    function saveDefaults(){
+      const d = {};
+      for(const id of fields){
+        const el = document.getElementById(id);
+        if(!el) continue;
+        if(el.type==='checkbox') d[id]=el.checked;
+        else d[id]=el.value;
+      }
+      localStorage.setItem('coc_defaults', JSON.stringify(d));
+      alert('Defaults saved for this browser.');
+    }
+
+    function resetForm(){
+      localStorage.removeItem('coc_defaults');
+      for(const id of fields){
+        const el = document.getElementById(id);
+        if(!el) continue;
+        if(el.type==='checkbox') el.checked = (id==='showLogo');
+        else el.value = '';
+      }
+      loadDefaults();
+      sync();
+    }
+
+    function nl2br(s){ return (s||'').trim().replace(/\n/g,'<br>') }
+
+    function sync(){
+      $('#p_title').textContent          = $('#certTitle').value || 'Certificate of Conformance';
+      $('#p_certNo').textContent         = $('#certNo').value || '';
+      $('#p_company').textContent        = $('#company').value || '';
+      const addr = [$('#addr1').value,$('#state').value,$('#zip').value].filter(Boolean).join(' • ');
+      $('#p_addr').textContent           = addr;
+      $('#p_po').textContent             = $('#po').value || '';
+      $('#p_mfgPart').textContent        = $('#mfgPart').value || '';
+      $('#p_lot').textContent            = $('#lot').value || '';
+      $('#p_dom').textContent            = fmt($('#dom').value);
+      $('#p_ship').textContent           = fmt($('#dateShipped').value);
+      $('#p_qty').textContent            = $('#qty').value || '';
+      $('#p_desc').innerHTML             = nl2br($('#desc').value);
+      $('#p_specs').innerHTML            = nl2br($('#specs').value);
+      $('#p_serials').innerHTML          = nl2br($('#serials').value);
+      $('#p_signName').textContent       = $('#signName').value || '';
+      $('#p_signDate').textContent       = fmt($('#signDate').value);
+
+      $('#logo').style.display = $('#showLogo').checked ? '' : 'none';
+    }
+
+    // wire inputs
+    for(const id of fields){
+      const el = document.getElementById(id);
+      if(!el) continue;
+      el.addEventListener('input', sync);
+      el.addEventListener('change', sync);
+    }
+
+    // buttons
+    $('#makePdf').addEventListener('click', async () => {
+      sync();
+      const nameBits = [
+        ($('#certTitle').value||'COC').replace(/[^\w]+/g,'-'),
+        $('#po').value||'PO',
+        $('#mfgPart').value||'PART',
+        ($('#certNo').value||'').replace(/[^\w-]+/g,'')
+      ].filter(Boolean);
+      const filename = nameBits.join('_') + '.pdf';
+
+      const element = document.getElementById('paper');
+      const opt = {
+        margin:       [12,12,12,12],
+        filename,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS:true },
+        jsPDF:        { unit: 'pt', format: 'a4', orientation: 'portrait' }
+      };
+      await html2pdf().set(opt).from(element).save();
+    });
+
+    $('#saveDefaults').addEventListener('click', saveDefaults);
+    $('#resetForm').addEventListener('click', resetForm);
+
+    // init
+    loadDefaults();
+    sync();
+  </script>
+</body>
+</html>
