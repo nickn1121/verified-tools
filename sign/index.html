@@ -30,7 +30,7 @@
   .stamp img{display:block;max-width:260px;max-height:90px}
   .stamp--selected{outline:2px solid var(--brand)}
   .resize-handle{
-    position:absolute; right:-8px; bottom:-8px; width:16px; height:16px;
+    position:absolute; right:-10px; bottom:-10px; width:18px; height:18px;
     background:#fff; border:2px solid var(--brand); border-radius:4px; cursor:nwse-resize;
     box-shadow:0 1px 6px rgba(0,0,0,.15);
   }
@@ -196,7 +196,11 @@ $('#clearSig').addEventListener('click', ()=>sigPad.clear());
 drawTypedPreview();
 
 // ===== PDF handling =====
-let pdfBytes = null, pdfDocProxy = null;
+// Keep TWO copies: one for pdf.js (render), one untouched for pdf-lib (edit)
+let pdfRenderBytes = null; // Uint8Array for pdf.js
+let pdfEditBytes   = null; // ArrayBuffer kept independent for pdf-lib
+let pdfDocProxy = null;
+
 let pageViews = [];   // [{wrap, canvas, viewport}]
 let stamps = [];      // [{id,type,pageIndex,x,y,w,h,dataUrl,text,ratio,canW,canH}]
 let idSeq = 1;
@@ -206,7 +210,9 @@ $('#docFile').addEventListener('change', async (e)=>{
   resetAll();
 
   if (/\.(pdf)$/i.test(f.name)) {
-    pdfBytes = await f.arrayBuffer();
+    const buf = await f.arrayBuffer();
+    pdfRenderBytes = new Uint8Array(buf);
+    pdfEditBytes   = buf.slice(0);
   } else if (/\.(docx)$/i.test(f.name)) {
     const buf = await f.arrayBuffer();
     const res = await mammoth.convertToHtml({arrayBuffer:buf});
@@ -220,19 +226,22 @@ $('#docFile').addEventListener('change', async (e)=>{
       jsPDF: { unit:'pt', format:'a4', orientation:'portrait' }
     };
     const pdfBlob = await html2pdf().set(opt).from(element).toPdf().get('pdf').then(pdf => pdf.output('blob'));
-    pdfBytes = await pdfBlob.arrayBuffer();
+    const pdfBuf = await pdfBlob.arrayBuffer();
+    pdfRenderBytes = new Uint8Array(pdfBuf);
+    pdfEditBytes   = pdfBuf.slice(0);
     holder.innerHTML = '';
   } else {
     alert('Unsupported file type. Please upload PDF or DOCX.');
     return;
   }
-  await renderPdf(pdfBytes);
+
+  await renderPdf();
 });
 
-async function renderPdf(bytes){
+async function renderPdf(){
   $('#preview').innerHTML = '';
   pageViews = [];
-  pdfDocProxy = await pdfjsLib.getDocument({data: bytes}).promise;
+  pdfDocProxy = await pdfjsLib.getDocument({data: pdfRenderBytes}).promise;
   for(let i=1; i<=pdfDocProxy.numPages; i++){
     const page = await pdfDocProxy.getPage(i);
     const viewport = page.getViewport({scale: 1.2});
@@ -306,7 +315,6 @@ function addStampAt(type, pageIndex, x, y){
       const im = new Image(); im.src = dataUrl; im.style.maxWidth='260px'; im.style.maxHeight='90px';
       el.innerHTML=''; el.appendChild(im);
     }
-    // resize handle
     const hnd = document.createElement('div'); hnd.className='resize-handle'; el.appendChild(hnd);
 
     page.wrap.appendChild(el);
@@ -314,7 +322,7 @@ function addStampAt(type, pageIndex, x, y){
     makeResizable(el, { keepRatio: type!=='date' });
 
     stamps.push({ id: el.dataset.id, type, pageIndex, x, y, w, h, dataUrl, text, ratio, canW: page.canvas.width, canH: page.canvas.height });
-    updateStampSize(el, w, h); //write dimensions into dataset+array
+    updateStampSize(el, w, h);
     selectStamp(el);
     updateChecklist();
     toggleFinalize();
@@ -325,7 +333,7 @@ function addStampAt(type, pageIndex, x, y){
 let dragInfo=null, selected=null;
 function makeDraggable(el){
   el.addEventListener('pointerdown', e=>{
-    if(e.target.classList.contains('resize-handle')) return; // resize takes over
+    if(e.target.classList.contains('resize-handle')) return;
     selectStamp(el);
     dragInfo = { el, startX:e.clientX, startY:e.clientY, origLeft:parseFloat(el.style.left), origTop:parseFloat(el.style.top) };
     el.setPointerCapture(e.pointerId);
@@ -396,7 +404,7 @@ function makeResizable(el, {keepRatio}){
     rs=null;
   });
 
-  // wheel scale (Ctrl/Cmd required so normal page scroll still works)
+  // wheel scale (Ctrl/Cmd required)
   el.addEventListener('wheel', e=>{
     if(!(e.ctrlKey || e.metaKey)) return;
     e.preventDefault();
@@ -410,33 +418,29 @@ function makeResizable(el, {keepRatio}){
 }
 
 function updateStampSize(el, w, h){
-  // Visually scale the element by padding; for images it's fine, for date pill we adjust padding/line-height subtly
   el.style.padding = '2px 6px';
   el.style.width = w+'px';
   el.style.height = h+'px';
-
   const id = el.dataset.id;
   const s = stamps.find(x=>x.id===id);
-  if(s){
-    s.w = w; s.h = h;
-  }
+  if(s){ s.w = w; s.h = h; }
 }
 
 // ===== Utilities =====
 function resetAll(){
   $('#preview').innerHTML='';
-  pageViews=[]; stamps=[]; pdfBytes=null; pdfDocProxy=null;
+  pageViews=[]; stamps=[]; pdfRenderBytes=null; pdfEditBytes=null; pdfDocProxy=null;
   updateChecklist();
   toggleFinalize();
 }
 function toggleFinalize(){
-  const can = !!(pdfBytes && stamps.length && $('#agree').checked);
+  const can = !!(pdfEditBytes && stamps.length && $('#agree').checked);
   $('#finalize').disabled = !can;
 }
 $('#agree').addEventListener('change', toggleFinalize);
 
 function updateChecklist(){
-  const okDoc = !!pdfBytes;
+  const okDoc = !!pdfEditBytes;
   const okStamp = stamps.length>0;
   const okAgree = $('#agree').checked;
   $('#checklist').innerHTML = `
@@ -448,14 +452,15 @@ function updateChecklist(){
 
 // ===== Finalize (flatten into PDF) =====
 $('#finalize').addEventListener('click', async ()=>{
-  if(!pdfBytes || !stamps.length || !$('#agree').checked) { updateChecklist(); return; }
+  if(!pdfEditBytes || !stamps.length || !$('#agree').checked) { updateChecklist(); return; }
 
   try{
-    const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+    // clone to ensure it's never detached
+    const safeBytes = pdfEditBytes.slice ? pdfEditBytes.slice(0) : new Uint8Array(pdfEditBytes);
+    const pdfDoc = await PDFLib.PDFDocument.load(safeBytes);
     for(const s of stamps){
       const page = pdfDoc.getPage(s.pageIndex);
       const { width: pageW, height: pageH } = page.getSize();
-      // convert from canvas pixel coords to PDF points
       const xRatio = s.x / s.canW, yRatio = s.y / s.canH;
       const wPt = (s.w / s.canW) * pageW;
       const hPt = (s.h / s.canH) * pageH;
@@ -463,7 +468,6 @@ $('#finalize').addEventListener('click', async ()=>{
       const yPt = pageH - (yRatio * pageH) - hPt/2;
 
       if(s.type==='date'){
-        // background rectangle first, then text
         page.drawRectangle({ x:xPt, y:yPt, width:wPt, height:hPt, borderColor:PDFLib.rgb(0.9,0.9,0.95), borderWidth:1, color: PDFLib.rgb(1,1,1) });
         page.drawText(s.text || getDateStampText(), {
           x: xPt + 6, y: yPt + Math.max(6, hPt/2 - 5), size: 10, color: PDFLib.rgb(0.18,0.18,0.18)
@@ -495,4 +499,5 @@ $('#finalize').addEventListener('click', async ()=>{
 </script>
 </body>
 </html>
+
 
