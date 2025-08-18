@@ -6,30 +6,48 @@
   <title>Verified Electronics — Tools</title>
   <meta name="description" content="Internal tools hub for Verified Electronics." />
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .card { background:#fff; border-radius:1rem; box-shadow:0 4px 18px rgba(2,6,23,.06); border:1px solid #eef2ff; }
+    .chip { font-size:.75rem; padding:.25rem .5rem; border-radius:.5rem; background:#eef2ff; color:#3730a3; }
+  </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
+  <!-- Brand stripe -->
   <div class="w-full h-1.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600"></div>
 
   <main class="max-w-6xl mx-auto px-6 md:px-10 py-10 md:py-16">
+    <!-- Header -->
     <header class="flex items-center justify-between mb-10">
       <div class="flex items-center gap-4">
         <div class="w-14 h-14 rounded-2xl bg-white shadow ring-1 ring-slate-100 flex items-center justify-center overflow-hidden">
-          <img src="/assets/logo.png" onerror="this.src='/Logo_color_white_background (1).png'" alt="Verified Electronics" class="max-w-12 max-h-12">
+          <!-- Your shared logo -->
+          <img src="assets/Logo_color_white_background (1).png" alt="Verified Electronics" class="max-w-12 max-h-12">
         </div>
         <div>
           <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Verified Electronics — Tools</h1>
-          <p class="text-sm text-slate-500 mt-0.5">Internal utilities for sales & ops</p>
+          <p class="text-sm text-slate-500 mt-0.5">Internal utilities for sales & operations</p>
         </div>
       </div>
+      <span class="chip hidden md:inline-block">Private</span>
     </header>
 
+    <!-- Intro card -->
+    <section class="card p-5 md:p-6 mb-8">
+      <p class="text-slate-700">
+        Welcome to the tools hub. Choose a tool below. If you need access control, protect
+        <span class="font-medium">tools.verifiedelectronics.com</span> with Cloudflare Access.
+      </p>
+    </section>
+
+    <!-- Tool grid -->
     <section class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      <a href="/so-confirmation/" class="group block rounded-2xl bg-white shadow hover:shadow-md ring-1 ring-slate-100 transition">
+      <!-- Sales Order / Invoice PDF -->
+      <a href="/so-confirmation/" class="card group hover:shadow-lg transition">
         <div class="p-5">
           <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 opacity-90"></div>
           <h2 class="mt-4 text-lg font-semibold">Sales Order / Invoice PDF</h2>
           <p class="text-sm text-slate-500 mt-1.5">
-            Generate branded PDFs with line items, VAT, delivery terms, and totals.
+            Generate branded PDFs with line items, VAT, delivery terms, currency & totals.
           </p>
           <div class="mt-4 inline-flex items-center gap-1 text-indigo-600 group-hover:gap-2 transition">
             Open tool <span>→</span>
@@ -37,19 +55,38 @@
         </div>
       </a>
 
-      <a href="/excess-checker/" class="group block rounded-2xl bg-white shadow hover:shadow-md ring-1 ring-slate-100 transition">
+      <!-- Excess Checker -->
+      <a href="/excess-checker/" class="card group hover:shadow-lg transition">
         <div class="p-5">
-          <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 opacity-90"></div>
-        <h2 class="mt-4 text-lg font-semibold">Excess Checker</h2>
+          <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-fuchsia-600 to-purple-700 opacity-90"></div>
+          <h2 class="mt-4 text-lg font-semibold">Excess Checker</h2>
           <p class="text-sm text-slate-500 mt-1.5">
-            Check stock/excess quickly. CSV import & filters (coming soon).
+            Search parts quickly, import CSV, and view supplier counts & availability.
           </p>
           <div class="mt-4 inline-flex items-center gap-1 text-indigo-600 group-hover:gap-2 transition">
             Open tool <span>→</span>
           </div>
         </div>
       </a>
+
+      <!-- Placeholder for future tools -->
+      <div class="card p-5 text-slate-500">
+        <div class="h-10 w-10 rounded-xl bg-slate-200"></div>
+        <h2 class="mt-4 text-lg font-semibold text-slate-700">Add another tool</h2>
+        <p class="text-sm mt-1.5">Drop a new app at <code class="text-slate-700">/new-tool/index.html</code> and add a card here.</p>
+      </div>
     </section>
+
+    <!-- Footer -->
+    <footer class="mt-12 text-xs text-slate-400">
+      © <span id="y"></span> Verified Electronics. Internal use.
+    </footer>
   </main>
+
+  <script>
+    // year
+    document.getElementById('y').textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
+
