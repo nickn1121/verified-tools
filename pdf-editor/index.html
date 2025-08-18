@@ -17,7 +17,6 @@
   label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
   input,select,button{font:inherit}
   .btn{appearance:none;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;color:#fff;background:var(--brand);box-shadow:0 6px 16px rgba(103,58,183,.25)}
-  .btn.ghost{background:#fff;color:var(--brand);border:1px solid var(--line)}
   .btn[disabled]{opacity:.5;cursor:not-allowed}
   .toolbar{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
   .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -27,11 +26,10 @@
   .hint{font-size:12px;color:#555}
   .panel{display:grid;gap:8px}
   .sep{height:1px;background:var(--line);margin:8px 0}
-  /* pages */
   .pages{padding:12px}
   .pageWrap{position:relative;margin:12px auto;border-radius:12px;border:1px solid #e6e6f6;background:#fff;overflow:hidden}
   .pdfCanvas{display:block}
-  .stage{position:absolute;left:0;top:0}
+  .stage{position:absolute;left:0;top:0;pointer-events:auto}
   .note{font-size:12px;margin-top:6px}
 </style>
 </head>
@@ -64,10 +62,8 @@
       </div>
       <div class="sep"></div>
       <div class="row">
-        <label>Fill</label>
-        <input id="fill" type="color" value="#ffffff"/>
-        <label>Stroke</label>
-        <input id="stroke" type="color" value="#000000"/>
+        <label>Fill</label><input id="fill" type="color" value="#ffffff"/>
+        <label>Stroke</label><input id="stroke" type="color" value="#000000"/>
       </div>
       <div class="row">
         <label>Opacity</label>
@@ -75,8 +71,7 @@
         <span id="opv" class="muted">1.00</span>
       </div>
       <div class="row">
-        <label>Stroke width</label>
-        <input id="strokeW" type="number" min="0" step="0.5" value="1" style="width:80px"/>
+        <label>Stroke width</label><input id="strokeW" type="number" min="0" step="0.5" value="1" style="width:80px"/>
       </div>
       <div id="textOpts" class="panel" style="display:none">
         <div class="row">
@@ -91,8 +86,7 @@
           </select>
         </div>
         <div class="row">
-          <label>Font size</label>
-          <input id="fontSize" type="number" min="6" max="96" step="1" value="16" style="width:80px"/>
+          <label>Font size</label><input id="fontSize" type="number" min="6" max="96" step="1" value="16" style="width:80px"/>
         </div>
       </div>
       <div class="sep"></div>
@@ -116,9 +110,12 @@
   </section>
 </div>
 
-<!-- libs -->
-<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script>pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";</script>
+<!-- libs: **pdf.js v2.16.105** (stable global build) -->
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js";
+</script>
 <script src="https://unpkg.com/konva@9/konva.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 
@@ -126,198 +123,128 @@
 const $ = s=>document.querySelector(s), $$ = s=>[...document.querySelectorAll(s)];
 let tool='select';
 let pdfRenderBytes=null, pdfEditBytes=null, pdfProxy=null;
-let pages=[]; // [{wrap, canvas, stage, layer, tr, width, height}]
+let pages=[]; // [{wrap, canvas, overlay, stage, layer, tr, width, height}]
 
-/* ========== UI wiring ========== */
+/* ===== UI ===== */
 const toolBtns=$$('.pill[data-tool]');
 toolBtns.forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
-function setTool(t){
-  tool=t; toolBtns.forEach(b=>b.classList.toggle('active',b.dataset.tool===t));
-  $('#textOpts').style.display=(t==='text')?'block':'none';
-}
+function setTool(t){ tool=t; toolBtns.forEach(b=>b.classList.toggle('active',b.dataset.tool===t));
+  $('#textOpts').style.display=(t==='text')?'block':'none'; }
 setTool('select');
-
 $('#opacity').addEventListener('input', e=>$('#opv').textContent=Number(e.target.value).toFixed(2));
 $('#deleteBtn').onclick=()=>deleteSelected();
 
-/* ========== File load ========== */
+/* ===== File load ===== */
 $('#file').addEventListener('change', async e=>{
   const f=e.target.files[0]; if(!f) return;
-  const buf=await f.arrayBuffer();
-  pdfRenderBytes=new Uint8Array(buf);  // for pdf.js
-  pdfEditBytes=buf.slice(0);           // untouched for pdf-lib
-  await renderPdf();
-  $('#download').disabled=false;
+  try{
+    const buf=await f.arrayBuffer();
+    pdfRenderBytes=new Uint8Array(buf);   // for pdf.js
+    pdfEditBytes=buf.slice(0);            // untouched for pdf-lib
+    await renderPdf();
+    $('#download').disabled=false;
+  }catch(err){ console.error('Load error:', err); alert('Could not open PDF. See console for details.'); }
 });
 
 async function renderPdf(){
   $('#pages').innerHTML=''; pages=[];
-  pdfProxy=await pdfjsLib.getDocument({data:pdfRenderBytes}).promise;
+  try{
+    pdfProxy=await pdfjsLib.getDocument({data:pdfRenderBytes}).promise;
+  }catch(err){ console.error('pdf.js getDocument error:', err); alert('PDF preview failed (pdf.js).'); return; }
 
   for(let i=1;i<=pdfProxy.numPages;i++){
     const page=await pdfProxy.getPage(i);
     const viewport=page.getViewport({scale:1.4});
+
     const wrap=document.createElement('div');
-    wrap.className='pageWrap';
-    wrap.style.width=viewport.width+'px';
-    wrap.style.height=viewport.height+'px';
+    wrap.className='pageWrap'; wrap.style.width=viewport.width+'px'; wrap.style.height=viewport.height+'px';
+
     const canvas=document.createElement('canvas');
-    canvas.className='pdfCanvas';
-    canvas.width=viewport.width; canvas.height=viewport.height;
+    canvas.className='pdfCanvas'; canvas.width=viewport.width; canvas.height=viewport.height;
     wrap.appendChild(canvas);
+
+    const overlay=document.createElement('div');
+    overlay.className='stage'; overlay.style.width=viewport.width+'px'; overlay.style.height=viewport.height+'px';
+    wrap.appendChild(overlay);
+
     $('#pages').appendChild(wrap);
+
     await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
 
-    // Konva overlay
-    const stage=new Konva.Stage({container:wrap,width:viewport.width,height:viewport.height});
+    // Konva on overlay (doesn't clear the PDF canvas)
+    const stage=new Konva.Stage({container:overlay,width:viewport.width,height:viewport.height});
     const layer=new Konva.Layer(); stage.add(layer);
-    const tr=new Konva.Transformer({rotateEnabled:false,ignoreStroke:false,enabledAnchors:['top-left','top-right','bottom-left','bottom-right']});
+    const tr=new Konva.Transformer({rotateEnabled:false,ignoreStroke:false,
+      enabledAnchors:['top-left','top-right','bottom-left','bottom-right']});
     layer.add(tr);
 
-    // clicks
     stage.on('mousedown', (ev)=>{
       if(ev.target===stage){
         tr.nodes([]); layer.draw();
-        if(tool==='whiteout'||tool==='highlight'||tool==='rect'||tool==='ellipse'||tool==='line'){
-          startDraw(ev, {i,stage,layer,tr});
-        } else if(tool==='text'){
-          addText(ev, {i,stage,layer,tr});
-        }
+        if(['whiteout','highlight','rect','ellipse','line'].includes(tool)) startDraw(ev,{i,stage,layer,tr});
+        else if(tool==='text') addText(ev,{i,stage,layer,tr});
         return;
       }
-      selectNode(ev.target, tr, layer);
+      selectNode(ev.target,tr,layer);
     });
 
-    // key delete
-    window.addEventListener('keydown', (ev)=>{
-      if(ev.key==='Delete'||ev.key==='Backspace'){ deleteSelected(tr); layer.draw(); }
-    });
+    window.addEventListener('keydown',(ev)=>{ if(ev.key==='Delete'||ev.key==='Backspace'){ deleteSelected(tr); layer.draw(); } });
 
-    pages.push({wrap,canvas,stage,layer,tr,width:viewport.width,height:viewport.height});
+    pages.push({wrap,canvas,overlay,stage,layer,tr,width:viewport.width,height:viewport.height});
   }
 }
 
-/* ========== Drawing helpers ========== */
-function konvaColor(hex, op){ // '#rrggbb'
-  const c = Konva.Util.getRGB(hex);
-  return {r:c.r/255,g:c.g/255,b:c.b/255,opacity:op};
-}
-function currentStyle(){
-  return {
-    fill: $('#fill').value,
-    stroke: $('#stroke').value,
-    strokeWidth: Number($('#strokeW').value||1),
-    opacity: Number($('#opacity').value||1),
-    fontFamily: $('#fontFamily').value,
-    fontSize: Number($('#fontSize').value||16),
-  };
-}
+/* ===== Draw helpers ===== */
+function currentStyle(){ return {
+  fill: $('#fill').value, stroke: $('#stroke').value,
+  strokeWidth: Number($('#strokeW').value||1), opacity: Number($('#opacity').value||1),
+  fontFamily: $('#fontFamily')?.value || 'Helvetica', fontSize: Number($('#fontSize')?.value||16),
+};}
+function selectNode(node,tr,layer){ if(node.name()==='draw'){ tr.nodes([node]); layer.draw(); } else { tr.nodes([]); layer.draw(); } }
+function deleteSelected(tr){ tr.nodes().forEach(n=>n.destroy()); tr.nodes([]); pages.forEach(p=>p.layer.draw()); }
 
-function selectNode(node, tr, layer){
-  if(node.name()==='draw'){
-    tr.nodes([node]); layer.draw();
-  }else{
-    tr.nodes([]); layer.draw();
-  }
-}
-
-function deleteSelected(tr){
-  const nodes=tr.nodes();
-  nodes.forEach(n=>n.destroy());
-  tr.nodes([]);
-  pages.forEach(p=>p.layer.draw());
-}
-
-function addText(ev, ctx){
-  const {stage,layer,tr}=ctx;
-  const st=currentStyle();
-  const pos=stage.getPointerPosition();
-  const text=new Konva.Text({
-    x:pos.x, y:pos.y, width:180, text:'Text',
-    fontSize:st.fontSize, fontFamily:'Inter, Arial',
-    fill:st.stroke, name:'draw', draggable:true,
-  });
-  // simple inline edit on dblclick
+function addText(ev,{stage,layer,tr}){
+  const st=currentStyle(), pos=stage.getPointerPosition();
+  const text=new Konva.Text({x:pos.x,y:pos.y,width:220,text:'Text',fontSize:st.fontSize,fontFamily:'Inter, Arial',
+    fill:st.stroke,name:'draw',draggable:true});
   text.on('dblclick dbltap', ()=>{
-    const trNode=text;
-    const area=document.createElement('textarea');
-    area.value=trNode.text();
-    area.style.position='absolute';
-    const rect=stage.container().getBoundingClientRect();
-    area.style.left=(rect.left+trNode.x())+'px';
-    area.style.top=(rect.top+trNode.y())+'px';
-    area.style.width=trNode.width()+'px';
-    area.style.font=sizeCss(trNode.fontSize());
-    area.style.border='1px solid #cbd5e1';
-    document.body.appendChild(area);
-    area.focus();
-    area.addEventListener('blur', ()=>{
-      trNode.text(area.value);
-      area.remove(); layer.draw();
-    });
+    const area=document.createElement('textarea'); area.value=text.text(); area.style.position='absolute';
+    const r=stage.container().getBoundingClientRect(); area.style.left=(r.left+text.x())+'px'; area.style.top=(r.top+text.y())+'px';
+    area.style.width=text.width()+'px'; area.style.font=`${text.fontSize()}px/1.2 Inter, Arial, sans-serif`;
+    area.style.border='1px solid #cbd5e1'; document.body.appendChild(area); area.focus();
+    area.addEventListener('blur', ()=>{ text.text(area.value); area.remove(); layer.draw(); });
   });
-  layer.add(text);
-  tr.nodes([text]); layer.draw();
+  layer.add(text); tr.nodes([text]); layer.draw();
 }
 
-function sizeCss(px){return `${px}px/1.2 Inter, Arial, sans-serif`;}
-
-function startDraw(ev, ctx){
-  const {stage,layer,tr}=ctx;
-  const st=currentStyle();
-  const pos=stage.getPointerPosition();
-  let shape=null;
-
+function startDraw(ev,{stage,layer,tr}){
+  const st=currentStyle(), pos=stage.getPointerPosition(); let shape=null;
   const common={x:pos.x,y:pos.y,stroke:st.stroke,strokeWidth:st.strokeWidth,opacity:st.opacity,draggable:true,name:'draw'};
-  if(tool==='whiteout'||tool==='highlight'){
-    const fill=(tool==='whiteout')?'#ffffff':st.fill;
-    shape=new Konva.Rect({...common,fill, width:1,height:1});
-  }else if(tool==='rect'){
-    shape=new Konva.Rect({...common,fill:st.fill,width:1,height:1});
-  }else if(tool==='ellipse'){
-    shape=new Konva.Ellipse({...common,fill:st.fill, radiusX:1,radiusY:1});
-  }else if(tool==='line'){
-    shape=new Konva.Line({...common,points:[pos.x,pos.y,pos.x+1,pos.y+1]});
-  }
-
+  if(tool==='whiteout'||tool==='highlight'){ shape=new Konva.Rect({...common,fill:(tool==='whiteout')?'#ffffff':st.fill,width:1,height:1}); }
+  else if(tool==='rect'){ shape=new Konva.Rect({...common,fill:st.fill,width:1,height:1}); }
+  else if(tool==='ellipse'){ shape=new Konva.Ellipse({...common,fill:st.fill,radiusX:1,radiusY:1}); }
+  else if(tool==='line'){ shape=new Konva.Line({...common,points:[pos.x,pos.y,pos.x+1,pos.y+1]}); }
   layer.add(shape); tr.nodes([shape]); layer.draw();
 
-  const move = ()=>{
-    const p=stage.getPointerPosition();
-    if(tool==='ellipse'){
-      shape.radiusX(Math.abs(p.x - pos.x));
-      shape.radiusY(Math.abs(p.y - pos.y));
-    }else if(tool==='line'){
-      shape.points([pos.x,pos.y,p.x,p.y]);
-    }else{
-      shape.width(p.x - pos.x);
-      shape.height(p.y - pos.y);
-    }
-    layer.batchDraw();
-  };
-  const up = ()=>{
-    stage.off('mousemove',move);
-    stage.off('mouseup',up);
-    // normalize negative sizes
-    if(tool!=='ellipse' && tool!=='line'){
-      if(shape.width()<0){ shape.x(shape.x()+shape.width()); shape.width(Math.abs(shape.width())); }
-      if(shape.height()<0){ shape.y(shape.y()+shape.height()); shape.height(Math.abs(shape.height())); }
-    }
-  };
-
-  stage.on('mousemove', move);
-  stage.on('mouseup', up);
+  const move=()=>{ const p=stage.getPointerPosition();
+    if(tool==='ellipse'){ shape.radiusX(Math.abs(p.x-pos.x)); shape.radiusY(Math.abs(p.y-pos.y)); }
+    else if(tool==='line'){ shape.points([pos.x,pos.y,p.x,p.y]); }
+    else{ shape.width(p.x-pos.x); shape.height(p.y-pos.y); }
+    layer.batchDraw(); };
+  const up=()=>{ stage.off('mousemove',move); stage.off('mouseup',up);
+    if(tool!=='ellipse'&&tool!=='line'){ if(shape.width()<0){ shape.x(shape.x()+shape.width()); shape.width(Math.abs(shape.width())); }
+      if(shape.height()<0){ shape.y(shape.y()+shape.height()); shape.height(Math.abs(shape.height())); } } };
+  stage.on('mousemove',move); stage.on('mouseup',up);
 }
 
-/* ========== Export / Flatten ========== */
+/* ===== Export / Flatten ===== */
 $('#download').addEventListener('click', async ()=>{
   if(!pdfEditBytes) return;
   try{
-    const {PDFDocument, rgb, degrees, StandardFonts} = PDFLib;
+    const {PDFDocument, rgb, StandardFonts} = PDFLib;
     const safe = pdfEditBytes.slice(0);
     const doc = await PDFDocument.load(safe);
 
-    // preload fonts (standard)
     const fontMap = {
       'Helvetica': await doc.embedStandardFont(StandardFonts.Helvetica),
       'Helvetica-Bold': await doc.embedStandardFont(StandardFonts.HelveticaBold),
@@ -330,84 +257,45 @@ $('#download').addEventListener('click', async ()=>{
     for(let i=0;i<pages.length;i++){
       const p = doc.getPage(i);
       const pageW = p.getSize().width, pageH = p.getSize().height;
-      const stage = pages[i].stage;
-      const canW = pages[i].width, canH = pages[i].height;
-
-      // get all top-level drawn nodes
+      const stage = pages[i].stage, canW = pages[i].width, canH = pages[i].height;
       const nodes = stage.find(node => node.getName && node.getName()==='draw');
 
       nodes.forEach(n=>{
-        // use absolute client rect for easy mapping
         const rect = n.getClientRect({relativeTo:stage});
-        const wPt = rect.width / canW * pageW;
-        const hPt = rect.height / canH * pageH;
-        const xPt = rect.x / canW * pageW;
-        const yPt = pageH - (rect.y / canH * pageH) - hPt;
-
-        const color = (hex, op=1)=> {
-          const c = Konva.Util.getRGB(hex);
-          return {rgb: rgb(c.r/255, c.g/255, c.b/255), opacity: op};
-        };
+        const wPt = rect.width / canW * pageW, hPt = rect.height / canH * pageH;
+        const xPt = rect.x / canW * pageW, yPt = pageH - (rect.y / canH * pageH) - hPt;
+        const color = (hex,op=1)=>{ const c = Konva.Util.getRGB(hex); return {rgb:rgb(c.r/255,c.g/255,c.b/255),opacity:op}; };
 
         if(n instanceof Konva.Rect){
-          // whiteout / highlight / rect (we treat by fills & strokes)
-          const fill = n.fill(); const stroke = n.stroke(); const sw = n.strokeWidth()||0; const op = n.opacity()||1;
-          if(fill){
-            const {rgb:fc, opacity:fo} = color(fill, op);
-            p.drawRectangle({x:xPt, y:yPt, width:wPt, height:hPt, color:fc, opacity:fo});
-          }
-          if(sw>0 && stroke){
-            const {rgb:sc, opacity:so} = color(stroke, op);
-            p.drawRectangle({x:xPt, y:yPt, width:wPt, height:hPt, borderColor:sc, borderWidth: sw, opacity:so});
-          }
+          const fill=n.fill(), stroke=n.stroke(), sw=n.strokeWidth()||0, op=n.opacity()||1;
+          if(fill){ const {rgb:fc,opacity:fo}=color(fill,op); p.drawRectangle({x:xPt,y:yPt,width:wPt,height:hPt,color:fc,opacity:fo}); }
+          if(sw>0 && stroke){ const {rgb:sc,opacity:so}=color(stroke,op); p.drawRectangle({x:xPt,y:yPt,width:wPt,height:hPt,borderColor:sc,borderWidth:sw,opacity:so}); }
         } else if(n instanceof Konva.Ellipse){
-          const fill = n.fill(); const stroke = n.stroke(); const sw = n.strokeWidth()||0; const op = n.opacity()||1;
-          const cxPt = xPt + wPt/2, cyPt = yPt + hPt/2;
-          const rx = wPt/2, ry = hPt/2;
-          if(fill){
-            const {rgb:fc, opacity:fo} = color(fill, op);
-            p.drawEllipse({x:cxPt, y:cyPt, xScale:1, yScale:1, xRadius:rx, yRadius:ry, color:fc, opacity:fo});
-          }
-          if(sw>0 && stroke){
-            const {rgb:sc, opacity:so} = color(stroke, op);
-            p.drawEllipse({x:cxPt, y:cyPt, xRadius:rx, yRadius:ry, borderColor:sc, borderWidth: sw, opacity:so});
-          }
+          const fill=n.fill(), stroke=n.stroke(), sw=n.strokeWidth()||0, op=n.opacity()||1;
+          const cx=xPt+wPt/2, cy=yPt+hPt/2, rx=wPt/2, ry=hPt/2;
+          if(fill){ const {rgb:fc,opacity:fo}=color(fill,op); p.drawEllipse({x:cx,y:cy,xRadius:rx,yRadius:ry,color:fc,opacity:fo}); }
+          if(sw>0 && stroke){ const {rgb:sc,opacity:so}=color(stroke,op); p.drawEllipse({x:cx,y:cy,xRadius:rx,yRadius:ry,borderColor:sc,borderWidth:sw,opacity:so}); }
         } else if(n instanceof Konva.Line){
-          const pts = n.points();
-          // absolute start/end
-          const t = n.getAbsoluteTransform();
-          const s = t.point({x:pts[0], y:pts[1]});
-          const e = t.point({x:pts[2], y:pts[3]});
-          const sx = s.x / canW * pageW;
-          const sy = pageH - (s.y / canH * pageH);
-          const ex = e.x / canW * pageW;
-          const ey = pageH - (e.y / canH * pageH);
-          const {rgb:sc, opacity:so} = color(n.stroke()||'#000', n.opacity()||1);
-          p.drawLine({start:{x:sx,y:sy}, end:{x:ex,y:ey}, color:sc, thickness:n.strokeWidth()||1, opacity:so});
+          const pts=n.points(), t=n.getAbsoluteTransform(), s=t.point({x:pts[0],y:pts[1]}), e=t.point({x:pts[2],y:pts[3]});
+          const sx=s.x / canW * pageW, sy=pageH - (s.y / canH * pageH), ex=e.x / canW * pageW, ey=pageH - (e.y / canH * pageH);
+          const {rgb:sc,opacity:so}=color(n.stroke()||'#000',n.opacity()||1);
+          p.drawLine({start:{x:sx,y:sy},end:{x:ex,y:ey},color:sc,thickness:n.strokeWidth()||1,opacity:so});
         } else if(n instanceof Konva.Text){
-          // map text block into PDF rect; wrap if needed
-          const fontSize = n.fontSize()||16;
-          const fill = n.fill()||'#000';
-          const ffKey = $('#fontFamily').value; // use current UI font; simple approach
-          const fnt = fontMap[ffKey] || fontMap['Helvetica'];
-          const {rgb:tc, opacity:to} = color(fill, 1);
-          p.drawText(n.text(), {
-            x:xPt, y:yPt + hPt - fontSize, size: fontSize, maxWidth: wPt,
-            font: fnt, color: tc, opacity: to, lineHeight: 1.2
-          });
+          const fontSize=n.fontSize()||16, fill=n.fill()||'#000', ffKey=$('#fontFamily')?.value||'Helvetica';
+          const font = fontMap[ffKey] || fontMap['Helvetica']; const {rgb:tc}=color(fill,1);
+          p.drawText(n.text(), {x:xPt, y:yPt + hPt - fontSize, size:fontSize, maxWidth:wPt, font, color:tc, lineHeight:1.2});
         }
       });
     }
 
     const bytes = await doc.save();
     const blob = new Blob([bytes], {type:'application/pdf'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='Edited.pdf'; a.click();
+    const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='Edited.pdf'; a.click();
     setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
-  }catch(err){
-    console.error(err);
-    alert('Sorry, something went wrong while creating the PDF. See console for details.');
-  }
+  }catch(err){ console.error('Export error:', err); alert('Could not create edited PDF. See console for details.'); }
 });
 </script>
 </body>
 </html>
+
+
