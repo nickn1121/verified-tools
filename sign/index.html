@@ -18,6 +18,7 @@
   label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
   input[type="text"],input[type="number"],input[type="file"],select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit}
   .btn{appearance:none;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;color:#fff;background:var(--brand);box-shadow:0 6px 16px rgba(103,58,183,.25)}
+  .btn[disabled]{opacity:.55;cursor:not-allowed}
   .btn.ghost{background:#fff;color:var(--brand);border:1px solid var(--line)}
   .muted{color:var(--muted)}
   .tools{display:flex;gap:8px;flex-wrap:wrap}
@@ -28,11 +29,21 @@
   .stamp{position:absolute;transform:translate(-50%,-50%);border:1px solid #d9d9ef;border-radius:8px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.08);padding:2px 6px;cursor:grab;user-select:none}
   .stamp img{display:block;max-width:260px;max-height:90px}
   .stamp--selected{outline:2px solid var(--brand)}
+  .resize-handle{
+    position:absolute; right:-8px; bottom:-8px; width:16px; height:16px;
+    background:#fff; border:2px solid var(--brand); border-radius:4px; cursor:nwse-resize;
+    box-shadow:0 1px 6px rgba(0,0,0,.15);
+  }
+
   .palette{display:flex;gap:8px}
   .pill{padding:8px 12px;border-radius:999px;border:1px solid #e3ddfb;background:#f5f3ff;color:#4525b2;font-weight:700;cursor:grab;user-select:none}
   .pill:active{opacity:.9}
   .notice{font-size:12px;color:#555;margin-top:10px}
   #hiddenHtml{position:absolute;left:-99999px;top:-99999px;visibility:hidden}
+
+  .checklist{font-size:12px;color:#666;margin-top:6px}
+  .checklist span{display:inline-block;margin-right:10px}
+  .ok{color:#16a34a} .no{color:#b45309}
 </style>
 </head>
 <body>
@@ -86,13 +97,13 @@
 
       <div class="tools" style="margin-top:8px">
         <label style="display:flex;align-items:center;gap:6px;font-size:12px">
-          Width:
+          Default width:
           <input id="sigWidth" type="number" min="60" max="600" value="220" style="width:84px"/>
           px
         </label>
       </div>
 
-      <div class="notice">Drag a stamp from the palette onto a page. Reposition by dragging. Select a stamp and press <b>Delete</b> to remove.</div>
+      <div class="notice">Drag a stamp from the palette onto a page. Reposition by dragging. Drag the <b>corner</b> to resize. Select a stamp and press <b>Delete</b> to remove. Hold <b>Ctrl/Cmd</b> and scroll to scale.</div>
     </div>
 
     <h2>3) Stamps</h2>
@@ -110,7 +121,7 @@
       <div class="tools" style="margin-top:10px">
         <button id="finalize" class="btn" type="button" disabled>Download Signed PDF</button>
       </div>
-      <div class="muted" style="margin-top:8px">No data leaves your browser. The signed PDF is flattened.</div>
+      <div class="checklist" id="checklist"></div>
     </div>
   </section>
 
@@ -157,7 +168,7 @@ function getSignatureImage(){
   out.width = targetW;
   out.height = Math.round(canvas.height * scale);
   out.getContext('2d').drawImage(canvas, 0, 0, out.width, out.height);
-  return out.toDataURL('image/png');
+  return {dataUrl: out.toDataURL('image/png'), w: out.width, h: out.height, ratio: out.width/out.height};
 }
 function getInitialsImage(){
   const name = ($('#signerName').value || 'Your Name').trim();
@@ -169,11 +180,10 @@ function getInitialsImage(){
   c.fillStyle='#222'; c.textBaseline='middle';
   c.font = `54px "${style}", "Segoe Script", cursive`;
   c.fillText(initials, 10, canvas.height/2);
-  return canvas.toDataURL('image/png');
+  return {dataUrl: canvas.toDataURL('image/png'), w: 180, h: 70, ratio: 180/70};
 }
-function getDateStampText(){
-  return new Date().toLocaleString();
-}
+function getDateStampText(){ return new Date().toLocaleString(); }
+
 $('#sigMode').addEventListener('change', ()=>{
   const typed = $('#sigMode').value==='typed';
   $('#typedBox').style.display = typed?'block':'none';
@@ -188,7 +198,7 @@ drawTypedPreview();
 // ===== PDF handling =====
 let pdfBytes = null, pdfDocProxy = null;
 let pageViews = [];   // [{wrap, canvas, viewport}]
-let stamps = [];      // [{id,type,pageIndex,x,y,w,h,dataUrl,text}]
+let stamps = [];      // [{id,type,pageIndex,x,y,w,h,dataUrl,text,ratio,canW,canH}]
 let idSeq = 1;
 
 $('#docFile').addEventListener('change', async (e)=>{
@@ -238,10 +248,10 @@ async function renderPdf(bytes){
     wrap.appendChild(canvas);
     $('#preview').appendChild(wrap);
 
-    // allow drop from palette
     enableDrop(wrap, i-1);
     pageViews.push({wrap, canvas, viewport});
   }
+  updateChecklist();
   toggleFinalize();
 }
 
@@ -260,54 +270,62 @@ $$('.palette .pill').forEach(p=>{
   });
 });
 
-// Add stamp helper
 function addStampAt(type, pageIndex, x, y){
   const page = pageViews[pageIndex];
   let el = document.createElement('div');
   el.className='stamp';
   el.dataset.id = String(idSeq++);
   el.dataset.page = String(pageIndex);
-  let w=160, h=50, dataUrl=null, text=null;
+
+  let w=160, h=50, dataUrl=null, text=null, ratio=null;
 
   if(type==='signature'){
-    dataUrl = getSignatureImage();
-    const img = new Image(); img.src = dataUrl; img.onload = ()=>{
-      // fit within 260x90
-      const ratio = Math.min(260/img.width, 90/img.height, 1);
-      w = Math.round(img.width*ratio); h = Math.round(img.height*ratio);
-      const im = new Image(); im.src = dataUrl; im.style.maxWidth='260px'; im.style.maxHeight='90px';
-      el.innerHTML=''; el.appendChild(im);
-      place();
+    const sig = getSignatureImage();
+    dataUrl = sig.dataUrl; ratio = sig.ratio;
+    const im = new Image(); im.src = dataUrl;
+    im.onload = ()=>{
+      const r = Math.min(260/im.width, 90/im.height, 1);
+      w = Math.round(im.width*r); h = Math.round(im.height*r);
+      build();
     };
-    el.innerHTML='Placing…';
   } else if(type==='initials'){
-    dataUrl = getInitialsImage();
-    const im = new Image(); im.src = dataUrl; im.style.maxWidth='200px'; im.style.maxHeight='70px';
-    el.appendChild(im); w=140; h=50; place();
+    const ini = getInitialsImage();
+    dataUrl = ini.dataUrl; ratio = ini.ratio; w=140; h=50; build();
   } else if(type==='date'){
-    text = getDateStampText();
-    el.style.padding='6px 10px';
-    el.style.background='#fff';
-    el.style.border='1px solid #e6e6f6';
-    el.style.font='600 12px system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial';
-    el.textContent = text;
-    w = Math.min(200, 10 + text.length*7); h=28; place();
+    text = getDateStampText(); w=140; h=28; build(true);
   }
 
-  function place(){
+  function build(isDate=false){
     el.style.left = x+'px'; el.style.top = y+'px';
+    if(isDate){
+      el.style.padding='6px 10px';
+      el.style.border='1px solid #e6e6f6';
+      el.style.font='600 12px system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial';
+      el.textContent = text;
+    } else {
+      const im = new Image(); im.src = dataUrl; im.style.maxWidth='260px'; im.style.maxHeight='90px';
+      el.innerHTML=''; el.appendChild(im);
+    }
+    // resize handle
+    const hnd = document.createElement('div'); hnd.className='resize-handle'; el.appendChild(hnd);
+
     page.wrap.appendChild(el);
     makeDraggable(el);
-    stamps.push({ id: el.dataset.id, type, pageIndex, x, y, w, h, dataUrl, text, canW: page.canvas.width, canH: page.canvas.height });
+    makeResizable(el, { keepRatio: type!=='date' });
+
+    stamps.push({ id: el.dataset.id, type, pageIndex, x, y, w, h, dataUrl, text, ratio, canW: page.canvas.width, canH: page.canvas.height });
+    updateStampSize(el, w, h); //write dimensions into dataset+array
     selectStamp(el);
+    updateChecklist();
     toggleFinalize();
   }
 }
 
-// Draggable + selectable
+// --- Dragging + selecting
 let dragInfo=null, selected=null;
 function makeDraggable(el){
   el.addEventListener('pointerdown', e=>{
+    if(e.target.classList.contains('resize-handle')) return; // resize takes over
     selectStamp(el);
     dragInfo = { el, startX:e.clientX, startY:e.clientY, origLeft:parseFloat(el.style.left), origTop:parseFloat(el.style.top) };
     el.setPointerCapture(e.pointerId);
@@ -321,7 +339,7 @@ function makeDraggable(el){
     dragInfo.el.style.left = nx+'px';
     dragInfo.el.style.top = ny+'px';
   });
-  el.addEventListener('pointerup', e=>{
+  el.addEventListener('pointerup', ()=>{
     if(!dragInfo) return;
     const id = el.dataset.id;
     const s = stamps.find(x=>x.id===id);
@@ -340,61 +358,141 @@ document.addEventListener('keydown', e=>{
     const id = selected.dataset.id;
     stamps = stamps.filter(s=>s.id!==id);
     selected.remove(); selected=null;
+    updateChecklist();
     toggleFinalize();
   }
 });
+
+// --- Resizing
+function makeResizable(el, {keepRatio}){
+  const handle = el.querySelector('.resize-handle');
+  let rs=null;
+
+  handle.addEventListener('pointerdown', e=>{
+    e.stopPropagation();
+    selectStamp(el);
+    const id = el.dataset.id;
+    const s = stamps.find(x=>x.id===id);
+    rs = {
+      el, startX:e.clientX, startY:e.clientY,
+      startW:s.w, startH:s.h, keepRatio: keepRatio ? (s.ratio || (s.w/s.h)) : null
+    };
+    handle.setPointerCapture(e.pointerId);
+  });
+
+  el.addEventListener('pointermove', e=>{
+    if(!rs) return;
+    const dx = e.clientX - rs.startX;
+    const dy = e.clientY - rs.startY;
+    let newW = Math.max(40, rs.startW + dx);
+    let newH = Math.max(20, rs.startH + dy);
+    if(rs.keepRatio){
+      newH = Math.round(newW / rs.keepRatio);
+    }
+    updateStampSize(rs.el, newW, newH);
+  });
+
+  document.addEventListener('pointerup', ()=>{
+    rs=null;
+  });
+
+  // wheel scale (Ctrl/Cmd required so normal page scroll still works)
+  el.addEventListener('wheel', e=>{
+    if(!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    const id = el.dataset.id;
+    const s = stamps.find(x=>x.id===id);
+    const factor = (e.deltaY<0)? 1.05 : 0.95;
+    let newW = Math.max(40, Math.round(s.w * factor));
+    let newH = rs && rs.keepRatio ? Math.round(newW / rs.keepRatio) : Math.max(20, Math.round(s.h * factor));
+    updateStampSize(el, newW, newH);
+  }, {passive:false});
+}
+
+function updateStampSize(el, w, h){
+  // Visually scale the element by padding; for images it's fine, for date pill we adjust padding/line-height subtly
+  el.style.padding = '2px 6px';
+  el.style.width = w+'px';
+  el.style.height = h+'px';
+
+  const id = el.dataset.id;
+  const s = stamps.find(x=>x.id===id);
+  if(s){
+    s.w = w; s.h = h;
+  }
+}
 
 // ===== Utilities =====
 function resetAll(){
   $('#preview').innerHTML='';
   pageViews=[]; stamps=[]; pdfBytes=null; pdfDocProxy=null;
+  updateChecklist();
   toggleFinalize();
 }
 function toggleFinalize(){
-  $('#finalize').disabled = !(pdfBytes && stamps.length && $('#agree').checked);
+  const can = !!(pdfBytes && stamps.length && $('#agree').checked);
+  $('#finalize').disabled = !can;
 }
 $('#agree').addEventListener('change', toggleFinalize);
 
+function updateChecklist(){
+  const okDoc = !!pdfBytes;
+  const okStamp = stamps.length>0;
+  const okAgree = $('#agree').checked;
+  $('#checklist').innerHTML = `
+    <span class="${okDoc?'ok':'no'}">• ${okDoc?'Document loaded':'Upload a document'}</span>
+    <span class="${okStamp?'ok':'no'}">• ${okStamp?'Stamp placed':'Add a signature/initials/date stamp'}</span>
+    <span class="${okAgree?'ok':'no'}">• ${okAgree?'Consent checked':'Tick the consent box'}</span>
+  `;
+}
+
 // ===== Finalize (flatten into PDF) =====
 $('#finalize').addEventListener('click', async ()=>{
-  if(!pdfBytes || !stamps.length || !$('#agree').checked) return;
+  if(!pdfBytes || !stamps.length || !$('#agree').checked) { updateChecklist(); return; }
 
-  const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
-  for(const s of stamps){
-    const page = pdfDoc.getPage(s.pageIndex);
-    const { width: pageW, height: pageH } = page.getSize();
-    // convert from canvas pixel coords to PDF points
-    const xRatio = s.x / s.canW, yRatio = s.y / s.canH;
-    const wPt = (s.w / s.canW) * pageW;
-    const hPt = (s.h / s.canH) * pageH;
-    const xPt = xRatio * pageW - wPt/2;
-    const yPt = pageH - (yRatio * pageH) - hPt/2;
+  try{
+    const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+    for(const s of stamps){
+      const page = pdfDoc.getPage(s.pageIndex);
+      const { width: pageW, height: pageH } = page.getSize();
+      // convert from canvas pixel coords to PDF points
+      const xRatio = s.x / s.canW, yRatio = s.y / s.canH;
+      const wPt = (s.w / s.canW) * pageW;
+      const hPt = (s.h / s.canH) * pageH;
+      const xPt = xRatio * pageW - wPt/2;
+      const yPt = pageH - (yRatio * pageH) - hPt/2;
 
-    if(s.type==='date'){
-      page.drawText(s.text || getDateStampText(), {
-        x: xPt + 6, y: yPt + 8, size: 10, color: PDFLib.rgb(0.18,0.18,0.18)
-      });
-      // light box outline for date pill
-      page.drawRectangle({ x:xPt, y:yPt, width:wPt, height:hPt, borderColor:PDFLib.rgb(0.9,0.9,0.95), borderWidth:1, color: PDFLib.rgb(1,1,1) });
-    } else {
-      const png = await pdfDoc.embedPng(s.dataUrl);
-      page.drawImage(png, { x:xPt, y:yPt, width:wPt, height:hPt });
-      // optional caption under signature
-      if(s.type==='signature'){
-        const name = ($('#signerName').value || '').trim();
-        if(name) page.drawText(`${name}  •  ${new Date().toLocaleString()}`, { x:xPt, y:yPt-10, size:8, color: PDFLib.rgb(0.22,0.22,0.22) });
+      if(s.type==='date'){
+        // background rectangle first, then text
+        page.drawRectangle({ x:xPt, y:yPt, width:wPt, height:hPt, borderColor:PDFLib.rgb(0.9,0.9,0.95), borderWidth:1, color: PDFLib.rgb(1,1,1) });
+        page.drawText(s.text || getDateStampText(), {
+          x: xPt + 6, y: yPt + Math.max(6, hPt/2 - 5), size: 10, color: PDFLib.rgb(0.18,0.18,0.18)
+        });
+      } else {
+        const png = await pdfDoc.embedPng(s.dataUrl);
+        page.drawImage(png, { x:xPt, y:yPt, width:wPt, height:hPt });
+        if(s.type==='signature'){
+          const name = ($('#signerName').value || '').trim();
+          if(name) page.drawText(`${name}  •  ${new Date().toLocaleString()}`, { x:xPt, y:yPt-10, size:8, color: PDFLib.rgb(0.22,0.22,0.22) });
+        }
       }
     }
-  }
 
-  const signedBytes = await pdfDoc.save();
-  const blob = new Blob([signedBytes], {type:'application/pdf'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'Signed.pdf';
-  a.click();
-  URL.revokeObjectURL(a.href);
+    const signedBytes = await pdfDoc.save();
+    const blob = new Blob([signedBytes], {type:'application/pdf'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'Signed.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  }catch(err){
+    console.error(err);
+    alert('Sorry, something went wrong creating the PDF. Check the console for details.');
+  }
 });
 </script>
 </body>
 </html>
+
