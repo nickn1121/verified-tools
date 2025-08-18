@@ -26,8 +26,9 @@
     header img{height:40px}
     h1{font-size:28px;margin:0;font-weight:800;letter-spacing:.2px}
     .sub{color:var(--muted);margin-top:2px}
+    .section-title{margin:22px 6px 8px;font-weight:800;color:#262b3a}
     .grid{
-      display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:22px
+      display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:12px
     }
     @media (max-width:960px){ .grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
     @media (max-width:640px){ .grid{grid-template-columns:1fr} }
@@ -62,6 +63,8 @@
       </div>
     </header>
 
+    <!-- Active tools -->
+    <h2 class="section-title">Available now</h2>
     <div class="grid">
       <!-- Sales Order / Invoice -->
       <article class="card">
@@ -108,7 +111,26 @@
         </div>
       </article>
 
-      <!-- Coming soon: Sales Leaderboard -->
+      <!-- Document Signing -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Document Signing</h3>
+        </div>
+        <div class="desc">Upload Word/PDF, add signature/initials/date stamps, and download a signed PDF.</div>
+        <div class="row">
+          <a class="cta" href="./sign/index.html">Open tool →</a>
+          <span class="tag">Internal</span>
+        </div>
+      </article>
+    </div>
+
+    <!-- Coming soon -->
+    <h2 class="section-title">Coming soon</h2>
+    <div class="grid">
+      <!-- Sales Leaderboard -->
       <article class="card">
         <div class="top">
           <div class="logo-badge">
@@ -123,7 +145,7 @@
         </div>
       </article>
 
-      <!-- Coming soon: Call & Email Stats -->
+      <!-- Call & Email Stats -->
       <article class="card">
         <div class="top">
           <div class="logo-badge">
@@ -138,22 +160,7 @@
         </div>
       </article>
 
-      <!-- Coming soon: Document Signing -->
-      <article class="card">
-        <div class="top">
-          <div class="logo-badge">
-            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
-          </div>
-          <h3 class="title">Document Signing</h3>
-        </div>
-        <div class="desc">Simple, branded e-sign for POs, NDAs and order confirmations.</div>
-        <div class="row">
-          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
-          <span class="tag soon">Coming soon</span>
-        </div>
-      </article>
-
-      <!-- Coming soon: Document Editor -->
+      <!-- Document Editor -->
       <article class="card">
         <div class="top">
           <div class="logo-badge">
@@ -171,6 +178,7 @@
   </div>
 </body>
 </html>
+
 
 
 
