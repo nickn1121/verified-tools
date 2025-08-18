@@ -1,58 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
   <title>Verified Electronics — Tools</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root{
+      --brand:#2a2afc;
+      --text:#222;
+      --muted:#555;
+      --border:#e7e7ef;
+      --soon:#7c7cff;
+      --bg:#fff;
+    }
+    *{box-sizing:border-box}
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      color: var(--text);
+      background: var(--bg);
+    }
+    #logo {
+      max-width: 280px;
+      margin-bottom: 30px;
+    }
+    h1 {
+      font-size: 28px;
+      margin: 0 0 6px 0;
+    }
+    h2 {
+      font-size: 20px;
+      margin: 0 0 6px 0;
+    }
+    p {
+      margin: 4px 0 14px;
+      line-height: 1.45;
+    }
+    a {
+      color: var(--brand);
+      text-decoration: none;
+      font-weight: bold;
+    }
+    a:hover { text-decoration: underline; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 18px;
+      margin-top: 16px;
+    }
+    .tool{
+      border:1px solid var(--border);
+      border-radius: 12px;
+      padding:16px 16px 14px;
+      background:#fafaff;
+    }
+    .tool h2{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .soon{
+      display:inline-block;
+      font-weight:600;
+      color:#fff;
+      background:var(--soon);
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:12px;
+      letter-spacing:.2px;
+    }
+    .muted{color:var(--muted)}
+    footer {
+      margin-top: 36px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    code{background:#f3f4ff;border:1px solid var(--border);padding:2px 6px;border-radius:6px}
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
-  <!-- Brand stripe -->
-  <div class="w-full h-1.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600"></div>
+<body>
 
-  <main class="max-w-6xl mx-auto px-6 md:px-10 py-10 md:py-16">
-    <!-- Header -->
-    <header class="flex items-center justify-between mb-10">
-      <div class="flex items-center gap-4">
-        <div class="w-16 h-16 rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 flex items-center justify-center overflow-hidden">
-          <img src="assets/Logo_color_white_background (1).png" alt="Verified Electronics" class="max-w-14 max-h-14" />
-        </div>
-        <div>
-          <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Verified Electronics — Tools</h1>
-          <p class="text-sm text-slate-500 mt-0.5">Internal utilities for sales & operations</p>
-        </div>
-      </div>
-    </header>
+  <img id="logo" src="assets/logo.png" alt="Verified Electronics Logo">
 
-    <!-- Tool cards -->
-    <section class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      <a href="so-confirmation/" class="group block rounded-2xl bg-white p-5 shadow ring-1 ring-slate-200 hover:shadow-lg transition">
-        <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 opacity-90"></div>
-        <h2 class="mt-4 text-lg font-semibold">Sales Order / Invoice PDF</h2>
-        <p class="text-sm text-slate-500 mt-1.5">Generate branded PDFs with VAT, delivery terms, currency & totals.</p>
-        <div class="mt-4 inline-flex items-center gap-1 text-indigo-600 group-hover:gap-2 transition">Open tool →</div>
-      </a>
+  <h1>Verified Electronics — Tools</h1>
+  <p class="muted">Internal utilities for sales &amp; operations</p>
 
-      <a href="excess-checker/" class="group block rounded-2xl bg-white p-5 shadow ring-1 ring-slate-200 hover:shadow-lg transition">
-        <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-fuchsia-600 to-purple-700 opacity-90"></div>
-        <h2 class="mt-4 text-lg font-semibold">Excess Checker</h2>
-        <p class="text-sm text-slate-500 mt-1.5">Search parts, import CSV, view supplier counts & availability.</p>
-        <div class="mt-4 inline-flex items-center gap-1 text-indigo-600 group-hover:gap-2 transition">Open tool →</div>
-      </a>
+  <div class="grid">
 
-      <div class="rounded-2xl bg-white p-5 shadow ring-1 ring-slate-200">
-        <div class="h-10 w-10 rounded-xl bg-slate-200"></div>
-        <h2 class="mt-4 text-lg font-semibold">More tools coming</h2>
-        <p class="text-sm text-slate-500 mt-1.5">Add another app under <code class="text-slate-700">/new-tool/index.html</code> and put a card here.</p>
-      </div>
-    </section>
+    <div class="tool">
+      <h2><a href="so-confirmation/">Sales Order / Invoice PDF</a></h2>
+      <p>Generate branded PDFs with VAT, delivery terms, currency &amp; totals.</p>
+      <p><a href="so-confirmation/">Open tool →</a></p>
+    </div>
 
-    <footer class="mt-12 text-xs text-slate-400">© <span id="y"></span> Verified Electronics. Internal use.</footer>
-  </main>
+    <div class="tool">
+      <h2><a href="excess-checker/">Excess Checker</a></h2>
+      <p>Search parts, import CSV, view supplier counts &amp; availability.</p>
+      <p><a href="excess-checker/">Open tool →</a></p>
+    </div>
 
-  <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+    <div class="tool">
+      <h2><a href="coc.index.html">Certificate of Conformance</a></h2>
+      <p>Generate a clean, modern PDF certificate with lot numbers, serials, dates and PO references.</p>
+      <p><a href="coc.index.html">Open tool →</a></p>
+    </div>
+
+    <!-- New placeholders -->
+    <div class="tool">
+      <h2>Sales Leaderboard <span class="soon">Coming soon</span></h2>
+      <p class="muted">Team &amp; individual performance ranking with period filters and targets.</p>
+      <p class="muted"><em>Planned: daily/weekly/monthly views, export, and badges.</em></p>
+    </div>
+
+    <div class="tool">
+      <h2>Call &amp; Email Stats <span class="soon">Coming soon</span></h2>
+      <p class="muted">Outbound calls and email volumes by rep, with response-rate trends.</p>
+      <p class="muted"><em>Planned: source integrations, SLA alerts, and CSV export.</em></p>
+    </div>
+
+  </div>
+
+  <h2 style="margin-top:28px;">More tools coming</h2>
+  <p class="muted">Add another app under <code>/new-tool/index.html</code> and put a card here.</p>
+
+  <footer>
+    &copy; 2025 Verified Electronics. Internal use.
+  </footer>
+
 </body>
 </html>
+
 
 
 
