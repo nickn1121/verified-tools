@@ -1,167 +1,177 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <title>Verified Electronics — Tools</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
   <style>
     :root{
-      --bg: #f6f7fb;
-      --panel: #ffffff;
-      --text: #17171f;
-      --muted: #63637a;
-      --border: #e8eaf5;
-      --brand: #5e55ff;
-      --brand-2:#8f56ff;
-      --link:#3d36ff;
-      --badge:#7f83ff;
-      --shadow: 0 12px 28px rgba(25, 20, 75, .08);
+      --brand:#673ab7; --ink:#1e1e1e; --muted:#677085;
+      --bg:#f6f7fb; --card:#fff; --line:#e9e9ef;
     }
     *{box-sizing:border-box}
-    html,body{margin:0}
-    body{
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    /* Header */
-    .hero{
-      background:
-        radial-gradient(1200px 600px at 10% -20%, rgba(143,86,255,.18), transparent 60%),
-        radial-gradient(900px 540px at 90% -30%, rgba(94,85,255,.18), transparent 60%),
-        linear-gradient(#f9faff, #f6f7fb);
-      border-bottom:1px solid var(--border);
-    }
-    .wrap{max-width:1200px; margin:0 auto; padding:28px 22px}
-    .brand{
-      display:flex; gap:16px; align-items:center;
-    }
-    .logo-box{
-      width:64px;height:64px;border-radius:16px;
-      background:#fff;border:1px solid var(--border);
-      display:grid;place-items:center;box-shadow: var(--shadow);
-      overflow:hidden;
-    }
-    .logo-box img{width:46px;height:auto;display:block}
-    .logo-fallback{display:none;width:46px;height:46px}
-    .logo-fallback svg{width:46px;height:46px;display:block}
-
-    h1{font-size:34px; line-height:1.2; margin:2px 0 4px}
-    .sub{color:var(--muted); font-size:15px}
-
-    /* Grid of cards */
-    .content{max-width:1200px; margin:0 auto; padding:10px 22px 36px}
-    .grid{
-      display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px,1fr));
-      gap:22px;
-    }
-    .card{
-      background:var(--panel);
-      border:1px solid var(--border);
+    html,body{height:100%}
+    body{margin:0;font:15px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+    .wrap{max-width:1160px;margin:24px auto;padding:0 16px}
+    header{
+      display:flex;align-items:center;gap:14px;
+      background:radial-gradient(1200px 260px at 160px -60px, rgba(103,58,183,.18), transparent 60%),
+                 linear-gradient(180deg,#fff, #fafaff);
+      border-bottom:1px solid var(--line);
+      padding:22px 18px;
       border-radius:18px;
-      padding:18px 18px 16px;
-      box-shadow: var(--shadow);
-      transition: transform .15s ease, box-shadow .15s ease;
+      box-shadow:0 4px 24px rgba(0,0,0,.04);
     }
-    .card:hover{ transform: translateY(-2px); box-shadow: 0 16px 34px rgba(25, 20, 75, .12); }
-
-    .row{display:flex; gap:12px; align-items:center; margin-bottom:8px}
-    .ico{
-      width:42px;height:42px;border-radius:12px;flex:0 0 42px;
-      background:linear-gradient(135deg, var(--brand), var(--brand-2));
+    header img{height:40px}
+    h1{font-size:28px;margin:0;font-weight:800;letter-spacing:.2px}
+    .sub{color:var(--muted);margin-top:2px}
+    .grid{
+      display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:22px
     }
-    .ico--muted{ background:#ebedff; }
+    @media (max-width:960px){ .grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+    @media (max-width:640px){ .grid{grid-template-columns:1fr} }
 
-    .title{font-size:18px;font-weight:700;margin:0}
-    .txt{color:var(--muted); margin:6px 0 12px; line-height:1.45}
-    a.btn{color:var(--link); text-decoration:none; font-weight:700}
-    a.btn:hover{text-decoration:underline}
-
-    .pill{
-      margin-left:8px;
-      background:var(--badge); color:#fff;
-      padding:2px 8px; border-radius:999px;
-      font-size:12px; font-weight:700; letter-spacing:.25px;
+    .card{
+      background:var(--card);border:1px solid var(--line);border-radius:16px;
+      box-shadow:0 8px 30px rgba(103,58,183,.06), 0 1px 0 rgba(0,0,0,.02);
+      padding:18px; display:flex; flex-direction:column; gap:10px; min-height:160px
     }
-
-    h3.more{margin:26px 0 8px; padding:0 22px}
-    .note{color:var(--muted); padding:0 22px}
-    code{
-      background:#eef0ff; border:1px solid #dde1ff;
-      padding:2px 6px; border-radius:6px;
+    .top{display:flex;align-items:center;gap:12px}
+    .logo-badge{
+      width:44px;height:44px;border-radius:12px;background:#efeafd;display:grid;place-items:center;
+      box-shadow:inset 0 0 0 1px #e3ddfb;
     }
-    footer{color:var(--muted); font-size:13px; padding: 18px 22px 38px}
+    .logo-badge img{max-width:28px;max-height:28px;object-fit:contain}
+    .title{font-size:18px;font-weight:800;margin:0}
+    .desc{color:var(--muted);font-size:14px}
+    .row{display:flex;align-items:center;gap:10px;margin-top:auto}
+    .tag{margin-left:auto;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #e8e8f5;background:#fbfbff;color:#5a46b6}
+    .soon{background:#fff5eb;border-color:#ffe1c4;color:#a66b2f}
+    a.cta{font-weight:700;color:#3a2db1;text-decoration:none}
+    a.cta:hover{text-decoration:underline}
   </style>
 </head>
 <body>
-  <!-- HEADER -->
-  <header class="hero">
-    <div class="wrap">
-      <div class="brand">
-        <div class="logo-box">
-          <img src="assets/logo.png" alt="Verified Electronics Logo"
-               onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block'">
-          <!-- Fallback SVG if the logo image is missing -->
-          <span class="logo-fallback" aria-hidden="true">
-            <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
-                  <stop offset="0" stop-color="#5e55ff"/><stop offset="1" stop-color="#8f56ff"/>
-                </linearGradient>
-              </defs>
-              <rect rx="14" width="64" height="64" fill="url(#g)"/>
-              <path d="M18 34l8 8 20-20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </span>
-        </div>
-        <div>
-          <h1>Verified Electronics — Tools</h1>
-          <div class="sub">Internal utilities for sales &amp; operations</div>
-        </div>
+  <div class="wrap">
+    <header>
+      <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified Electronics">
+      <div>
+        <h1>Verified Electronics — Tools</h1>
+        <div class="sub">Built in-house at Verified Electronics for sales & operations.</div>
       </div>
-    </div>
-  </header>
+    </header>
 
-  <!-- CONTENT -->
-  <main class="content">
-    <section class="grid">
-
-      <!-- Sales Order -->
+    <div class="grid">
+      <!-- Sales Order / Invoice -->
       <article class="card">
-        <div class="row">
-          <div class="ico" aria-hidden="true"></div>
-          <h2 class="title">Sales Order / Invoice PDF</h2>
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Sales Order / Invoice PDF</h3>
         </div>
-        <p class="txt">Generate branded PDFs with VAT, delivery terms, currency &amp; totals.</p>
-        <a class="btn" href="so-confirmation/">Open tool →</a>
+        <div class="desc">Generate branded PDFs with VAT, delivery terms, currency & totals.</div>
+        <div class="row">
+          <a class="cta" href="sales-order/index.html">Open tool →</a>
+          <span class="tag">Internal</span>
+        </div>
       </article>
 
       <!-- Excess Checker -->
       <article class="card">
-        <div class="row">
-          <div class="ico" aria-hidden="true"></div>
-          <h2 class="title">Excess Checker</h2>
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Excess Checker</h3>
         </div>
-        <p class="txt">Search parts, import CSV, view supplier counts &amp; availability.</p>
-        <a class="btn" href="excess-checker/">Open tool →</a>
+        <div class="desc">Search parts, import CSV, and view supplier counts & availability.</div>
+        <div class="row">
+          <a class="cta" href="excess-checker/index.html">Open tool →</a>
+          <span class="tag">Internal</span>
+        </div>
       </article>
 
-      <!-- CoC -->
+      <!-- Certificate of Conformance -->
       <article class="card">
-        <div class="row">
-          <div class="ico" aria-hidden="true"></div>
-          <h2 class="title">Certificate of Conformance</h2>
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Certificate of Conformance</h3>
         </div>
-        <p class="txt">Generate a clean, modern PDF certificate with lot numbers, serials, dates and PO references.</p>
-        <a class="btn" href="coc.index.html">Open tool →</a>
+        <div class="desc">Generate a clean, modern PDF certificate with PO refs, lot numbers, date codes and dates.</div>
+        <div class="row">
+          <a class="cta" href="coc/index.html">Open tool →</a>
+          <span class="tag">Internal</span>
+        </div>
       </article>
 
-      <!-- Sales Leaderboard - Coming soon -->
+      <!-- Coming soon: Sales Leaderboard -->
       <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Sales Leaderboard</h3>
+        </div>
+        <div class="desc">Live revenue and GP by rep with time filters and drill-downs.</div>
         <div class="row">
-          <div class="ico ico--muted" aria-hidden="
+          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
+          <span class="tag soon">Coming soon</span>
+        </div>
+      </article>
+
+      <!-- Coming soon: Call & Email Stats -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Call & Email Stats</h3>
+        </div>
+        <div class="desc">Daily activity, invites, replies and follow-up automation insights.</div>
+        <div class="row">
+          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
+          <span class="tag soon">Coming soon</span>
+        </div>
+      </article>
+
+      <!-- Coming soon: Document Signing -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Document Signing</h3>
+        </div>
+        <div class="desc">Simple, branded e-sign for POs, NDAs and order confirmations.</div>
+        <div class="row">
+          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
+          <span class="tag soon">Coming soon</span>
+        </div>
+      </article>
+
+      <!-- Coming soon: Document Editor -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Document Editor</h3>
+        </div>
+        <div class="desc">Create internal docs & templates with team-ready sharing.</div>
+        <div class="row">
+          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
+          <span class="tag soon">Coming soon</span>
+        </div>
+      </article>
+    </div>
+  </div>
+</body>
+</html>
+
 
 
 
