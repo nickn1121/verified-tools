@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Call Stats — Verified Electronics</title>
+<style>
+:root{--brand:#673ab7;--ink:#1e1e1e;--muted:#677085;--bg:#f6f7fb;--card:#fff;--line:#e9e9ef}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1160px;margin:24px auto;padding:0 16px}
+header{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 8px 30px rgba(103,58,183,.06)}
+h1{margin:0;font-size:24px;font-weight:800}
+.muted{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 30px rgba(103,58,183,.06);padding:16px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.input,select{border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:#fff}
+.btn{background:#3a2db1;color:#fff;border:none;border-radius:10px;padding:10px 12px;font-weight:700;cursor:pointer}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.tag{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid #e8e8f5;background:#fbfbff;color:#5a46b6}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+@media(max-width:1024px){.kpis{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
+.kpi .label{color:var(--muted);font-size:12px}.kpi .value{font-size:22px;font-weight:800;margin-top:6px}
+table{width:100%;border-collapse:separate;border-spacing:0 8px;margin-top:14px}
+th,td{text-align:left;padding:10px 12px;background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{border-left:1px solid var(--line);border-top-left-radius:10px;border-bottom-left-radius:10px}
+th:last-child,td:last-child{border-right:1px solid var(--line);border-top-right-radius:10px;border-bottom-right-radius:10px}
+tfoot td{background:transparent;border:none;padding:6px 0}
+.small{font-size:12px;color:var(--muted)}
+.right{text-align:right}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Call Stats</h1>
+    <div class="muted">Daily call activity and follow-up insight</div>
+  </header>
+
+  <div class="card">
+    <div class="controls">
+      <label>Range
+        <select id="range" class="input">
+          <option value="today">Today</option>
+          <option value="week" selected>This week</option>
+          <option value="month">This month</option>
+          <option value="custom">Custom…</option>
+        </select>
+      </label>
+      <input id="from" class="input" type="datetime-local" style="display:none">
+      <input id="to" class="input" type="datetime-local" style="display:none">
+      <input id="userFilter" class="input" placeholder="Filter by user email (optional)">
+      <button id="load" class="btn">Load</button>
+      <span id="status" class="tag" style="display:none"></span>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="label">Total calls</div><div id="k_total" class="value">–</div></div>
+      <div class="kpi"><div class="label">Inbound</div><div id="k_in" class="value">–</div></div>
+      <div class="kpi"><div class="label">Outbound</div><div id="k_out" class="value">–</div></div>
+      <div class="kpi"><div class="label">Answered</div><div id="k_ans" class="value">–</div></div>
+      <div class="kpi"><div class="label">Missed</div><div id="k_miss" class="value">–</div></div>
+      <div class="kpi"><div class="label">Avg duration</div><div id="k_avg" class="value">–</div></div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <strong>User breakdown</strong>
+      <table id="byUser"><thead>
+        <tr><th>User (target)</th><th>Inbound</th><th>Outbound</th><th>Answered</th><th>Missed</th><th>Total</th><th>Avg dur</th></tr>
+      </thead><tbody></tbody></table>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <strong>Raw calls</strong>
+      <table id="raw">
+        <thead>
+          <tr><th>Time</th><th>User</th><th>Direction</th><th>Number</th><th>State</th><th class="right">Duration</th><th>Recording</th></tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="7">
+              <button id="more" class="btn">Load more</button>
+              <span id="moreInfo" class="small"></span>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== CONFIG =====
+const WORKER_URL = "https://ve-dialpad-proxy.nick-north.workers.dev/calls"; // your worker
+const PAGE_SIZE = 200;   // how many per page to fetch
+// ==================
+
+// Helpers
+const el = id => document.getElementById(id);
+const fmt = s => {
+  const sec = Math.round(Number(s||0));
+  const m = Math.floor(sec/60), r = sec%60;
+  return `${String(m).padStart(1,'0')}:${String(r).padStart(2,'0')}`;
+};
+const epochMs = d => (d instanceof Date ? d.getTime() : new Date(d).getTime());
+const startOfDay = d => { d = new Date(d); d.setHours(0,0,0,0); return d; };
+const endOfDay = d => { d = new Date(d); d.setHours(23,59,59,999); return d; };
+
+let nextCursor = null;
+let collected = [];
+let currentParams = {};
+
+function setStatus(t){ const s=el('status'); s.style.display='inline-block'; s.textContent=t; }
+function clearStatus(){ el('status').style.display='none'; }
+
+function calcRange() {
+  const mode = el('range').value;
+  const now = new Date();
+  if (mode === 'today') {
+    return { from: startOfDay(now), to: endOfDay(now) };
+  }
+  if (mode === 'week') {
+    const day = now.getDay(); // 0 Sun..6 Sat
+    const diff = (day===0?6:day-1); // start Monday
+    const from = startOfDay(new Date(now - diff*86400000));
+    const to = endOfDay(now);
+    return { from, to };
+  }
+  if (mode === 'month') {
+    const from = new Date(now.getFullYear(), now.getMonth(), 1, 0,0,0,0);
+    const to = endOfDay(now);
+    return { from, to };
+  }
+  // custom
+  return { from: new Date(el('from').value), to: new Date(el('to').value) };
+}
+
+async function fetchPage(params){
+  const url = new URL(WORKER_URL);
+  Object.entries(params).forEach(([k,v]) => { if (v!=null && v!=='') url.searchParams.set(k,v) });
+  url.searchParams.set('limit', PAGE_SIZE);
+  const r = await fetch(url.toString());
+  if(!r.ok) throw new Error('Dialpad proxy failed');
+  return r.json();
+}
+
+function summarise(items){
+  const totals = {total:0,in:0,out:0,ans:0,miss:0,sumDur:0};
+  const map = new Map(); // user -> stats
+
+  for(const c of items){
+    totals.total++;
+    const dir = (c.direction||'').toLowerCase();
+    if(dir==='inbound') totals.in++; else if(dir==='outbound') totals.out++;
+    const dur = Number(c.duration||0);
+    // Treat >0s as answered
+    if(dur>0) totals.ans++; else totals.miss++;
+    totals.sumDur += dur;
+
+    const user = (c.target && (c.target.email || c.target.name)) || 'Unknown';
+    if(!map.has(user)) map.set(user, {in:0,out:0,ans:0,miss:0,total:0,sumDur:0});
+    const s = map.get(user);
+    s.total++; s.sumDur += dur;
+    if(dir==='inbound') s.in++; else if(dir==='outbound') s.out++;
+    if(dur>0) s.ans++; else s.miss++;
+  }
+  return { totals, byUser:[...map.entries()] };
+}
+
+function renderKPIs({totals}){
+  el('k_total').textContent = totals.total;
+  el('k_in').textContent = totals.in;
+  el('k_out').textContent = totals.out;
+  el('k_ans').textContent = totals.ans;
+  el('k_miss').textContent = totals.miss;
+  el('k_avg').textContent = totals.total ? fmt(totals.sumDur/totals.total) : '0:00';
+}
+
+function renderByUser(byUser){
+  const tbody = document.querySelector('#byUser tbody');
+  tbody.innerHTML = '';
+  byUser.sort((a,b)=>b[1].total-a[1].total).forEach(([user,s])=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${user}</td>
+      <td>${s.in}</td><td>${s.out}</td>
+      <td>${s.ans}</td><td>${s.miss}</td>
+      <td>${s.total}</td><td>${fmt(s.sumDur/Math.max(1,s.total))}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderRows(items, append=false){
+  const tbody = document.querySelector('#raw tbody');
+  if(!append) tbody.innerHTML='';
+  for(const c of items){
+    const when = c.event_timestamp ? new Date(Number(c.event_timestamp)).toLocaleString() : '';
+    const user = (c.target && (c.target.email || c.target.name)) || '';
+    const num  = c.external_number || c.internal_number || '';
+    const rec = (c.admin_recording_urls && c.admin_recording_urls[0]) || (c.recording_details && c.recording_details[0]?.url) || '';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${when}</td>
+      <td>${user}</td>
+      <td>${(c.direction||'').toLowerCase()}</td>
+      <td>${num}</td>
+      <td>${c.state || ''}</td>
+      <td class="right">${fmt(c.duration||0)}</td>
+      <td>${rec?`<a href="${rec}" target="_blank">link</a>`:''}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+async function loadInitial(){
+  setStatus('Loading…');
+  collected = [];
+  nextCursor = null;
+
+  const {from,to} = calcRange();
+  // Dialpad expects epoch seconds or ms; API accepts ms in practice.
+  const params = {
+    start_after: Math.floor(epochMs(from)/1000),   // try seconds
+    start_before: Math.floor(epochMs(to)/1000),
+  };
+
+  const userFilter = el('userFilter').value.trim().toLowerCase();
+  currentParams = params;
+
+  const first = await fetchPage(params);
+  nextCursor = first.cursor || null;
+
+  let items = (first.items || []).map(x=>x.call || x); // handle nested shape
+  if(userFilter) items = items.filter(c => ((c.target?.email||'').toLowerCase().includes(userFilter)));
+  collected = items;
+
+  renderRows(items, false);
+  renderKPIs(summarise(collected));
+  renderByUser(summarise(collected).byUser);
+
+  el('more').disabled = !nextCursor;
+  el('moreInfo').textContent = nextCursor ? 'More available…' : 'All loaded';
+  clearStatus();
+}
+
+async function loadMore(){
+  if(!nextCursor) return;
+  setStatus('Loading more…');
+  const params = {...currentParams, cursor: nextCursor};
+  const page = await fetchPage(params);
+  nextCursor = page.cursor || null;
+  let items = (page.items || []).map(x=>x.call || x);
+  const userFilter = el('userFilter').value.trim().toLowerCase();
+  if(userFilter) items = items.filter(c => ((c.target?.email||'').toLowerCase().includes(userFilter)));
+
+  collected = collected.concat(items);
+  renderRows(items, true);
+  renderKPIs(summarise(collected));
+  renderByUser(summarise(collected).byUser);
+
+  el('more').disabled = !nextCursor;
+  el('moreInfo').textContent = nextCursor ? 'More available…' : 'All loaded';
+  clearStatus();
+}
+
+// UI wiring
+el('range').addEventListener('change', e=>{
+  const custom = e.target.value==='custom';
+  el('from').style.display = custom ? '' : 'none';
+  el('to').style.display = custom ? '' : 'none';
+});
+el('load').addEventListener('click', loadInitial);
+el('more').addEventListener('click', loadMore);
+
+// Auto-load on first open
+loadInitial();
+</script>
+</body>
+</html>
