@@ -50,6 +50,15 @@
     .divider{height:1px;background:var(--line);margin:14px 0}
     a.link{color:#4f46e5;text-decoration:none;font-weight:600}
     .inline{display:flex;gap:10px;align-items:center}
+    /* leaderboard */
+    table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    th{font-size:12px;color:var(--muted);text-align:left;padding:0 10px}
+    td{background:var(--panel);border:1px solid var(--line);padding:12px 10px}
+    tr td:first-child{border-top-left-radius:10px;border-bottom-left-radius:10px}
+    tr td:last-child{border-top-right-radius:10px;border-bottom-right-radius:10px;text-align:right;font-weight:700}
+    .filterbar{display:flex;gap:10px;align-items:center;margin:8px 0}
+    .pill{padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;cursor:pointer}
+    .pill.active{background:linear-gradient(90deg,var(--brand),var(--brand2));border:0;color:#fff}
   </style>
 </head>
 <body>
@@ -76,6 +85,7 @@
         <button class="tab active" data-tab="tab-search">Search</button>
         <button class="tab" data-tab="tab-upload">Upload</button>
         <button class="tab" data-tab="tab-remove">Remove</button>
+        <button class="tab" data-tab="tab-leader">Leaderboard</button>
       </div>
 
       <!-- SEARCH -->
@@ -201,6 +211,32 @@ STM32F103C8T6, 50, ST"></textarea>
         <div class="title">Recent uploads</div>
         <div id="upload-list" class="rows"></div>
       </section>
+
+      <!-- LEADERBOARD -->
+      <section id="tab-leader" class="section">
+        <div class="subtle">
+          <div class="title">Excess Leaderboard</div>
+          <div class="hint">Counts the number of <b>uploads (lists)</b> per employee using <span class="mono">batch_id</span>. Default view is <b>this week</b>.</div>
+        </div>
+
+        <div class="filterbar">
+          <span class="pill active" data-period="week">This Week</span>
+          <span class="pill" data-period="month">This Month</span>
+          <span class="pill" data-period="year">This Year</span>
+          <span class="pill" data-period="all">All Time</span>
+        </div>
+
+        <div class="rows">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th><th>Employee</th><th>Lists</th>
+              </tr>
+            </thead>
+            <tbody id="leader-tbody"></tbody>
+          </table>
+        </div>
+      </section>
     </div>
 
     <footer>© <span id="year"></span> Verified Electronics</footer>
@@ -209,11 +245,11 @@ STM32F103C8T6, 50, ST"></textarea>
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    // Supabase (same values you already use)
+    // === Supabase (your existing values) ===
     const SUPABASE_URL  = "https://ijzroisggstqkfhpjndq.supabase.co";
     const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc";
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
 
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
     const $ = (id)=>document.getElementById(id);
     $("year").textContent = new Date().getFullYear();
 
@@ -224,10 +260,11 @@ STM32F103C8T6, 50, ST"></textarea>
         document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
         btn.classList.add("active");
         document.getElementById(btn.dataset.tab).classList.add("active");
+        if (btn.dataset.tab === "tab-leader") loadLeaderboard(currentPeriod);
       });
     });
 
-    // Staff: show “Other” input
+    // Staff “Other”
     window.toggleOtherStaff = ()=>{
       const sel = $("uploaded-by").value;
       $("other-staff").style.display = (sel === "Other") ? "block" : "none";
@@ -247,8 +284,9 @@ STM32F103C8T6, 50, ST"></textarea>
         const { data: vendors } = await supabase.from("excess_parts").select("vendor").not("vendor","is",null).limit(10000);
         $("stat-vendors").textContent = vendors ? new Set(vendors.map(v=>v.vendor)).size : "—";
 
-        const { data: batches } = await supabase.from("excess_uploads").select("*").limit(1000);
-        $("stat-batches").textContent = batches ? batches.length : "—";
+        // existing view counting vendor×date uploads
+        const { count: batches } = await supabase.from("excess_uploads").select("*", { count:"exact", head:true });
+        $("stat-batches").textContent = (batches ?? 0).toLocaleString();
       }catch{
         $("stat-total").textContent = "—";
         $("stat-vendors").textContent = "—";
@@ -256,7 +294,7 @@ STM32F103C8T6, 50, ST"></textarea>
       }
     }
 
-    // ---------- Upload list + dropdown ----------
+    // ---------- Upload list + dropdown (Remove tab) ----------
     async function refreshUploadsUI(){
       const list = $("upload-list");
       list.innerHTML = "";
@@ -345,22 +383,21 @@ STM32F103C8T6, 50, ST"></textarea>
       $("btn-search").disabled = false; $("btn-search").textContent = "🔍 Check Excess";
     });
 
-    // ---------- BUILD upload payload ----------
-    async function buildUploadPayload(){
+    // ---------- UPLOAD (RPC) ----------
+    $("btn-upload").addEventListener("click", async ()=>{
       const fallbackVendor = $("fallback-vendor").value.trim() || null;
       const uploader = getUploader();
-      if (!uploader){ throw new Error("Please select or enter 'Uploaded by'."); }
+      if (!uploader){ $("upload-status").innerHTML = `<span class="err">Please select or enter 'Uploaded by'.</span>`; return; }
 
       let rows = [];
 
-      // CSV
       const f = $("file-upload").files?.[0];
       if (f){
         const { headers, rows: csvRows } = await parseCSV(f);
         const hPart = headers.find(h => h.toLowerCase()==="part number");
         const hQty  = headers.find(h => h.toLowerCase()==="quantity");
         const hVend = headers.find(h => h.toLowerCase()==="vendor");
-        if (!hPart || !hQty){ throw new Error("CSV must include 'Part Number' and 'Quantity' headers."); }
+        if (!hPart || !hQty){ $("upload-status").innerHTML = `<span class="err">CSV must include 'Part Number' and 'Quantity'.</span>`; return; }
         rows = rows.concat(csvRows.map(r=>({
           part_number: String(r[hPart]??"").trim().toUpperCase(),
           quantity: cleanQty(r[hQty]),
@@ -369,7 +406,6 @@ STM32F103C8T6, 50, ST"></textarea>
         })));
       }
 
-      // Pasted
       const pasted = $("paste-upload").value.replace(/\r/g,"").split("\n").map(l=>l.trim()).filter(Boolean);
       pasted.forEach(line=>{
         const cols = line.split(",").map(s=>s.trim());
@@ -380,39 +416,20 @@ STM32F103C8T6, 50, ST"></textarea>
       });
 
       rows = rows.filter(r=>r.part_number && r.quantity >= 0);
-      return { rows, fallbackVendor, uploader };
-    }
-
-    // ---------- UPLOAD (RPC) ----------
-    $("btn-upload").addEventListener("click", async ()=>{
-      let payload;
-      try{
-        payload = await buildUploadPayload();
-      }catch(err){
-        $("upload-status").innerHTML = `<span class="err">${err.message}</span>`;
-        return;
-      }
-
-      if (!payload.rows.length){
-        $("upload-status").innerHTML = `<span class="err">Nothing to upload. Add a CSV and/or pasted rows.</span>`;
-        return;
-      }
+      if (!rows.length){ $("upload-status").innerHTML = `<span class="err">Nothing to upload. Add a CSV and/or pasted rows.</span>`; return; }
 
       $("btn-upload").disabled = true; $("btn-upload").textContent = "⏳ Uploading...";
-      $("upload-status").textContent = `Uploading ${payload.rows.length} rows…`;
+      $("upload-status").textContent = `Uploading ${rows.length} rows…`;
 
       const { data, error } = await supabase.rpc("excess_bulk_insert", {
-        rows: payload.rows,
-        default_vendor: payload.fallbackVendor,
-        uploader: payload.uploader
+        rows, default_vendor: fallbackVendor, uploader
       });
 
       if (error){
         $("upload-status").innerHTML = `<span class="err">Upload failed: ${error.message}</span>`;
       }else{
-        $("upload-status").innerHTML = `<span class="ok">Uploaded ${payload.rows.length.toLocaleString()} rows (batch_id: ${data}).</span>`;
-        loadStats();
-        refreshUploadsUI();
+        $("upload-status").innerHTML = `<span class="ok">Uploaded ${rows.length.toLocaleString()} rows (batch_id: ${data}).</span>`;
+        loadStats(); refreshUploadsUI(); loadLeaderboard(currentPeriod);
       }
 
       $("btn-upload").disabled = false; $("btn-upload").textContent = "⬆️ Upload Excess";
@@ -442,18 +459,99 @@ STM32F103C8T6, 50, ST"></textarea>
         $("remove-status").innerHTML = `<span class="err">Delete failed: ${error.message}</span>`;
       } else {
         $("remove-status").innerHTML = `<span class="ok">Deleted ${Number(data||0).toLocaleString()} rows for ${vendor} on ${date}.</span>`;
-        loadStats(); refreshUploadsUI();
+        loadStats(); refreshUploadsUI(); loadLeaderboard(currentPeriod);
       }
 
       $("btn-remove").disabled = false; $("btn-remove").textContent = "🗑️ Remove Selected Upload";
     });
 
+    // ---------- LEADERBOARD ----------
+    const STAFF = ["Nick N","Nick K","Jake B","Dan C","Emir B"]; // show even if zero
+    let currentPeriod = "week";
+
+    function fmtDate(d){
+      const y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,"0"), da=String(d.getUTCDate()).padStart(2,"0");
+      return `${y}-${m}-${da}`;
+    }
+    function startOfWeekUTC(d){
+      const day = d.getUTCDay(); // 0..6 (Sun..Sat)
+      const diff = (day===0?6:day-1); // ISO Mon=0
+      const copy = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+      copy.setUTCDate(copy.getUTCDate()-diff);
+      return copy;
+    }
+    function rangeFor(period){
+      const today = new Date();
+      const end = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())); // today
+      let start;
+      if (period==="week"){
+        start = startOfWeekUTC(today);
+      } else if (period==="month"){
+        start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+      } else if (period==="year"){
+        start = new Date(Date.UTC(today.getUTCFullYear(), 0, 1));
+      } else { // all
+        start = new Date(Date.UTC(1970,0,1));
+      }
+      return { from: fmtDate(start), to: fmtDate(end) };
+    }
+
+    async function loadLeaderboard(period="week"){
+      currentPeriod = period;
+      document.querySelectorAll(".pill").forEach(p=>{
+        p.classList.toggle("active", p.dataset.period===period);
+      });
+
+      const { from, to } = rangeFor(period);
+      // one row per batch (upload)
+      let q = supabase.from("excess_batches").select("uploaded_by,batch_id,created_on_utc");
+      if (period!=="all"){
+        q = q.gte("created_on_utc", from).lte("created_on_utc", to);
+      }
+      const { data, error } = await q.limit(20000);
+      const tbody = $("leader-tbody");
+      tbody.innerHTML = "";
+
+      if (error){ tbody.innerHTML = `<tr><td colspan="3">Failed to load: ${error.message}</td></tr>`; return; }
+
+      // Count batches per uploader
+      const counts = {};
+      (data||[]).forEach(r=>{
+        const name = r.uploaded_by || "(unknown)";
+        counts[name] = (counts[name]||0) + 1;
+      });
+
+      // Ensure core staff always present
+      STAFF.forEach(n=>{ if(!(n in counts)) counts[n]=0; });
+
+      const rows = Object.entries(counts)
+        .sort((a,b)=>b[1]-a[1])
+        .map((entry,idx)=>({ rank: idx+1, name: entry[0], lists: entry[1] }));
+
+      if (!rows.length){
+        tbody.innerHTML = `<tr><td colspan="3">No uploads found for this period.</td></tr>`;
+        return;
+      }
+
+      rows.forEach(r=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${r.rank}</td><td>${r.name}</td><td>${r.lists}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.querySelectorAll(".pill").forEach(p=>{
+      p.addEventListener("click", ()=> loadLeaderboard(p.dataset.period));
+    });
+
     // Init
     loadStats();
     refreshUploadsUI();
+    loadLeaderboard("week");
   </script>
 </body>
 </html>
+
 
 
 
