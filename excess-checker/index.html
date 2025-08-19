@@ -1,216 +1,326 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Excess Part Number Checker — Verified Electronics</title>
+  <meta charset="utf-8" />
+  <title>Excess Parts — Verified Electronics</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    :root { --brand:#673ab7; --ink:#222; --muted:#666; --panel:#f6f7fb; }
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      background: #fafafa;
-      color: var(--ink);
-      margin: 0;
+    :root{
+      --bg:#0b0b12; --card:#141427; --ghost:#1b1b32; --ink:#e8e8ff; --muted:#9aa0be;
+      --brand:#7c5cff; --brand2:#a855f7; --ok:#10b981; --warn:#f59e0b; --err:#ef4444;
+      --ring:0 0 0 3px rgba(124,92,255,.28);
     }
-    /* brand stripe */
-    .stripe{height:6px;background:linear-gradient(90deg,#7c3aed,#a855f7,#6366f1);}
-    .wrap{max-width:980px;margin:0 auto;padding:24px;}
-    header{display:flex;align-items:center;gap:16px;justify-content:space-between;margin-top:8px;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:radial-gradient(1200px 600px at 20% -10%,rgba(124,92,255,.18),transparent),radial-gradient(1000px 500px at 120% 0,rgba(168,85,247,.16),transparent),var(--bg);color:var(--ink)}
+    .wrap{max-width:1080px;margin:0 auto;padding:28px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:4px 0 18px}
     .brand{display:flex;align-items:center;gap:14px}
-    img.logo{max-height:54px}
-    h1{font-size:22px;margin:0}
-    .back a{color:#4f46e5;text-decoration:none;font-size:13px}
-    .card{background:#fff;border-radius:14px;border:1px solid #eef2ff;box-shadow:0 4px 18px rgba(2,6,23,.06)}
-    .panel{background:var(--panel);border-radius:10px;padding:14px}
-    .stats{display:inline-block;text-align:left}
-    .stats p{margin:.3rem 0}
-    textarea{
-      width:100%;min-height:140px;display:block;margin-top:10px;padding:12px 14px;
-      font-size:15px;border-radius:10px;border:1px solid #d1d5db;background:#fff;
-    }
-    .controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}
-    input[type="file"]{font-size:13px}
-    .hint{font-size:12px;color:#6b7280;margin-top:2px}
-    .btn{
-      background:var(--brand);color:#fff;border:none;border-radius:10px;
-      padding:12px 22px;font-size:15px;cursor:pointer
-    }
-    .btn:disabled{background:#a0a0a0;cursor:not-allowed}
-    #results > .row{
-      margin:10px 0;background:#f2f2f4;padding:12px;border-radius:10px
-    }
-    #results .summary{background:#eef2ff;border:1px solid #dbe2fe}
-    footer{margin:32px 0 16px;color:#9ca3af;font-size:12px;text-align:center}
+    .logo{height:52px}
+    h1{margin:0;font-size:22px;font-weight:800;letter-spacing:.2px}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(8px);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:18px}
+    .stat{background:rgba(124,92,255,.1);border:1px solid rgba(124,92,255,.25);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+    .tabs{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 2px}
+    .tab{padding:10px 14px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);cursor:pointer;font-weight:600}
+    .tab.active{background:linear-gradient(90deg,var(--brand),var(--brand2));border:0}
+    .section{display:none;margin-top:10px}
+    .section.active{display:block}
+    label strong{display:block;margin:6px 0 6px}
+    textarea{width:100%;min-height:140px;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:var(--ghost);color:var(--ink);resize:vertical}
+    input[type="text"],input[type="date"],input[type="number"]{width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:var(--ghost);color:var(--ink)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px}
+    .hint{font-size:12px;color:var(--muted)}
+    .btn{background:linear-gradient(90deg,var(--brand),var(--brand2));color:#fff;border:0;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer}
+    .btn.ghost{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .rows{margin-top:14px}
+    .row{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);padding:10px 12px;border-radius:12px;margin:8px 0}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+    .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}
+    footer{margin:26px 2px 10px;color:var(--muted);font-size:12px;text-align:center}
+    .chip{display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(124,92,255,.15);border:1px solid rgba(124,92,255,.3);font-size:12px;margin-left:8px}
   </style>
 </head>
 <body>
-  <div class="stripe"></div>
   <div class="wrap">
     <header>
       <div class="brand">
-        <!-- LOCAL LOGO FROM /assets -->
-        <img src="../assets/Logo_color_white_background (1).png" alt="Verified Electronics" class="logo" />
+        <img class="logo" src="../assets/Logo_color_white_background (1).png" alt="Verified Electronics" />
         <h1>Excess Part Number Checker</h1>
       </div>
-      <div class="back"><a href="/">← Back to Tools</a></div>
+      <a href="/" class="btn ghost">← Back to Tools</a>
     </header>
 
-    <div class="card" style="padding:16px 16px 6px; margin-top:16px;">
-      <div class="panel stats" id="stats">
-        <p>📊 <strong>Live Excess Inventory</strong></p>
-        <p>• Total Part Numbers: <strong>70,024</strong></p>
-        <p>• Unique Vendors: <strong id="unique-vendors">Loading...</strong></p>
+    <div class="card">
+      <div class="stat">
+        <strong>📊 Live Excess Inventory</strong>
+        <div style="margin-top:6px">
+          • Total Part Numbers: <strong id="stat-total">—</strong>
+          <span class="chip">Unique Vendors: <strong id="stat-vendors">—</strong></span>
+        </div>
       </div>
 
-      <div style="margin-top:14px">
-        <label for="part-input"><strong>Paste part numbers (one per line)</strong></label>
-        <textarea id="part-input" placeholder="e.g.
+      <div class="tabs">
+        <button class="tab active" data-tab="tab-search">Search</button>
+        <button class="tab" data-tab="tab-upload">Upload</button>
+        <button class="tab" data-tab="tab-remove">Remove</button>
+      </div>
+
+      <!-- SEARCH -->
+      <section id="tab-search" class="section active">
+        <label for="input-parts"><strong>Paste part numbers (one per line)</strong></label>
+        <textarea id="input-parts" class="mono" placeholder="e.g.
 LM358DR
 STM32F103C8T6
 TPS7A4700RGWT"></textarea>
 
         <div class="controls">
           <div>
-            <input type="file" id="csv-input" />
+            <input type="file" id="file-search" accept=".csv" />
             <div class="hint">CSV must contain a column named <code>Part Number</code></div>
           </div>
-          <button class="btn" id="search-button">🔍 Check Excess</button>
+          <button id="btn-search" class="btn">🔍 Check Excess</button>
         </div>
-      </div>
 
-      <div id="results" style="margin-top:16px"></div>
+        <div id="search-results" class="rows"></div>
+      </section>
+
+      <!-- UPLOAD -->
+      <section id="tab-upload" class="section">
+        <div class="grid">
+          <div>
+            <label><strong>CSV file (Part Number, Quantity[, Vendor])</strong></label>
+            <input type="file" id="file-upload" accept=".csv" />
+            <div class="hint">Required headers: <code>Part Number</code>, <code>Quantity</code>. Optional: <code>Vendor</code>.</div>
+          </div>
+          <div>
+            <label><strong>Fallback Vendor (if column missing)</strong></label>
+            <input type="text" id="fallback-vendor" placeholder="e.g. ACME Components" />
+            <div class="hint">Used only when the CSV has no Vendor column.</div>
+          </div>
+        </div>
+        <div class="grid" style="margin-top:10px">
+          <div>
+            <label><strong>Uploaded by</strong></label>
+            <input type="text" id="uploaded-by" placeholder="Your name or email" />
+          </div>
+          <div></div>
+        </div>
+        <div class="controls">
+          <button id="btn-upload" class="btn">⬆️ Upload Excess</button>
+          <span id="upload-status" class="hint mono"></span>
+        </div>
+      </section>
+
+      <!-- REMOVE -->
+      <section id="tab-remove" class="section">
+        <div class="grid">
+          <div>
+            <label><strong>Vendor</strong></label>
+            <input type="text" id="rm-vendor" placeholder="Exact vendor name" />
+          </div>
+          <div>
+            <label><strong>Date (UTC day)</strong></label>
+            <input type="date" id="rm-date" />
+          </div>
+        </div>
+        <div class="controls">
+          <button id="btn-remove" class="btn">🗑️ Remove by Vendor + Date</button>
+          <span class="hint">Deletes rows where <code>created_on_utc</code> equals the chosen date.</span>
+        </div>
+        <div id="remove-status" class="hint mono" style="margin-top:8px"></div>
+      </section>
     </div>
 
-    <footer>© <span id="y"></span> Verified Electronics · Made by Nick</footer>
+    <footer>© <span id="year"></span> Verified Electronics</footer>
   </div>
 
-  <!-- Supabase (module) -->
   <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    // ⚠️ These are the keys/endpoints you supplied (anon public key)
-    const supabase = createClient(
-      'https://ijzroisggstqkfhpjndq.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc'
-    );
+    // === Supabase (same values as your current page) ===
+    const SUPABASE_URL  = "https://ijzroisggstqkfhpjndq.supabase.co";
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc";
 
-    // year
-    document.getElementById('y').textContent = new Date().getFullYear();
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+    const $ = (id)=>document.getElementById(id);
+    $("year").textContent = new Date().getFullYear();
 
-    // Load vendor stats
-    async function loadStats() {
-      const { data, error } = await supabase
-        .from('excess_parts')
-        .select('vendor');
-
-      if (error) {
-        console.error('Stats error:', error);
-        document.getElementById('unique-vendors').innerText = '—';
-        return;
-      }
-
-      const uniqueVendors = new Set((data || []).map(d => d.vendor));
-      document.getElementById('unique-vendors').innerText = uniqueVendors.size;
-    }
-    loadStats();
-
-    // Search helper (partial match on part number)
-    async function searchParts(partNumbers) {
-      const queries = partNumbers.map(async (part) => {
-        // Allow partial search: %term%
-        const pattern = `%${part}%`;
-        const { data, error } = await supabase
-          .from('excess_parts')
-          .select('*')
-          .ilike('part_number', pattern);
-
-        if (error) {
-          console.error('Search error for', part, error);
-          return [];
-        }
-        return data || [];
+    // Tabs
+    document.querySelectorAll(".tab").forEach(btn=>{
+      btn.addEventListener("click",()=>{
+        document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+        document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(btn.dataset.tab).classList.add("active");
       });
-
-      const results = await Promise.all(queries);
-      return results.flat();
-    }
-
-    // UI: search button
-    const button = document.getElementById('search-button');
-    button.addEventListener('click', async () => {
-      const input = document.getElementById('part-input').value;
-      const lines = input
-        .split('\n')
-        .map(s => s.trim().toUpperCase())
-        .filter(Boolean);
-
-      // nothing provided — bail
-      if (!lines.length) {
-        alert('Please paste some part numbers or upload a CSV.');
-        return;
-      }
-
-      button.disabled = true;
-      button.textContent = '⏳ Searching...';
-
-      const results = await searchParts(lines);
-      const container = document.getElementById('results');
-      container.innerHTML = '';
-
-      if (!results.length) {
-        container.innerHTML = `<div class="row">No matching parts found.</div>`;
-      } else {
-        const vendors = new Set();
-
-        results.forEach(r => {
-          vendors.add(r.vendor);
-          const el = document.createElement('div');
-          el.className = 'row';
-          el.innerHTML = `
-            <strong>${r.part_number}</strong><br>
-            • Quantity: ${r.quantity ?? '-'}<br>
-            • Vendor: ${r.vendor ?? '-'}
-          `;
-          container.appendChild(el);
-        });
-
-        const summary = document.createElement('div');
-        summary.className = 'row summary';
-        summary.innerHTML = `<strong>${results.length}</strong> matches found across <strong>${vendors.size}</strong> vendors.`;
-        container.prepend(summary);
-      }
-
-      button.disabled = false;
-      button.textContent = '🔍 Check Excess';
     });
 
-    // CSV → textarea
-    document.getElementById('csv-input').addEventListener('change', function (e) {
-      const file = e.target.files[0];
-      if (!file) return;
+    // -------- Stats (lightweight, accurate) --------
+    async function loadStats(){
+      try{
+        // total rows (exact, head)
+        const { count } = await supabase
+          .from("excess_parts")
+          .select("*", { count:"exact", head:true });
+        $("stat-total").textContent = (count ?? 0).toLocaleString();
 
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const text = e.target.result || '';
-        const lines = text.replace(/\r/g,'').split('\n');
-        const header = (lines[0] || '').split(',');
-        const idx = header.findIndex(h => h.trim().toLowerCase() === 'part number');
-
-        if (idx === -1) {
-          alert('CSV must contain a column called "Part Number"');
-          return;
+        // distinct vendor list via PostgREST 'select=vendor&distinct=true'
+        const { data: vendors, error: vErr } = await supabase.rpc("pg_distinct", { _table:"excess_parts", _column:"vendor" });
+        // fallback if the helper isn't present:
+        if (vErr) {
+          // try simple distinct using SQL hint through RPC fallback
+          const { data, error } = await supabase.from("excess_parts").select("vendor").not("vendor","is",null).limit(5000);
+          if (!error) $("stat-vendors").textContent = new Set(data.map(d=>d.vendor)).size;
+          else $("stat-vendors").textContent = "—";
+        } else {
+          $("stat-vendors").textContent = vendors.length;
         }
+      }catch{ $("stat-total").textContent = "—"; $("stat-vendors").textContent = "—"; }
+    }
+    // Minimal helper RPC (create once in SQL if you want super-accurate vendor count)
+    // create or replace function public.pg_distinct(_table text, _column text)
+    // returns table(val text) language sql as $$
+    //   select distinct (_column::text)::text as val from (select * from public.excess_parts) t
+    // $$;
 
-        const partNumbers = lines
-          .slice(1)
-          .map(row => (row.split(',')[idx] || '').trim().toUpperCase())
-          .filter(Boolean);
+    loadStats();
 
-        document.getElementById('part-input').value = partNumbers.join('\n');
-      };
+    // -------- CSV helpers --------
+    const parseCSV = async (file) => {
+      const text = await file.text();
+      const lines = text.replace(/\r/g,"").split("\n").filter(Boolean);
+      const headers = lines.shift().split(",").map(h=>h.trim().replace(/^"|"$/g,""));
+      const rows = lines.map(l=>{
+        const cols = l.split(","); // simple CSV (no embedded commas in fields)
+        const obj = {};
+        headers.forEach((h,i)=>obj[h]= (cols[i]??"").trim().replace(/^"|"$/g,""));
+        return obj;
+      });
+      return { headers, rows };
+    };
 
-      reader.readAsText(file);
+    const dedupUpper = (arr)=>[...new Set(arr.map(s=>s.trim()).filter(Boolean).map(s=>s.toUpperCase()))];
+
+    // -------- SEARCH --------
+    $("btn-search").addEventListener("click", async ()=>{
+      const pasted = $("input-parts").value.split("\n");
+      let parts = dedupUpper(pasted);
+
+      const file = $("file-search").files?.[0];
+      if (file){
+        const { headers, rows } = await parseCSV(file);
+        const col = headers.find(h => h.toLowerCase() === "part number");
+        if (!col) { alert("CSV needs a 'Part Number' column"); return; }
+        parts = dedupUpper([...parts, ...rows.map(r=>r[col])]);
+      }
+
+      if (parts.length === 0) { alert("Add some part numbers first."); return; }
+
+      $("btn-search").disabled = true; $("btn-search").textContent = "⏳ Searching...";
+      const container = $("search-results"); container.innerHTML = "";
+
+      // Batch lookup (one query per part; simple & accurate)
+      const batches = [];
+      for (const p of parts){
+        batches.push(
+          supabase.from("excess_parts").select("*").ilike("part_number", p) // exact (case-insensitive) without %
+        );
+      }
+      const results = (await Promise.all(batches))
+        .flatMap(r => (r.data ?? []));
+
+      if (results.length === 0){
+        container.innerHTML = `<div class="row">No matching parts found.</div>`;
+      } else {
+        // group by part_number
+        const byPart = results.reduce((m,r)=>{
+          const k = r.part_number.toUpperCase();
+          (m[k] ??= []).push(r); return m;
+        }, {});
+        Object.keys(byPart).sort().forEach(k=>{
+          const totalQty = byPart[k].reduce((a,b)=>a + (Number(b.quantity)||0),0);
+          const vendors = [...new Set(byPart[k].map(x=>x.vendor).filter(Boolean))].join(", ");
+          const el = document.createElement("div");
+          el.className = "row";
+          el.innerHTML = `<strong>${k}</strong><br>
+            • Total Qty: <strong>${totalQty.toLocaleString()}</strong><br>
+            • Vendors: ${vendors || "—"}`;
+          container.appendChild(el);
+        });
+      }
+
+      $("btn-search").disabled = false; $("btn-search").textContent = "🔍 Check Excess";
+    });
+
+    // -------- UPLOAD --------
+    $("btn-upload").addEventListener("click", async ()=>{
+      const f = $("file-upload").files?.[0];
+      if (!f){ alert("Choose a CSV file."); return; }
+      const { headers, rows } = await parseCSV(f);
+
+      const hPart = headers.find(h => h.toLowerCase()==="part number");
+      const hQty  = headers.find(h => h.toLowerCase()==="quantity");
+      const hVend = headers.find(h => h.toLowerCase()==="vendor");
+
+      if (!hPart || !hQty){ alert("CSV must include 'Part Number' and 'Quantity' headers."); return; }
+
+      const fallbackVendor = $("fallback-vendor").value.trim() || null;
+      const uploader = $("uploaded-by").value.trim() || "unknown";
+
+      // Build payload rows
+      const payload = rows.map(r=>({
+        "part_number": (r[hPart] ?? "").toString().trim().toUpperCase(),
+        "quantity": Number(String(r[hQty]).replace(/[^0-9-]/g,"")) || 0,
+        "vendor": (hVend ? (r[hVend]??"").toString().trim() : "") || fallbackVendor || null
+      })).filter(r=>r.part_number && r.quantity >= 0);
+
+      if (payload.length === 0){ alert("No valid rows to upload."); return; }
+
+      $("btn-upload").disabled = true; $("btn-upload").textContent = "⏳ Uploading...";
+      $("upload-status").textContent = `Uploading ${payload.length} rows…`;
+
+      // Use RPC helper (SECURITY DEFINER)
+      const { data, error } = await supabase.rpc("excess_bulk_insert", {
+        rows: payload,
+        default_vendor: fallbackVendor,
+        uploader
+      });
+      if (error){
+        $("upload-status").innerHTML = `<span class="err">Upload failed: ${error.message}</span>`;
+      }else{
+        $("upload-status").innerHTML = `<span class="ok">Uploaded ${payload.length.toLocaleString()} rows (batch_id: ${data}).</span>`;
+        loadStats();
+      }
+
+      $("btn-upload").disabled = false; $("btn-upload").textContent = "⬆️ Upload Excess";
+    });
+
+    // -------- REMOVE --------
+    $("btn-remove").addEventListener("click", async ()=>{
+      const vendor = $("rm-vendor").value.trim();
+      const date = $("rm-date").value; // YYYY-MM-DD
+      if (!vendor || !date){ alert("Enter vendor and date."); return; }
+
+      $("btn-remove").disabled = true; $("btn-remove").textContent = "⏳ Removing…";
+      $("remove-status").textContent = "";
+
+      const { data, error } = await supabase.rpc("excess_delete_by_vendor_date", {
+        in_vendor: vendor,
+        in_date: date
+      });
+      if (error){
+        $("remove-status").innerHTML = `<span class="err">Delete failed: ${error.message}</span>`;
+      } else {
+        $("remove-status").innerHTML = `<span class="ok">Deleted ${Number(data||0).toLocaleString()} rows for ${vendor} on ${date}.</span>`;
+        loadStats();
+      }
+
+      $("btn-remove").disabled = false; $("btn-remove").textContent = "🗑️ Remove by Vendor + Date";
     });
   </script>
 </body>
 </html>
+
