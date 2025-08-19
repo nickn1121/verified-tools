@@ -48,6 +48,7 @@
     .subtle{border:1px dashed var(--line);background:#fff;border-radius:12px;padding:10px}
     .title{font-weight:700;margin-bottom:6px}
     .divider{height:1px;background:var(--line);margin:14px 0}
+    a.link{color:#4f46e5;text-decoration:none;font-weight:600}
   </style>
 </head>
 <body>
@@ -109,8 +110,13 @@ TPS7A4700RGWT"></textarea>
           <div class="title">How to upload</div>
           <div class="hint">
             Option A — CSV with headers: <span class="mono">Part Number, Quantity, Vendor</span> (Vendor optional).<br/>
-            Option B — Paste rows below using: <span class="mono">Part Number, Quantity[, Vendor]</span>. One row per line.
+            Option B — Paste rows below using: <span class="mono">Part Number, Quantity, Vendor</span>. One row per line.<br/>
             If Vendor is missing, the <b>Fallback Vendor</b> will be used.
+            <br/><br/>
+            👉 <a
+              class="link"
+              href="data:text/csv;charset=utf-8,Part%20Number,Quantity,Vendor%0ATEST123,100,DemoVendor%0ALM358DR,250,DemoVendor%0ASTM32F103C8T6,50,ST"
+              download="sample_excess.csv">Download sample CSV</a>
           </div>
         </div>
 
@@ -211,11 +217,9 @@ STM32F103C8T6, 50, ST"></textarea>
         const { count } = await supabase.from("excess_parts").select("*", { count:"exact", head:true });
         $("stat-total").textContent = (count ?? 0).toLocaleString();
 
-        // Distinct vendors (fallback to client-side count if needed)
         const { data: vendors } = await supabase.from("excess_parts").select("vendor").not("vendor","is",null).limit(10000);
         $("stat-vendors").textContent = vendors ? new Set(vendors.map(v=>v.vendor)).size : "—";
 
-        // Upload batches count from the view
         const { data: batches } = await supabase.from("excess_uploads").select("*").limit(1000);
         $("stat-batches").textContent = batches ? batches.length : "—";
       }catch{
@@ -236,7 +240,6 @@ STM32F103C8T6, 50, ST"></textarea>
       if (error){ list.innerHTML = `<div class="row err">Failed to load uploads: ${error.message}</div>`; return; }
       if (!data || data.length===0){ list.innerHTML = `<div class="row">No uploads found yet.</div>`; return; }
 
-      // Dropdown options
       sel.appendChild(new Option("— Select an upload —",""));
       data.forEach(r=>{
         const label = `${r.vendor} — ${r.created_on_utc}  (${r.rows_count} rows, ${Number(r.total_qty||0).toLocaleString()} qty)`;
@@ -248,12 +251,10 @@ STM32F103C8T6, 50, ST"></textarea>
         if (!sel.value){ $("rm-batch-info").textContent = ""; return; }
         const v = JSON.parse(sel.value);
         $("rm-batch-info").textContent = `Selected: ${v.vendor} on ${v.date} — ${v.rows.toLocaleString()} rows (${Number(v.qty||0).toLocaleString()} qty)`;
-        // also populate manual fields as a convenience
         $("rm-vendor").value = v.vendor;
         $("rm-date").value = v.date;
       });
 
-      // List (cards)
       data.slice(0,20).forEach(r=>{
         const el = document.createElement("div");
         el.className = "row";
@@ -297,7 +298,6 @@ STM32F103C8T6, 50, ST"></textarea>
       $("btn-search").disabled = true; $("btn-search").textContent = "⏳ Searching...";
       const container = $("search-results"); container.innerHTML = "";
 
-      // exact (case-insensitive) match: part_number ilike 'ABC123'
       const queries = parts.map(p => supabase.from("excess_parts").select("*").ilike("part_number", p));
       const results = (await Promise.all(queries)).flatMap(r => (r.data ?? []));
 
@@ -319,13 +319,12 @@ STM32F103C8T6, 50, ST"></textarea>
       $("btn-search").disabled = false; $("btn-search").textContent = "🔍 Check Excess";
     });
 
-    // ---------- BUILD upload payload from CSV and/or pasted rows ----------
+    // ---------- BUILD upload payload ----------
     async function buildUploadPayload(){
       const fallbackVendor = $("fallback-vendor").value.trim() || null;
 
       let rows = [];
 
-      // CSV
       const f = $("file-upload").files?.[0];
       if (f){
         const { headers, rows: csvRows } = await parseCSV(f);
@@ -340,10 +339,8 @@ STM32F103C8T6, 50, ST"></textarea>
         })));
       }
 
-      // Pasted
       const pasted = $("paste-upload").value.replace(/\r/g,"").split("\n").map(l=>l.trim()).filter(Boolean);
       pasted.forEach(line=>{
-        // split by comma; tolerate spaces
         const cols = line.split(",").map(s=>s.trim());
         const pn = (cols[0]??"").toUpperCase();
         const qty = cleanQty(cols[1]??"");
@@ -351,7 +348,6 @@ STM32F103C8T6, 50, ST"></textarea>
         if (pn) rows.push({ part_number: pn, quantity: qty, vendor: vend });
       });
 
-      // Clean
       rows = rows.filter(r=>r.part_number && r.quantity >= 0);
       return { rows, fallbackVendor };
     }
@@ -429,5 +425,6 @@ STM32F103C8T6, 50, ST"></textarea>
   </script>
 </body>
 </html>
+
 
 
