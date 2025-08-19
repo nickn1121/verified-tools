@@ -116,6 +116,7 @@ th.sortable{user-select:none;cursor:pointer} th.sortable:hover{background:#faf8f
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+  // Your Worker base URL
   const WORKER_BASE = "https://ve-dialpad-proxy.nick-north.workers.dev";
 
   const $ = id => document.getElementById(id);
@@ -142,10 +143,10 @@ document.addEventListener('DOMContentLoaded', () => {
     return { from: startOfDay(f), to: endOfDay(t) };
   }
 
-  async function fetchLeaderboard(fromDateISO, toDateISO, force){
+  async function fetchLeaderboard(fromISO, toISO, force){
     const u = new URL(WORKER_BASE + "/leaderboard");
-    u.searchParams.set('from', fromDateISO);
-    u.searchParams.set('to',   toDateISO);
+    u.searchParams.set('from', fromISO);
+    u.searchParams.set('to',   toISO);
     if (force) u.searchParams.set('force', 'true');
     const r = await fetch(u.toString());
     if (!r.ok) throw new Error(`Leaderboard ${r.status}`);
@@ -237,6 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
 
 
 
