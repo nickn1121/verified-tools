@@ -1,343 +1,186 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Call Leaderboard — Verified Electronics</title>
-<style>
-:root{--brand:#5d34d9;--ink:#1e1e1e;--muted:#667085;--bg:#f6f7fb;--card:#fff;--line:#e9e9ef}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-.wrap{max-width:1200px;margin:24px auto;padding:0 16px}
-header{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,#ffffff 0%,#faf8ff 60%,#f4f1ff 100%);border:1px solid var(--line);border-radius:18px;padding:18px 20px;box-shadow:0 10px 40px rgba(93,52,217,.08)}
-h1{margin:0;font-size:26px;font-weight:800}
-.sub{color:var(--muted)}
-.badge{font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #ece9ff;background:#f7f5ff;color:#4a33b6}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 30px rgba(93,52,217,.06);padding:16px;margin-top:14px}
-.controls{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0}
-.input,select{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
-.btn{background:#5d34d9;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
-.btn.secondary{background:#efeafd;color:#4a33b6}
-.btn:disabled{opacity:.6;cursor:not-allowed}
-.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-top:12px}
-@media(max-width:1024px){.kpis{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:640px){.kpis{grid-template-columns:repeat(2,1fr)}}
-.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
-.kpi .label{color:var(--muted);font-size:12px}.kpi .value{font-size:22px;font-weight:800;margin-top:6px}
-table{width:100%;border-collapse:separate;border-spacing:0 8px}
-th,td{padding:12px;background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);text-align:left}
-th:first-child,td:first-child{border-left:1px solid var(--line);border-top-left-radius:10px;border-bottom-left-radius:10px}
-th:last-child,td:last-child{border-right:1px solid var(--line);border-top-right-radius:10px;border-bottom-right-radius:10px}
-th.sortable{user-select:none;cursor:pointer}
-th.sortable:hover{background:#faf8ff}
-.right{text-align:right}
-.small{font-size:12px;color:var(--muted)}
+/**
+ * Verified Electronics — FAST Dialpad Leaderboard (TEST BUILD)
+ * Paths:
+ *   /calls?limit=50[&cursor=…]
+ *   /leaderboard?from=YYYY-MM-DD&to=YYYY-MM-DD[&cap=80][&force=true]
+ *   /                 -> usage help (so root isn’t 404)
+ */
+const DP_BASE = "https://dialpad.com/api/v2";
 
-/* Loading overlay */
-.loading-overlay{position:fixed;inset:0;display:none;place-items:center;background:rgba(245,244,255,.75);backdrop-filter:blur(2px);z-index:1000}
-.loading-overlay.show{display:grid}
-.loading-box{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 22px;background:#fff;border:1px solid #efeafd;border-radius:14px;box-shadow:0 12px 40px rgba(93,52,217,.15)}
-.loader{width:56px;height:56px;border-radius:50%;border:4px solid #e6e2ff;border-top-color:#5d34d9;animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-text{font-weight:700;color:#5d34d9}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <header>
-    <div>
-      <h1>Call Leaderboard</h1>
-      <div class="sub">Per-user call time (mm:ss), dials & outcomes — tuned for speed</div>
-    </div>
-    <span class="badge" id="rangeInfo">This week · last 1 day</span>
-  </header>
+// 🔑 TEST KEY — INSECURE; ROTATE LATER
+const TEST_DIALPAD_API_KEY =
+  "2mC9tWMAaULL4SYSEJkK3z3x9nc2YyBKmWHxDc7tTv8azdYfAfRB6WxaNQf68ea8VS6mbYYdvqZVkcTvqwBfGuek9zFcS7qdMuNB";
 
-  <div class="card">
-    <div class="controls">
-      <label>Range
-        <select id="range" class="input">
-          <option value="today">Today</option>
-          <option value="week" selected>This week</option>
-          <option value="month">This month</option>
-          <option value="custom">Custom…</option>
-        </select>
-      </label>
-      <input id="from" class="input" type="datetime-local" style="display:none">
-      <input id="to" class="input" type="datetime-local" style="display:none">
+const apiKey = (env) => (env && env.DIALPAD_API_KEY) ? env.DIALPAD_API_KEY : TEST_DIALPAD_API_KEY;
 
-      <label>Window
-        <select id="window" class="input" title="How much to fetch right now">
-          <option value="1" selected>Last 1 day</option>
-          <option value="3">Last 3 days</option>
-          <option value="7">Last 7 days</option>
-          <option value="full">Full range</option>
-        </select>
-      </label>
+const cors = () => ({
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+});
+const json = (data, status = 200) =>
+  new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json; charset=utf-8", ...cors() } });
 
-      <label>Sort
-        <select id="sortBy" class="input">
-          <option value="duration" selected>Total Duration</option>
-          <option value="avg">Avg Duration</option>
-          <option value="dials">Dials</option>
-          <option value="answered">Answered</option>
-          <option value="missed">Missed</option>
-          <option value="outbound">Outbound</option>
-          <option value="inbound">Inbound</option>
-        </select>
-      </label>
+const toDate = (n) => { const x = Number(n); if (!x || !isFinite(x)) return null; return new Date(x > 1e12 ? x : x * 1000); };
+const startOfDay = (d) => { d = new Date(d); d.setHours(0,0,0,0); return d; };
+const endOfDay   = (d) => { d = new Date(d); d.setHours(23,59,59,999); return d; };
+const isoDay = (d) => new Date(d).toISOString().slice(0,10);
 
-      <input id="filterEmail" class="input" placeholder="Filter by user (email or name)">
-      <button id="load" class="btn">Load</button>
-      <button id="loadPrevDays" class="btn secondary">Load previous days</button>
-      <span id="status" class="small"></span>
-    </div>
-
-    <div class="kpis">
-      <div class="kpi"><div class="label">Total calls</div><div id="k_total" class="value">–</div></div>
-      <div class="kpi"><div class="label">Inbound</div><div id="k_in" class="value">–</div></div>
-      <div class="kpi"><div class="label">Outbound</div><div id="k_out" class="value">–</div></div>
-      <div class="kpi"><div class="label">Answered</div><div id="k_ans" class="value">–</div></div>
-      <div class="kpi"><div class="label">Missed</div><div id="k_miss" class="value">–</div></div>
-      <div class="kpi"><div class="label">Avg duration</div><div id="k_avg" class="value">–</div></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <strong>Leaderboard</strong>
-    <table id="board">
-      <thead>
-        <tr>
-          <th class="sortable" data-key="user">User</th>
-          <th class="sortable right" data-key="dials">Dials</th>
-          <th class="sortable right" data-key="inbound">Inbound</th>
-          <th class="sortable right" data-key="outbound">Outbound</th>
-          <th class="sortable right" data-key="answered">Answered</th>
-          <th class="sortable right" data-key="missed">Missed</th>
-          <th class="sortable right" data-key="duration">Total (mm:ss)</th>
-          <th class="sortable right" data-key="avg">Avg (mm:ss)</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
-      <button id="more" class="btn">Load more (older pages)</button>
-      <span id="moreInfo" class="small"></span>
-    </div>
-  </div>
-</div>
-
-<!-- Loading overlay -->
-<div id="loading" class="loading-overlay" aria-live="polite" aria-busy="true">
-  <div class="loading-box">
-    <div class="loader" role="progressbar" aria-label="Loading"></div>
-    <div id="loadingMsg" class="loading-text">Loading…</div>
-  </div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-/* ====== CONFIG ====== */
-const WORKER_URL = "https://ve-dialpad-proxy.nick-north.workers.dev/calls";
-const PAGE_LIMIT  = 50;   // Dialpad per-request limit
-const MAX_PAGES   = 300;  // safety cap (~15k calls)
-/* ==================== */
-
-const $ = id => document.getElementById(id);
-const setOverlay = (msg='Loading…') => { $('loadingMsg').textContent = msg; $('loading').classList.add('show'); };
-const setProgress = (msg) => { $('loadingMsg').textContent = msg; };
-const clearOverlay = () => $('loading').classList.remove('show');
-const setInline = (t)=> $('status').textContent = t || '';
-
-const fmtMMSS = (seconds) => {
-  const s = Math.round(Math.max(0, Number(seconds) || 0));
-  const m = Math.floor(s / 60);
-  const r = s % 60;
-  return `${m}:${String(r).padStart(2,'0')}`;
-};
-const toDate = (n) => { const x=Number(n); if(!x||!isFinite(x)) return null; return new Date(x>1e12?x:x*1000); };
-const callTs = (obj) => { const c=obj.call||obj; return c.event_timestamp || c.date_started || c.date_connected || 0; };
-const callDurSec = (c) => {
+function callDurSec(c){
   let d = Number(c.duration);
-  if (isFinite(d) && d>0){ if(d>100000) d/=1000; return d; }
-  const a=Number(c.date_connected||c.date_started), b=Number(c.date_ended||c.date_connected);
-  if(isFinite(a)&&isFinite(b)&&b>a){ const diff=b-a; return diff>1e11?diff/1000:diff; }
+  if (isFinite(d) && d > 0){ if (d > 100000) d/=1000; return d; }
+  const a = Number(c.date_connected || c.date_started);
+  const b = Number(c.date_ended || c.date_connected);
+  if (isFinite(a) && isFinite(b) && b>a){ const diff=b-a; return diff>1e11?diff/1000:diff; }
   return 0;
-};
-
-let cursor=null, collected=[], range={from:null,to:null};
-let sortKey='duration', sortAsc=false;
-let effectiveFrom=null; // window start within range
-
-// Range helpers
-const startOfDay=d=>{d=new Date(d);d.setHours(0,0,0,0);return d};
-const endOfDay=d=>{d=new Date(d);d.setHours(23,59,59,999);return d};
-function calcRange(){
-  const now=new Date(); const mode=$('range').value;
-  if(mode==='today'){ $('rangeInfo').textContent='Today · last '+windowDays()+' day(s)'; return {from:startOfDay(now),to:endOfDay(now)}; }
-  if(mode==='week'){ const dow=now.getDay(),diff=(dow===0?6:dow-1); const from=startOfDay(new Date(now-diff*86400000)); $('rangeInfo').textContent='This week · last '+windowDays()+' day(s)'; return {from,to:endOfDay(now)}; }
-  if(mode==='month'){ $('rangeInfo').textContent='This month · last '+windowDays()+' day(s)'; return {from:new Date(now.getFullYear(),now.getMonth(),1),to:endOfDay(now)}; }
-  $('rangeInfo').textContent='Custom · last '+windowDays()+' day(s)';
-  return {from:new Date($('from').value), to:new Date($('to').value)};
 }
-const windowDays = ()=> $('window').value==='full' ? Infinity : Number($('window').value)||1;
+const callTs = (obj) => { const c = obj.call || obj; return c.event_timestamp || c.date_started || c.date_connected || 0; };
 
-async function fetchPage(next){
-  const u=new URL(WORKER_URL); u.searchParams.set('limit',PAGE_LIMIT); if(next) u.searchParams.set('cursor',next);
-  const r=await fetch(u.toString()); if(!r.ok) throw new Error(`Proxy ${r.status}`); return r.json();
+async function dpPage(env, cursor=null){
+  const u = new URL(DP_BASE + "/call");
+  u.searchParams.set("limit","50");
+  if (cursor) u.searchParams.set("cursor", cursor);
+  const r = await fetch(u.toString(), {
+    headers: { Authorization:`Bearer ${apiKey(env)}`, Accept:"application/json" }
+  });
+  if (!r.ok) throw new Error(`Dialpad ${r.status}`);
+  return r.json();
 }
 
-function inEffectiveWindow(obj){
-  const d = toDate(callTs(obj));
-  return !!d && d >= effectiveFrom && d <= range.to;
-}
-
-function buildLeaderboard(items){
+async function aggregateDay(env, dayISO, pageCap=80, {force=false}={}){
+  const cacheKey = `lb:day:${dayISO}`;
+  if (!force && env && env.LB_CACHE){
+    const cached = await env.LB_CACHE.get(cacheKey, "json");
+    if (cached) return cached;
+  }
+  const from = startOfDay(dayISO), to = endOfDay(dayISO);
+  let cursor=null, pages=0;
   const totals={ dials:0,inbound:0,outbound:0,answered:0,missed:0,sumDur:0 };
   const users=new Map();
-  for(const obj of items){
-    const c=obj.call||obj;
-    const user=(c.target&&(c.target.email||c.target.name))||'Unknown';
-    const dir=(c.direction||'').toLowerCase();
-    const dur=callDurSec(c);
-    totals.dials++; if(dir==='inbound') totals.inbound++; else if(dir==='outbound') totals.outbound++;
-    if(dur>0) totals.answered++; else totals.missed++; totals.sumDur+=dur;
-    if(!users.has(user)) users.set(user,{user,dials:0,inbound:0,outbound:0,answered:0,missed:0,duration:0});
-    const s=users.get(user);
-    s.dials++; if(dir==='inbound') s.inbound++; else if(dir==='outbound') s.outbound++;
-    if(dur>0) s.answered++; else s.missed++; s.duration+=dur;
+
+  while(true){
+    const page = await dpPage(env, cursor);
+    pages++;
+    const items = page.items || [];
+    let crossed=false;
+    for(const obj of items){
+      const c = obj.call || obj;
+      const d = toDate(callTs(obj));
+      if(!d) continue;
+      if(d>to) continue;
+      if(d<from){ crossed=true; continue; }
+
+      const dir=(c.direction||"").toLowerCase();
+      const dur=callDurSec(c);
+      totals.dials++;
+      if(dir==="inbound") totals.inbound++; else if(dir==="outbound") totals.outbound++;
+      if(dur>0) totals.answered++; else totals.missed++;
+      totals.sumDur+=dur;
+
+      const user=(c.target && (c.target.email||c.target.name)) || "Unknown";
+      if(!users.has(user)) users.set(user,{ user,dials:0,inbound:0,outbound:0,answered:0,missed:0,duration:0 });
+      const s=users.get(user);
+      s.dials++; if(dir==="inbound") s.inbound++; else if(dir==="outbound") s.outbound++;
+      if(dur>0) s.answered++; else s.missed++;
+      s.duration+=dur;
+    }
+    if(!page.cursor || crossed || pages>=pageCap) break;
+    cursor=page.cursor;
   }
-  const rows=[...users.values()].map(s=>({...s, avg:s.answered?(s.duration/s.answered):0}));
-  return {totals, rows};
+
+  const rows=[...users.values()].map(s=>({ ...s, avg: s.answered ? (s.duration/s.answered) : 0 }));
+  const result={ day:dayISO, totals, rows, pages, refreshedAt:new Date().toISOString() };
+  if (env && env.LB_CACHE){
+    await env.LB_CACHE.put(cacheKey, JSON.stringify(result), { expirationTtl: 60*60*24*30 });
+  }
+  return result;
 }
 
-function renderKPIs(t){ $('k_total').textContent=t.dials; $('k_in').textContent=t.inbound; $('k_out').textContent=t.outbound; $('k_ans').textContent=t.answered; $('k_miss').textContent=t.missed; $('k_avg').textContent=t.answered?fmtMMSS(t.sumDur/t.answered):'0:00'; }
-
-function renderTable(rows){
-  const tbody=$('board').querySelector('tbody'); tbody.innerHTML='';
-  rows.sort((a,b)=>{ const A=a[sortKey],B=b[sortKey]; const cmp=(typeof A==='string')?A.localeCompare(B):A-B; return sortAsc?cmp:-cmp; });
-  const q=($('filterEmail').value||'').trim().toLowerCase();
-  const data=q?rows.filter(r=>r.user.toLowerCase().includes(q)):rows;
-  for(const r of data){
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${r.user}</td>
-      <td class="right">${r.dials}</td>
-      <td class="right">${r.inbound}</td>
-      <td class="right">${r.outbound}</td>
-      <td class="right">${r.answered}</td>
-      <td class="right">${r.missed}</td>
-      <td class="right">${fmtMMSS(r.duration)}</td>
-      <td class="right">${fmtMMSS(r.avg)}</td>`;
-    tbody.appendChild(tr);
+function mergeAggregates(dayAggs){
+  const totals={ dials:0,inbound:0,outbound:0,answered:0,missed:0,sumDur:0 };
+  const users=new Map(); let pages=0;
+  for(const agg of dayAggs){
+    pages+=agg.pages||0;
+    totals.dials+=agg.totals.dials; totals.inbound+=agg.totals.inbound;
+    totals.outbound+=agg.totals.outbound; totals.answered+=agg.totals.answered;
+    totals.missed+=agg.totals.missed; totals.sumDur+=agg.totals.sumDur;
+    for(const r of agg.rows){
+      if(!users.has(r.user)) users.set(r.user,{ user:r.user,dials:0,inbound:0,outbound:0,answered:0,missed:0,duration:0 });
+      const s=users.get(r.user);
+      s.dials+=r.dials; s.inbound+=r.inbound; s.outbound+=r.outbound;
+      s.answered+=r.answered; s.missed+=r.missed; s.duration+=r.duration;
+    }
   }
+  const rows=[...users.values()].map(s=>({ ...s, avg: s.answered ? (s.duration/s.answered) : 0 }));
+  return { totals, rows, pages };
 }
 
-async function loadInitial(){
-  try{
-    $('more').disabled=true; setInline('');
-    setOverlay('Fetching calls…');
+export default {
+  async fetch(req, env){
+    const url = new URL(req.url);
+    const path = url.pathname.replace(/\/+$/,''); // strip trailing slash
 
-    collected=[]; cursor=null; range=calcRange();
+    if (req.method === "OPTIONS") return new Response(null, { headers: cors() });
+    if (req.method !== "GET")     return json({ error:"Method not allowed" }, 405);
 
-    // Determine effective window start (min(range.from, last N days))
-    const days = windowDays();
-    effectiveFrom = days===Infinity ? range.from : new Date(Math.max(range.from, range.to - (days*86400000 - 1)));
-
-    let pages=0, keep=true;
-    while(keep){
-      const page=await fetchPage(cursor);
-      pages++; setProgress(`Crunching stats… page ${pages}${page.cursor?' (more coming)':''}`);
-      cursor=page.cursor||null;
-
-      // Only keep calls in the effective window (faster)
-      const items=(page.items||[]).filter(inEffectiveWindow);
-      collected=collected.concat(items);
-
-      // Stop when: no cursor OR the page's oldest call is older than the effective window start OR too many pages
-      const allTs=(page.items||[]).map(callTs).map(Number).filter(Boolean);
-      const oldest=allTs.length?Math.min(...allTs):null;
-      const oldestDate=oldest?toDate(oldest):null;
-      keep = !!cursor && pages<MAX_PAGES && (!oldestDate || oldestDate >= effectiveFrom);
+    // Friendly root
+    if (path === "") {
+      return json({
+        ok: true,
+        usage: {
+          calls:        "/calls?limit=50[&cursor=...]",
+          leaderboard:  "/leaderboard?from=YYYY-MM-DD&to=YYYY-MM-DD[&cap=80][&force=true]"
+        },
+        note: "This is the root of ve-dialpad-proxy. Use the endpoints above.",
+      });
     }
 
-    const {totals,rows}=buildLeaderboard(collected);
-    renderKPIs(totals); renderTable(rows);
-    $('more').disabled=!cursor;
-    $('moreInfo').textContent = cursor ? 'More pages available…' : 'All pages loaded for this window';
-  }catch(e){ console.error(e); setInline('Error loading data'); }
-  finally{ clearOverlay(); }
-}
-
-async function loadMorePages(){
-  if(!cursor) return;
-  try{
-    setOverlay('Loading more pages…');
-    const page=await fetchPage(cursor);
-    cursor=page.cursor||null;
-    const items=(page.items||[]).filter(inEffectiveWindow);
-    collected=collected.concat(items);
-    const {totals,rows}=buildLeaderboard(collected);
-    renderKPIs(totals); renderTable(rows);
-    $('more').disabled=!cursor;
-    $('moreInfo').textContent = cursor ? 'More pages available…' : 'All pages loaded for this window';
-  }catch(e){ console.error(e); setInline('Error loading pages'); }
-  finally{ clearOverlay(); }
-}
-
-async function loadPreviousDays(){
-  // Extend the window backwards by the current selection (1/3/7 days)
-  const days = windowDays()===Infinity ? 7 : Number($('window').value)||1; // if already full, extend by 7
-  effectiveFrom = new Date(Math.max(range.from, effectiveFrom - days*86400000));
-  $('rangeInfo').textContent = $('rangeInfo').textContent.replace(/·.*$/, `· last ${Math.ceil((range.to-effectiveFrom)/86400000)} day(s)`);
-
-  // Keep the existing cursor and continue paging until we cross the new effectiveFrom
-  if(!cursor){ setInline('No more pages to fetch'); return; }
-  try{
-    setOverlay('Loading previous days…');
-    let keep=true, pages=0;
-    while(keep){
-      const page=await fetchPage(cursor);
-      pages++; setProgress(`Crunching stats… page ${pages}${page.cursor?' (more coming)':''}`);
-      cursor=page.cursor||null;
-      const items=(page.items||[]).filter(inEffectiveWindow);
-      collected=collected.concat(items);
-      const allTs=(page.items||[]).map(callTs).map(Number).filter(Boolean);
-      const oldest=allTs.length?Math.min(...allTs):null;
-      const oldestDate=oldest?toDate(oldest):null;
-      keep = !!cursor && (!oldestDate || oldestDate >= effectiveFrom) && pages<MAX_PAGES;
-      if(!keep) break;
+    if (path === "/calls"){
+      const u = new URL(DP_BASE + "/call");
+      for (const [k,v] of url.searchParams) u.searchParams.set(k,v);
+      if (!u.searchParams.get("limit")) u.searchParams.set("limit","50");
+      const r = await fetch(u.toString(), {
+        headers: { Authorization:`Bearer ${apiKey(env)}`, Accept:"application/json" }
+      });
+      const body = await r.text();
+      return new Response(body, { status:r.status, headers:{ "content-type":"application/json; charset=utf-8", ...cors() } });
     }
-    const {totals,rows}=buildLeaderboard(collected);
-    renderKPIs(totals); renderTable(rows);
-    $('more').disabled=!cursor;
-    $('moreInfo').textContent = cursor ? 'More pages available…' : 'All pages loaded for this window';
-  }catch(e){ console.error(e); setInline('Error loading previous days'); }
-  finally{ clearOverlay(); }
-}
 
-// Sorting + UI wiring
-$('board').querySelectorAll('th.sortable').forEach(th=>{
-  th.addEventListener('click', ()=>{
-    const key=th.getAttribute('data-key');
-    if(sortKey===key) sortAsc=!sortAsc; else { sortKey=key; sortAsc=(key==='user'); }
-    const {rows}=buildLeaderboard(collected); renderTable(rows);
-  });
-});
-$('range').addEventListener('change', e=>{
-  const c=e.target.value==='custom'; $('from').style.display=c?'':'none'; $('to').style.display=c?'':'none';
-});
-$('window').addEventListener('change', ()=>{ loadInitial(); });
-$('filterEmail').addEventListener('input', ()=>{ const {rows}=buildLeaderboard(collected); renderTable(rows); });
-$('sortBy').addEventListener('change', ()=>{ sortKey=$('sortBy').value; sortAsc=(sortKey==='user'); const {rows}=buildLeaderboard(collected); renderTable(rows); });
-$('load').addEventListener('click', loadInitial);
-$('more').addEventListener('click', loadMorePages);
-$('loadPrevDays').addEventListener('click', loadPreviousDays);
+    if (path === "/leaderboard"){
+      const fromStr = url.searchParams.get("from");
+      const toStr   = url.searchParams.get("to");
+      if(!fromStr || !toStr) return json({ error:"from/to required (YYYY-MM-DD)" }, 400);
 
-// Kick off (fast default: last 1 day inside current range)
-loadInitial();
-});
-</script>
-</body>
-</html>
+      const from = startOfDay(fromStr), to = endOfDay(toStr);
+      if (to < from) return json({ error:"invalid range" }, 400);
+
+      const cap   = Math.max(1, parseInt(url.searchParams.get("cap") || "80", 10));
+      const force = (url.searchParams.get("force") || "false").toLowerCase() === "true";
+
+      const days=[];
+      for(let d=new Date(from); d<=to; d=new Date(d.getTime()+86400000)){
+        days.push(isoDay(d));
+      }
+      const results = await Promise.all(days.map(day => aggregateDay(env, day, cap, { force })));
+      const merged  = mergeAggregates(results);
+      return json({ range:{ from:fromStr, to:toStr }, pages:merged.pages, totals:merged.totals, rows:merged.rows });
+    }
+
+    return json({ error:"Not found" }, 404);
+  },
+
+  // Hourly refresh for TODAY and YESTERDAY (if you add a Cron trigger)
+  async scheduled(event, env){
+    try{
+      const now = new Date();
+      const todayISO = isoDay(now);
+      const yISO     = isoDay(new Date(now.getFullYear(), now.getMonth(), now.getDate()-1));
+      await aggregateDay(env, todayISO, 120, { force:true });
+      await aggregateDay(env, yISO,     120, { force:true });
+    }catch(e){ console.error("scheduled error", e); }
+  }
+};
+
 
 
 
