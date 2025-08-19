@@ -3,41 +3,70 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Call Stats — Verified Electronics</title>
+<title>Call Leaderboard — Verified Electronics</title>
 <style>
-:root{--brand:#673ab7;--ink:#1e1e1e;--muted:#677085;--bg:#f6f7fb;--card:#fff;--line:#e9e9ef}
+:root{
+  --brand:#5d34d9; --ink:#1e1e1e; --muted:#667085; --bg:#f6f7fb;
+  --card:#fff; --line:#e9e9ef; --brand-2:#7e62f5;
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif}
-.wrap{max-width:1160px;margin:24px auto;padding:0 16px}
-header{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 8px 30px rgba(103,58,183,.06)}
-h1{margin:0;font-size:26px;font-weight:800}
-.muted{color:var(--muted)}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 30px rgba(103,58,183,.06);padding:16px}
-.controls{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
-.input,select{border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:#fff}
-.btn{background:#3a2db1;color:#fff;border:none;border-radius:10px;padding:10px 12px;font-weight:700;cursor:pointer}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1200px;margin:24px auto;padding:0 16px}
+
+/* Header */
+header{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:linear-gradient(135deg,#ffffff 0%,#faf8ff 60%,#f4f1ff 100%);
+  border:1px solid var(--line);border-radius:18px;padding:18px 20px;
+  box-shadow:0 10px 40px rgba(93,52,217,.08);
+}
+h1{margin:0;font-size:26px;font-weight:800;letter-spacing:.2px}
+.sub{color:var(--muted)}
+
+/* Controls + cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 30px rgba(93,52,217,.06);padding:16px;margin-top:14px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0}
+.input,select{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+.btn{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
 .btn:disabled{opacity:.6;cursor:not-allowed}
-.tag{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid #e8e8f5;background:#fbfbff;color:#5a46b6}
-.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-top:12px}
 @media(max-width:1024px){.kpis{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:640px){.kpis{grid-template-columns:repeat(2,1fr)}}
 .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
-.kpi .label{color:var(--muted);font-size:12px}.kpi .value{font-size:22px;font-weight:800;margin-top:6px}
-table{width:100%;border-collapse:separate;border-spacing:0 8px;margin-top:14px}
-th,td{text-align:left;padding:10px 12px;background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.kpi .label{color:var(--muted);font-size:12px}
+.kpi .value{font-size:22px;font-weight:800;margin-top:6px}
+
+/* Table */
+table{width:100%;border-collapse:separate;border-spacing:0 8px}
+th,td{padding:12px;background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);text-align:left}
 th:first-child,td:first-child{border-left:1px solid var(--line);border-top-left-radius:10px;border-bottom-left-radius:10px}
 th:last-child,td:last-child{border-right:1px solid var(--line);border-top-right-radius:10px;border-bottom-right-radius:10px}
-tfoot td{background:transparent;border:none;padding:6px 0}
-.small{font-size:12px;color:var(--muted)}
+th.sortable{user-select:none;cursor:pointer}
+th.sortable:hover{background:#faf8ff}
 .right{text-align:right}
-.error{color:#b00020}
+.small{font-size:12px;color:var(--muted)}
+.badge{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid #ece9ff;background:#f7f5ff;color:#4a33b6}
+
+/* Loading overlay */
+.loading-overlay{
+  position:fixed;inset:0;display:none;place-items:center;
+  background:rgba(245,244,255,.75);backdrop-filter:blur(2px);z-index:1000;
+}
+.loading-overlay.show{display:grid}
+.loading-box{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 22px;background:#fff;border:1px solid #efeafd;border-radius:14px;box-shadow:0 12px 40px rgba(93,52,217,.15)}
+.loader{width:56px;height:56px;border-radius:50%;border:4px solid #e6e2ff;border-top-color:var(--brand);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-weight:700;color:var(--brand)}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>Call Stats</h1>
-    <div class="muted">Daily call activity and follow-up insight</div>
+    <div>
+      <h1>Call Leaderboard</h1>
+      <div class="sub">Daily / Weekly / Monthly per-user call time (mm:ss), dials & outcomes</div>
+    </div>
+    <span class="badge" id="rangeInfo">This week</span>
   </header>
 
   <div class="card">
@@ -52,10 +81,22 @@ tfoot td{background:transparent;border:none;padding:6px 0}
       </label>
       <input id="from" class="input" type="datetime-local" style="display:none">
       <input id="to" class="input" type="datetime-local" style="display:none">
-      <input id="userFilter" class="input" placeholder="Filter by user email (optional)">
+
+      <label>Sort
+        <select id="sortBy" class="input">
+          <option value="duration" selected>Total Duration</option>
+          <option value="avg">Avg Duration</option>
+          <option value="dials">Dials</option>
+          <option value="answered">Answered</option>
+          <option value="missed">Missed</option>
+          <option value="outbound">Outbound</option>
+          <option value="inbound">Inbound</option>
+        </select>
+      </label>
+
+      <input id="filterEmail" class="input" placeholder="Filter by user (email or name)">
       <button id="load" class="btn">Load</button>
-      <span id="status" class="tag" style="display:none"></span>
-      <span id="err" class="error"></span>
+      <span id="status" class="small"></span>
     </div>
 
     <div class="kpis">
@@ -66,255 +107,297 @@ tfoot td{background:transparent;border:none;padding:6px 0}
       <div class="kpi"><div class="label">Missed</div><div id="k_miss" class="value">–</div></div>
       <div class="kpi"><div class="label">Avg duration</div><div id="k_avg" class="value">–</div></div>
     </div>
+  </div>
 
-    <div class="card" style="margin-top:14px">
-      <strong>User breakdown</strong>
-      <table id="byUser"><thead>
-        <tr><th>User (target)</th><th>Inbound</th><th>Outbound</th><th>Answered</th><th>Missed</th><th>Total</th><th>Avg dur</th></tr>
-      </thead><tbody></tbody></table>
+  <div class="card">
+    <strong>Leaderboard</strong>
+    <table id="board">
+      <thead>
+        <tr>
+          <th class="sortable" data-key="user">User</th>
+          <th class="sortable right" data-key="dials">Dials</th>
+          <th class="sortable right" data-key="inbound">Inbound</th>
+          <th class="sortable right" data-key="outbound">Outbound</th>
+          <th class="sortable right" data-key="answered">Answered</th>
+          <th class="sortable right" data-key="missed">Missed</th>
+          <th class="sortable right" data-key="duration">Total (mm:ss)</th>
+          <th class="sortable right" data-key="avg">Avg (mm:ss)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
+      <button id="more" class="btn">Load more</button>
+      <span id="moreInfo" class="small"></span>
     </div>
+  </div>
+</div>
 
-    <div class="card" style="margin-top:14px">
-      <strong>Raw calls</strong>
-      <table id="raw">
-        <thead>
-          <tr><th>Time</th><th>User</th><th>Direction</th><th>Number</th><th>State</th><th class="right">Duration</th><th>Recording</th></tr>
-        </thead>
-        <tbody></tbody>
-        <tfoot>
-          <tr>
-            <td colspan="7">
-              <button id="more" class="btn">Load more</button>
-              <span id="moreInfo" class="small"></span>
-            </td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
+<!-- Loading overlay -->
+<div id="loading" class="loading-overlay" aria-live="polite" aria-busy="true">
+  <div class="loading-box">
+    <div class="loader" role="progressbar" aria-label="Loading"></div>
+    <div id="loadingMsg" class="loading-text">Loading…</div>
   </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-// ===== CONFIG =====
-const WORKER_URL = "https://ve-dialpad-proxy.nick-north.workers.dev/calls";
-const PAGE_LIMIT = 50;          // Dialpad max
-const MAX_AUTO_PAGES = 10;      // safety cap
-// ==================
+/* ====== CONFIG ====== */
+const WORKER_URL = "https://ve-dialpad-proxy.nick-north.workers.dev/calls"; // your Worker
+const PAGE_LIMIT  = 50;     // Dialpad max per request
+const MAX_PAGES   = 500;    // safety cap (≈ 25k calls)
+/* ==================== */
 
-const el = id => document.getElementById(id);
-const setStatus = t => { const s=el('status'); s.style.display='inline-block'; s.textContent=t; };
-const clearStatus = () => el('status').style.display='none';
-const setErr = t => el('err').textContent = t || '';
+const $ = id => document.getElementById(id);
+const setOverlay = (msg='Loading…') => { $('loadingMsg').textContent = msg; $('loading').classList.add('show'); };
+const setProgress = (msg) => { $('loadingMsg').textContent = msg; };
+const clearOverlay = () => $('loading').classList.remove('show');
+const setInline = (t)=> $('status').textContent = t || '';
 
-const fmt = s => {
-  const sec = Math.round(Number(s||0));
-  const m = Math.floor(sec/60), r = sec%60;
+const fmtMMSS = (seconds) => {
+  const s = Math.round(Math.max(0, Number(seconds) || 0));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
   return `${m}:${String(r).padStart(2,'0')}`;
 };
-const startOfDay = d => { d=new Date(d); d.setHours(0,0,0,0); return d; };
-const endOfDay = d => { d=new Date(d); d.setHours(23,59,59,999); return d; };
 
-// Convert epoch seconds OR milliseconds to Date
+// Dialpad sometimes returns timestamps in seconds or ms.
+// Make robust to both.
 const toDate = (n) => {
   const x = Number(n);
   if (!x || !isFinite(x)) return null;
   return new Date(x > 1e12 ? x : x * 1000);
 };
 
+// Duration in **seconds** robustly computed.
+function callDurationSec(c){
+  // Prefer a numeric duration if present
+  let d = Number(c.duration);
+  if (isFinite(d) && d > 0) {
+    // If it's accidentally in ms, normalise
+    if (d > 100000) d = d / 1000;
+    return d;
+  }
+  // Fallback: use connected/ended timestamps
+  const start = Number(c.date_connected || c.date_started);
+  const end   = Number(c.date_ended || c.date_connected);
+  if (isFinite(start) && isFinite(end) && end > start) {
+    const diff = end - start;
+    return diff > 1e11 ? diff/1000 : diff; // ms vs sec
+  }
+  return 0;
+}
+
+// Pull a safe timestamp for range comparisons
+const callTs = (obj) => {
+  const c = obj.call || obj;
+  return c.event_timestamp || c.date_started || c.date_connected || 0;
+};
+
+// State
 let cursor = null;
 let collected = [];
 let range = {from:null, to:null};
+let sortKey = 'duration', sortAsc = false;
 
-function calcRange() {
-  const mode = el('range').value;
+// Range helpers
+const startOfDay = d => { d=new Date(d); d.setHours(0,0,0,0); return d; };
+const endOfDay   = d => { d=new Date(d); d.setHours(23,59,59,999); return d; };
+function calcRange(){
   const now = new Date();
-  if (mode === 'today') return { from: startOfDay(now), to: endOfDay(now) };
-  if (mode === 'week') {
-    const day = now.getDay(); const diff = (day===0?6:day-1); // Mon start
-    const from = startOfDay(new Date(now - diff*86400000));
-    return { from, to: endOfDay(now) };
-  }
-  if (mode === 'month') return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: endOfDay(now) };
-  return { from: new Date(el('from').value), to: new Date(el('to').value) };
+  const mode = $('range').value;
+  if (mode === 'today') { $('rangeInfo').textContent = 'Today'; return {from:startOfDay(now), to:endOfDay(now)}; }
+  if (mode === 'week')  { const dow=now.getDay(),diff=(dow===0?6:dow-1); const from=startOfDay(new Date(now - diff*86400000)); $('rangeInfo').textContent='This week'; return {from, to:endOfDay(now)}; }
+  if (mode === 'month') { $('rangeInfo').textContent='This month'; return {from:new Date(now.getFullYear(), now.getMonth(), 1), to:endOfDay(now)}; }
+  $('rangeInfo').textContent='Custom';
+  return {from:new Date($('from').value), to:new Date($('to').value)};
 }
 
-async function fetchPage(nextCursor=null){
-  const url = new URL(WORKER_URL);
-  url.searchParams.set('limit', PAGE_LIMIT);
-  if (nextCursor) url.searchParams.set('cursor', nextCursor);
-  const r = await fetch(url.toString());
-  if(!r.ok) throw new Error('Proxy request failed');
+// Fetch
+async function fetchPage(next){
+  const u = new URL(WORKER_URL);
+  u.searchParams.set('limit', PAGE_LIMIT);
+  if (next) u.searchParams.set('cursor', next);
+  const r = await fetch(u.toString());
+  if (!r.ok) throw new Error(`Proxy ${r.status}`);
   return r.json();
 }
 
-function callTimestamp(callObj){
-  const c = callObj.call || callObj;
-  // Prefer event_timestamp; fallbacks if Dialpad changes fields
-  return c.event_timestamp || c.date_started || c.date_connected || 0;
-}
+// Aggregation
+function buildLeaderboard(items){
+  const totals = { dials:0, inbound:0, outbound:0, answered:0, missed:0, sumDur:0 };
+  const users = new Map(); // key -> stats
 
-function inRange(callObj){
-  const dt = toDate(callTimestamp(callObj));
-  if (!dt) return false;
-  return dt >= range.from && dt <= range.to;
-}
-
-function summarise(items){
-  const totals = {total:0,in:0,out:0,ans:0,miss:0,sumDur:0};
-  const map = new Map(); // user -> stats
   for (const obj of items){
     const c = obj.call || obj;
-    totals.total++;
-    const dir = (c.direction||'').toLowerCase();
-    if (dir==='inbound') totals.in++; else if (dir==='outbound') totals.out++;
-    const dur = Number(c.duration||0);
-    if (dur>0) totals.ans++; else totals.miss++;
+    const user = (c.target && (c.target.email || c.target.name)) || 'Unknown';
+
+    const dir = (c.direction || '').toLowerCase();
+    const dur = callDurationSec(c);
+
+    totals.dials++;
+    if (dir === 'inbound') totals.inbound++; else if (dir === 'outbound') totals.outbound++;
+    if (dur > 0) totals.answered++; else totals.missed++;
     totals.sumDur += dur;
 
-    const user = (c.target && (c.target.email || c.target.name)) || 'Unknown';
-    if (!map.has(user)) map.set(user, {in:0,out:0,ans:0,miss:0,total:0,sumDur:0});
-    const s = map.get(user);
-    s.total++; s.sumDur += dur;
-    if (dir==='inbound') s.in++; else if (dir==='outbound') s.out++;
-    if (dur>0) s.ans++; else s.miss++;
+    if (!users.has(user)) users.set(user, { user, dials:0, inbound:0, outbound:0, answered:0, missed:0, duration:0 });
+    const s = users.get(user);
+    s.dials++;
+    if (dir === 'inbound') s.inbound++; else if (dir === 'outbound') s.outbound++;
+    if (dur > 0) s.answered++; else s.missed++;
+    s.duration += dur; // seconds
   }
-  return { totals, byUser:[...map.entries()] };
+
+  // Convert map → array and compute avg (over answered calls only)
+  const rows = [...users.values()].map(s => ({
+    ...s,
+    avg: s.answered ? (s.duration / s.answered) : 0
+  }));
+
+  return { totals, rows };
 }
 
-function renderKPIs({totals}){
-  el('k_total').textContent = totals.total;
-  el('k_in').textContent = totals.in;
-  el('k_out').textContent = totals.out;
-  el('k_ans').textContent = totals.ans;
-  el('k_miss').textContent = totals.miss;
-  el('k_avg').textContent = totals.total ? fmt(totals.sumDur/totals.total) : '0:00';
+// Render
+function renderKPIs(t){
+  $('k_total').textContent = t.dials;
+  $('k_in').textContent    = t.inbound;
+  $('k_out').textContent   = t.outbound;
+  $('k_ans').textContent   = t.answered;
+  $('k_miss').textContent  = t.missed;
+  $('k_avg').textContent   = t.answered ? fmtMMSS(t.sumDur / t.answered) : '0:00';
 }
 
-function renderByUser(byUser){
-  const tbody = document.querySelector('#byUser tbody');
+function renderTable(rows){
+  const tbody = $('board').querySelector('tbody');
   tbody.innerHTML = '';
-  byUser.sort((a,b)=>b[1].total-a[1].total).forEach(([user,s])=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${user}</td>
-      <td>${s.in}</td><td>${s.out}</td>
-      <td>${s.ans}</td><td>${s.miss}</td>
-      <td>${s.total}</td><td>${fmt(s.sumDur/Math.max(1,s.total))}</td>`;
-    tbody.appendChild(tr);
+  // Sort
+  rows.sort((a,b)=>{
+    const ka = a[sortKey], kb = b[sortKey];
+    const cmp = (typeof ka === 'string') ? ka.localeCompare(kb) : (ka - kb);
+    return sortAsc ? cmp : -cmp;
   });
-}
 
-function renderRows(items, append=false){
-  const tbody = document.querySelector('#raw tbody');
-  if(!append) tbody.innerHTML='';
-  for (const obj of items){
-    const c = obj.call || obj;
-    const dt = toDate(callTimestamp(obj));
-    const when = dt ? dt.toLocaleString() : '';
-    const user = (c.target && (c.target.email || c.target.name)) || '';
-    const num  = c.external_number || c.internal_number || '';
-    const rec = (c.admin_recording_urls && c.admin_recording_urls[0]) || (c.recording_details && c.recording_details[0]?.url) || '';
+  const filter = ($('filterEmail').value || '').trim().toLowerCase();
+  const filtered = filter ? rows.filter(r => r.user.toLowerCase().includes(filter)) : rows;
+
+  for (const r of filtered){
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${when}</td>
-      <td>${user}</td>
-      <td>${(c.direction||'').toLowerCase()}</td>
-      <td>${num}</td>
-      <td>${c.state || ''}</td>
-      <td class="right">${fmt(c.duration||0)}</td>
-      <td>${rec?`<a href="${rec}" target="_blank">link</a>`:''}</td>`;
+    tr.innerHTML = `
+      <td>${r.user}</td>
+      <td class="right">${r.dials}</td>
+      <td class="right">${r.inbound}</td>
+      <td class="right">${r.outbound}</td>
+      <td class="right">${r.answered}</td>
+      <td class="right">${r.missed}</td>
+      <td class="right">${fmtMMSS(r.duration)}</td>
+      <td class="right">${fmtMMSS(r.avg)}</td>`;
     tbody.appendChild(tr);
   }
+}
+
+// Range filter for each page
+function inRange(obj){
+  const d = toDate(callTs(obj));
+  return !!d && d >= range.from && d <= range.to;
 }
 
 async function loadInitial(){
-  try {
-    setErr(''); setStatus('Loading…');
-    collected = []; cursor = null; range = calcRange();
-    const userFilter = el('userFilter').value.trim().toLowerCase();
+  try{
+    $('more').disabled = true;
+    setInline('');
+    setOverlay('Fetching calls…');
 
-    let pages = 0, keepGoing = true;
-    while (keepGoing){
+    collected = [];
+    cursor = null;
+    range = calcRange();
+
+    let pages = 0, keep = true;
+    while (keep) {
       const page = await fetchPage(cursor);
+      pages++;
+      setProgress(`Crunching stats… page ${pages}${page.cursor ? ' (more coming)' : ''}`);
+
       cursor = page.cursor || null;
+      const pageItems = (page.items || []).filter(inRange);
+      collected = collected.concat(pageItems);
 
-      let items = (page.items || []);
-      // Filter to range & user here
-      items = items.filter(inRange);
-      if (userFilter) {
-        items = items.filter(o => {
-          const c = o.call || o;
-          return (c.target?.email || '').toLowerCase().includes(userFilter);
-        });
-      }
-
-      collected = collected.concat(items);
-      renderRows(items, pages>0);
-
-      // Stop if: no cursor OR we've gone past range OR safety cap
-      const allTs = (page.items||[]).map(callTimestamp).map(Number).filter(Boolean);
+      // Stop when cursor ends, we’ve crossed range start, or safety cap
+      const allTs = (page.items||[]).map(callTs).map(Number).filter(Boolean);
       const oldest = allTs.length ? Math.min(...allTs) : null;
       const oldestDate = oldest ? toDate(oldest) : null;
-
-      pages++;
-      keepGoing = !!cursor && pages < MAX_AUTO_PAGES && (!oldestDate || oldestDate >= range.from);
+      keep = !!cursor && pages < MAX_PAGES && (!oldestDate || oldestDate >= range.from);
     }
 
-    const summary = summarise(collected);
-    renderKPIs(summary);
-    renderByUser(summary.byUser);
+    const { totals, rows } = buildLeaderboard(collected);
+    renderKPIs(totals);
+    renderTable(rows);
 
-    el('more').disabled = !cursor;
-    el('moreInfo').textContent = cursor ? 'More available…' : 'All loaded';
-    clearStatus();
+    $('more').disabled = !cursor;
+    $('moreInfo').textContent = cursor ? 'More available…' : 'All loaded';
   } catch (e){
-    setErr(e.message || String(e));
-    clearStatus();
+    setInline('Error loading data');
+    console.error(e);
+  } finally {
+    clearOverlay();
   }
 }
 
 async function loadMore(){
-  if(!cursor) return;
+  if (!cursor) return;
   try{
-    setErr(''); setStatus('Loading more…');
-    const userFilter = el('userFilter').value.trim().toLowerCase();
+    $('more').disabled = true;
+    setOverlay('Loading more…');
+
     const page = await fetchPage(cursor);
     cursor = page.cursor || null;
 
-    let items = (page.items || []).filter(inRange);
-    if (userFilter) {
-      items = items.filter(o => (o.call?.target?.email || o.target?.email || '').toLowerCase().includes(userFilter));
-    }
+    const pageItems = (page.items || []).filter(inRange);
+    collected = collected.concat(pageItems);
 
-    collected = collected.concat(items);
-    renderRows(items, true);
+    const { totals, rows } = buildLeaderboard(collected);
+    renderKPIs(totals);
+    renderTable(rows);
 
-    const summary = summarise(collected);
-    renderKPIs(summary);
-    renderByUser(summary.byUser);
-
-    el('more').disabled = !cursor;
-    el('moreInfo').textContent = cursor ? 'More available…' : 'All loaded';
-    clearStatus();
+    $('more').disabled = !cursor;
+    $('moreInfo').textContent = cursor ? 'More available…' : 'All loaded';
   } catch(e){
-    setErr(e.message || String(e));
-    clearStatus();
+    setInline('Error loading more');
+    console.error(e);
+  } finally {
+    clearOverlay();
   }
 }
 
-// Wire up UI (elements now exist because we’re in DOMContentLoaded)
-el('range').addEventListener('change', e=>{
-  const custom = e.target.value==='custom';
-  el('from').style.display = custom ? '' : 'none';
-  el('to').style.display = custom ? '' : 'none';
+// Sorting
+$('board').querySelectorAll('th.sortable').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.getAttribute('data-key');
+    if (sortKey === key) sortAsc = !sortAsc; else { sortKey = key; sortAsc = (key==='user'); }
+    const { rows } = buildLeaderboard(collected);
+    renderTable(rows);
+  });
 });
-el('load').addEventListener('click', loadInitial);
-el('more').addEventListener('click', loadMore);
 
-// Auto-load on open
+// UI events
+$('range').addEventListener('change', e=>{
+  const c = e.target.value === 'custom';
+  $('from').style.display = c ? '' : 'none';
+  $('to').style.display   = c ? '' : 'none';
+});
+$('filterEmail').addEventListener('input', ()=>{
+  const { rows } = buildLeaderboard(collected);
+  renderTable(rows);
+});
+$('load').addEventListener('click', loadInitial);
+$('more').addEventListener('click', loadMore);
+
+// Kick off
 loadInitial();
-}); // DOMContentLoaded
+});
 </script>
 </body>
 </html>
+
 
 
