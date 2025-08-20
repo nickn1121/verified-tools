@@ -1,372 +1,274 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Call Leaderboard — Verified Electronics</title>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Call Leaderboard</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#f6f8fb;
-    --panel:#ffffff;
-    --panel-border:#e9edf5;
-    --muted:#6e7482;
-    --text:#0f1324;
-    --accent:#5b34ff;
-    --accent-2:#7b60ff;
-    --ring-bg:#eef1f7;
-    --ring-fill:#5b34ff;
-    --shadow:0 10px 26px rgba(15,19,36,.06);
-    --radius:14px;
+    --bg:#f7f7fb;
+    --card:#ffffff;
+    --text:#111827;
+    --muted:#6b7280;
+    --primary:#5b4df2;
+    --ring: rgba(91,77,242,.15);
+    --border:#e5e7eb;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
-    margin:0;
-    background:
-      radial-gradient(1000px 400px at 80% -140px,#eef0ff 0%,#f7f8ff 40%,var(--bg) 80%),
-      linear-gradient(#fbfcff,var(--bg));
-    color:var(--text);
-    font:14px/1.5 Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    margin:0; padding:24px;
+    font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text);
   }
-  .wrap{max-width:1200px;margin:auto;padding:28px 16px 80px}
-  .title{font-size:30px;font-weight:800;letter-spacing:.2px}
-  .sub{color:var(--muted);margin-top:6px}
+  .wrap{max-width:1220px; margin:0 auto;}
+  h1{font-size:28px; margin:0 0 8px; font-weight:800;}
+  .sub{color:var(--muted); margin-bottom:18px}
 
-  .panel{
-    margin-top:18px;background:var(--panel);border:1px solid var(--panel-border);
-    border-radius:18px;box-shadow:var(--shadow);padding:16px
-  }
+  .panel{background:var(--card); border:1px solid var(--border);
+         border-radius:16px; padding:18px 18px 8px; box-shadow:0 2px 8px rgba(0,0,0,0.04);}
 
-  /* toolbar */
-  .toolbar{display:grid;gap:12px;grid-template-columns:140px 170px 1fr auto}
-  .toolbar .row{display:flex;gap:10px;align-items:center}
-  select,input[type="date"],input[type="text"]{
-    background:#fff;border:1px solid #e5e8f2;color:var(--text);
-    border-radius:10px;padding:10px 12px;outline:none;width:100%
+  .controls{display:grid; grid-template-columns: repeat(5, minmax(0,1fr)) 180px 120px; gap:10px; align-items:center;}
+  .controls select, .controls input[type="text"]{
+    width:100%; height:42px; padding:0 12px; border:1px solid var(--border); border-radius:10px; background:#fff; color:var(--text);
+    outline:none; font-size:14px;
   }
-  input::placeholder{color:#9aa1b8}
-  .toggle{display:flex;align-items:center;gap:8px;color:#424b63;font-weight:600}
-  .btn{
-    background:linear-gradient(180deg,var(--accent) 0%,var(--accent-2) 100%);
-    color:#fff;font-weight:800;border:0;border-radius:12px;padding:10px 18px;cursor:pointer;
-    box-shadow:0 12px 24px rgba(91,52,255,.25)
-  }
-  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .switch{display:flex; align-items:center; gap:8px; justify-content:flex-end;}
+  .btn{height:42px; background:var(--primary); color:#fff; border:none; border-radius:12px; font-weight:700; cursor:pointer; padding:0 18px;}
+  .btn:focus{outline:3px solid var(--ring)}
 
-  /* cards */
-  .cards{display:grid;gap:12px;grid-template-columns:repeat(6,minmax(0,1fr));margin-top:14px}
-  .card{background:#fff;border:1px solid #edf0f7;border-radius:14px;padding:12px 12px 16px}
-  .card h4{color:#8a92a6;margin:0 0 6px 0;font-weight:800;letter-spacing:.2px}
-  .card .val{font-size:24px;font-weight:800}
-  .mono{font-variant-numeric:tabular-nums}
-  .muted{color:var(--muted)}
-  .note{margin-top:10px;color:#687094;font-size:13px}
-  .error{color:#d21f3c;font-weight:700}
+  .cards{display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:10px; margin-top:12px;}
+  .card{background:#fff; border:1px solid var(--border); border-radius:14px; padding:14px 16px}
+  .card .label{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em}
+  .card .value{font-size:28px; font-weight:800; margin-top:6px}
 
-  /* table */
-  .table{margin-top:16px;overflow:auto;border-radius:12px;border:1px solid #edf0f7;background:#fff}
-  table{width:100%;border-collapse:collapse}
-  thead th{
-    position:sticky;top:0;background:#fff;z-index:1;font-weight:800;
-    color:#4e5675;font-size:12px;letter-spacing:.3px;text-transform:uppercase;
-    padding:12px;border-bottom:1px solid #edf0f7;text-align:left;white-space:nowrap
-  }
-  tbody td{padding:12px;border-bottom:1px solid #f2f4fb}
-  tbody tr:hover td{background:#fafbff}
-  .num{text-align:right}
+  table{width:100%; border-collapse:collapse; margin-top:14px}
+  th,td{padding:14px 12px; border-top:1px solid var(--border); font-size:14px}
+  th{color:var(--muted); font-weight:700; text-align:left}
+  tbody tr:hover{background:#fafafa}
 
-  /* overlay */
-  .overlay{
-    position:fixed;inset:0;background:rgba(17,19,24,.32);backdrop-filter:blur(2.5px);
-    display:none;align-items:center;justify-content:center;z-index:10
-  }
-  .overlay.show{display:flex}
-  .modal{
-    background:#fff;border:1px solid #e7e9f2;box-shadow:var(--shadow);
-    border-radius:18px;padding:26px 28px;width:420px;text-align:center
-  }
-  .ring{
-    width:90px;height:90px;border-radius:50%;
-    background:
-      conic-gradient(var(--ring-fill) calc(var(--pct)*1%), var(--ring-bg) 0),
-      radial-gradient(farthest-side,#fff 63%,transparent 65% 100%),
-      linear-gradient(var(--ring-bg),var(--ring-bg));
-    margin:0 auto 16px
-  }
-  .big{font-weight:900;font-size:18px}
-  .small{color:#6b739b;margin-top:6px}
+  /* loader */
+  .overlay{position:fixed; inset:0; background:rgba(255,255,255,.68); backdrop-filter:saturate(180%) blur(2px);
+           display:none; align-items:center; justify-content:center; z-index:50}
+  .modal{background:#fff; border:1px solid var(--border); border-radius:16px; padding:24px 28px; box-shadow:0 10px 30px rgba(0,0,0,.10); text-align:center; width:380px}
+  .spinner{width:54px;height:54px;border-radius:50%;border:6px solid #e5e7eb;border-top-color:var(--primary);margin:4px auto 12px; animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .toast{position:fixed; right:18px; bottom:18px; background:#111827; color:#fff; padding:12px 14px; border-radius:10px; display:none; z-index:60}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="title">Call Leaderboard</div>
-    <div class="sub">Per-user call time (mm:ss), dials & outcomes — powered by Dialpad Stats and cached per day for speed.</div>
+<div class="wrap">
+  <h1>Call Leaderboard</h1>
+  <div class="sub">Per-user call time (mm:ss), dials & outcomes — powered by Dialpad Stats and cached per day for speed.</div>
 
-    <div class="panel">
-      <div class="toolbar">
-        <div class="row">
-          <select id="range">
-            <option value="today">Today</option>
-            <option value="yesterday">Yesterday</option>
-            <option value="thisweek" selected>This week</option>
-            <option value="last7">Last 7 days</option>
-            <option value="thismonth">This month</option>
-            <option value="custom">Custom…</option>
-          </select>
-          <span class="muted" style="font-weight:700">Range</span>
-        </div>
+  <div class="panel">
+    <div class="controls">
+      <select id="range">
+        <option value="today">Today</option>
+        <option value="yesterday">Yesterday</option>
+        <option value="thisweek">This week</option>
+        <option value="last7">Last 7 days</option>
+      </select>
 
-        <div class="row" id="customDates" style="display:none">
-          <input type="date" id="fromDate">
-          <input type="date" id="toDate">
-        </div>
+      <select id="metric">
+        <option value="duration">Total Duration</option>
+        <option value="dials">Dials</option>
+        <option value="outbound">Outbound</option>
+        <option value="answered">Answered</option>
+        <option value="missed">Missed</option>
+        <option value="avg">Avg Duration</option>
+      </select>
 
-        <div class="row">
-          <select id="sortBy">
-            <option value="duration">Total Duration</option>
-            <option value="avg">Avg Duration</option>
-            <option value="dials">Dials</option>
-            <option value="answered">Answered</option>
-            <option value="missed">Missed</option>
-            <option value="inbound">Inbound</option>
-            <option value="outbound">Outbound</option>
-          </select>
-          <select id="sortDir">
-            <option value="desc" selected>Desc</option>
-            <option value="asc">Asc</option>
-          </select>
-        </div>
+      <select id="order">
+        <option value="desc">Desc</option>
+        <option value="asc">Asc</option>
+      </select>
 
-        <div class="row">
-          <input type="text" id="filter" placeholder="Filter by user email or name"/>
-        </div>
+      <input id="filter" type="text" placeholder="Filter by user email or name" />
 
-        <div class="row" style="justify-content:flex-end;gap:14px">
-          <label class="toggle"><input type="checkbox" id="force"> Force refresh</label>
-          <button class="btn" id="load">Load</button>
-        </div>
+      <div class="switch">
+        <label><input type="checkbox" id="force" /> Force refresh</label>
       </div>
 
-      <div class="cards">
-        <div class="card"><h4>Total calls</h4><div class="val mono" id="k-dials">—</div></div>
-        <div class="card"><h4>Inbound</h4><div class="val mono" id="k-in">—</div></div>
-        <div class="card"><h4>Outbound</h4><div class="val mono" id="k-out">—</div></div>
-        <div class="card"><h4>Answered</h4><div class="val mono" id="k-ans">—</div></div>
-        <div class="card"><h4>Missed</h4><div class="val mono" id="k-miss">—</div></div>
-        <div class="card"><h4>Avg duration</h4><div class="val mono" id="k-avg">—</div></div>
-      </div>
-
-      <div class="table">
-        <table id="tbl">
-          <thead>
-            <tr>
-              <th>User</th>
-              <th class="num">Dials</th>
-              <th class="num">Inbound</th>
-              <th class="num">Outbound</th>
-              <th class="num">Answered</th>
-              <th class="num">Missed</th>
-              <th class="num">Total (mm:ss)</th>
-              <th class="num">Avg (mm:ss)</th>
-            </tr>
-          </thead>
-          <tbody id="tbody">
-            <tr><td colspan="8" class="muted" style="padding:22px">Click <b>Load</b> to fetch data.</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="note" id="status">Ready.</div>
+      <button class="btn" id="loadBtn">Load</button>
     </div>
-  </div>
 
-  <!-- Loading overlay -->
-  <div class="overlay" id="overlay" aria-hidden="true">
-    <div class="modal">
-      <div class="ring" id="ring" style="--pct:0"></div>
-      <div class="big" id="progressLabel">Preparing…</div>
-      <div class="small" id="progressSub">Dialpad stats will be cached as we go.</div>
+    <div class="cards">
+      <div class="card"><div class="label">Total calls</div><div class="value" id="kTotal">—</div></div>
+      <div class="card"><div class="label">Inbound</div><div class="value" id="kIn">—</div></div>
+      <div class="card"><div class="label">Outbound</div><div class="value" id="kOut">—</div></div>
+      <div class="card"><div class="label">Answered</div><div class="value" id="kAns">—</div></div>
+      <div class="card"><div class="label">Missed</div><div class="value" id="kMiss">—</div></div>
+      <div class="card"><div class="label">Avg duration</div><div class="value" id="kAvg">—</div></div>
     </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Dials</th>
+          <th>Inbound</th>
+          <th>Outbound</th>
+          <th>Answered</th>
+          <th>Missed</th>
+          <th>Total (mm:ss)</th>
+          <th>Avg (mm:ss)</th>
+        </tr>
+      </thead>
+      <tbody id="rows">
+        <tr><td colspan="8" style="color:var(--muted)">Click <b>Load</b> to fetch data.</td></tr>
+      </tbody>
+    </table>
+    <div id="footNote" style="color:var(--muted); font-size:12px; margin-top:10px">Ready.</div>
   </div>
+</div>
+
+<!-- Loader + toast -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="spinner"></div>
+    <div id="overlayText" style="font-weight:700; margin-top:6px">Loading…</div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
 
 <script>
-/* ========= CONFIG ========= */
-const WORKER_BASE = "https://ve-dialpad-proxy.nick-north.workers.dev";
-/* ========================= */
+  // ======= Configure your worker origin here =======
+  const WORKER_BASE = 'https://ve-dialpad-proxy.nick-north.workers.dev';
+  // ================================================
 
-const $ = id => document.getElementById(id);
-const fmtInt = n => Number(n||0).toLocaleString("en-GB");
-const pad2 = n => String(n).padStart(2,"0");
+  const $ = (id) => document.getElementById(id);
+  const rowsEl = $('rows');
 
-function fmtSecMMSS(secs){
-  secs = Math.round(secs||0);
-  const m = Math.floor(secs/60);
-  const s = secs%60;
-  return `${m}:${pad2(s)}`;
-}
+  function showLoader(text){ $('overlayText').textContent = text || 'Loading…'; $('overlay').style.display='flex'; }
+  function hideLoader(){ $('overlay').style.display='none'; }
+  function toast(msg){
+    const el = $('toast'); el.textContent = msg; el.style.display='block';
+    setTimeout(()=> el.style.display='none', 3500);
+  }
+  const fmtMMSS = (sec) => {
+    sec = Math.max(0, Math.round(sec||0));
+    const m = Math.floor(sec/60), s = sec%60;
+    return `${m}:${s.toString().padStart(2,'0')}`;
+  };
 
-function startOfWeek(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setHours(0,0,0,0); x.setDate(x.getDate()-day); return x; }
-function endOfWeek(d){ const s=startOfWeek(d); const e=new Date(s); e.setDate(e.getDate()+6); e.setHours(23,59,59,999); return e; }
-function dayISO(d){ return new Date(d).toISOString().slice(0,10); }
-function daysBetween(from,to){
-  const arr=[]; const a=new Date(from); a.setHours(0,0,0,0);
-  const b=new Date(to); b.setHours(0,0,0,0);
-  for(let d=new Date(a); d<=b; d.setDate(d.getDate()+1)) arr.push(dayISO(d));
-  return arr;
-}
+  function rangeToFromTo(r) {
+    const now = new Date(); // local
+    const toDate = new Date(now); toDate.setHours(0,0,0,0); // we’ll offset inside worker by tz
+    const fromDate = new Date(toDate);
 
-function getRange(){
-  const r = $("range").value;
-  const now = new Date();
-  let f,t;
-  if(r==="today"){ f=t=dayISO(now); }
-  else if(r==="yesterday"){ const y=new Date(now); y.setDate(y.getDate()-1); f=t=dayISO(y); }
-  else if(r==="thisweek"){ f=dayISO(startOfWeek(now)); t=dayISO(endOfWeek(now)); }
-  else if(r==="last7"){ const s=new Date(now); s.setDate(s.getDate()-6); f=dayISO(s); t=dayISO(now); }
-  else if(r==="thismonth"){ const s=new Date(now.getFullYear(), now.getMonth(), 1); const e=new Date(now.getFullYear(), now.getMonth()+1, 0); f=dayISO(s); t=dayISO(e); }
-  else { f=$("fromDate").value; t=$("toDate").value; }
-  return { from:f, to:t };
-}
+    if (r==='today') { /* from today to today */ }
+    else if (r==='yesterday') { fromDate.setDate(fromDate.getDate()-1); toDate.setDate(toDate.getDate()-1); }
+    else if (r==='thisweek') {
+      // Monday as week start
+      const day = fromDate.getDay(); // 0 Sun..6 Sat
+      const diff = (day === 0 ? -6 : 1 - day); // to Monday
+      fromDate.setDate(fromDate.getDate()+diff);
+    } else if (r==='last7') {
+      fromDate.setDate(fromDate.getDate()-6);
+    }
+    const fromISO = fromDate.toISOString().slice(0,10);
+    const toISO   = toDate.toISOString().slice(0,10);
+    return { fromISO, toISO };
+  }
 
-function showCustomDates(){
-  const isCustom = $("range").value === "custom";
-  $("customDates").style.display = isCustom ? "flex" : "none";
-}
+  async function fetchLeaderboard() {
+    const range = $('range').value;
+    const { fromISO, toISO } = rangeToFromTo(range);
+    const cap   = 120;
+    const force = $('force').checked;
+    const tz    = -new Date().getTimezoneOffset(); // minutes EAST of UTC
 
-function mergeAggs(dayAggs){
-  const totals = { dials:0, inbound:0, outbound:0, answered:0, missed:0, sumDur:0 };
-  const map = new Map();
-  for(const d of dayAggs){
-    const t=d.totals||{};
-    totals.dials    += t.dials    || 0;
-    totals.inbound  += t.inbound  || 0;
-    totals.outbound += t.outbound || 0;
-    totals.answered += t.answered || 0;
-    totals.missed   += t.missed   || 0;
-    totals.sumDur   += t.sumDur   || 0;
-    for(const r of (d.rows||[])){
-      if(!map.has(r.user)) map.set(r.user,{user:r.user,dials:0,inbound:0,outbound:0,answered:0,missed:0,duration:0,avg:0});
-      const s = map.get(r.user);
-      s.dials += r.dials||0; s.inbound += r.inbound||0; s.outbound += r.outbound||0;
-      s.answered += r.answered||0; s.missed += r.missed||0; s.duration += r.duration||0;
+    const url = `${WORKER_BASE}/stats-leaderboard?from=${fromISO}&to=${toISO}&cap=${cap}${force?'&force=true':''}&tz=${tz}`;
+
+    showLoader(`Loading ${fromISO} → ${toISO}…`);
+    try {
+      const res = await fetch(url, { cache:'no-store' });
+      if (!res.ok) {
+        const text = await res.text().catch(()=> '');
+        throw new Error(`Worker ${res.status}: ${text || res.statusText}`);
+      }
+      const data = await res.json();
+      hideLoader();
+      render(data);
+    } catch(e) {
+      hideLoader();
+      console.error(e);
+      toast(`Failed to load: ${e.message}`);
     }
   }
-  const rows = [...map.values()].map(s=>({...s, avg: s.answered ? s.duration/s.answered : 0}));
-  return { totals, rows };
-}
 
-function render(merged){
-  // cards
-  $("k-dials").textContent = fmtInt(merged.totals.dials);
-  $("k-in").textContent    = fmtInt(merged.totals.inbound);
-  $("k-out").textContent   = fmtInt(merged.totals.outbound);
-  $("k-ans").textContent   = fmtInt(merged.totals.answered);
-  $("k-miss").textContent  = fmtInt(merged.totals.missed);
-  const avg = merged.totals.answered ? merged.totals.sumDur / merged.totals.answered : 0;
-  $("k-avg").textContent   = fmtSecMMSS(avg);
+  function render(data) {
+    const totals = data.totals || {};
+    const rows = (data.rows || []).slice();
 
-  // sort/filter
-  const by  = $("sortBy").value;
-  const dir = $("sortDir").value;
-  const q   = $("filter").value.trim().toLowerCase();
+    // filter
+    const q = ($('filter').value || '').trim().toLowerCase();
+    const filtered = q ? rows.filter(r => (r.user||'').toLowerCase().includes(q)) : rows;
 
-  let rows = merged.rows.slice();
-  rows = rows.filter(r => !q || (r.user||"").toLowerCase().includes(q));
-  rows.sort((a,b)=>{
-    const ka = by==="duration"?a.duration: by==="avg"?a.avg: a[by];
-    const kb = by==="duration"?b.duration: by==="avg"?b.avg: b[by];
-    return dir==="asc" ? (ka-kb) : (kb-ka);
-  });
+    // sort
+    const by = $('metric').value;  // duration|dials|outbound|answered|missed|avg
+    const order = $('order').value; // asc|desc
+    filtered.sort((a,b) => {
+      const av = by==='duration' ? (a.duration||0) :
+                 by==='avg'      ? (a.avg||0) :
+                                    (a[by]||0);
+      const bv = by==='duration' ? (b.duration||0) :
+                 by==='avg'      ? (b.avg||0) :
+                                    (b[by]||0);
+      return order==='asc' ? av-bv : bv-av;
+    });
 
-  const tbody = $("tbody"); tbody.innerHTML = "";
-  if(!rows.length){
-    const tr=document.createElement("tr");
-    tr.innerHTML = `<td colspan="8" class="muted" style="padding:20px">No matching users.</td>`;
-    tbody.appendChild(tr);
-    return;
-  }
+    // fill cards
+    $('kTotal').textContent = (totals.dials ?? 0);
+    $('kIn').textContent    = (totals.inbound ?? 0);
+    $('kOut').textContent   = (totals.outbound ?? 0);
+    $('kAns').textContent   = (totals.answered ?? 0);
+    $('kMiss').textContent  = (totals.missed ?? 0);
+    const avg = (totals.answered ? (totals.sumDur || 0)/totals.answered : 0);
+    $('kAvg').textContent   = fmtMMSS(avg);
 
-  for(const r of rows){
-    const tr=document.createElement("tr");
-    tr.innerHTML = `
-      <td>${r.user || "Unknown"}</td>
-      <td class="num mono">${fmtInt(r.dials)}</td>
-      <td class="num mono">${fmtInt(r.inbound)}</td>
-      <td class="num mono">${fmtInt(r.outbound)}</td>
-      <td class="num mono">${fmtInt(r.answered)}</td>
-      <td class="num mono">${fmtInt(r.missed)}</td>
-      <td class="num mono">${fmtSecMMSS(r.duration)}</td>
-      <td class="num mono">${fmtSecMMSS(r.avg)}</td>
-    `;
-    tbody.appendChild(tr);
-  }
-}
-
-async function fetchDay(iso, force){
-  const u = new URL(WORKER_BASE + "/stats-leaderboard");
-  u.searchParams.set("from", iso);
-  u.searchParams.set("to",   iso);
-  if (force) u.searchParams.set("force","true");
-  const r = await fetch(u);
-  if(!r.ok) throw new Error(`Leaderboard ${r.status}`);
-  return r.json();
-}
-
-async function loadLeaderboard(){
-  const { from, to } = getRange();
-  if(!from || !to) { alert("Choose a valid date range."); return; }
-
-  const days = daysBetween(from,to);
-  const force = $("force").checked;
-
-  // overlay
-  $("overlay").classList.add("show");
-  const ring  = $("ring");
-  const label = $("progressLabel");
-  const sub   = $("progressSub");
-
-  const parts = [];
-  for(let i=0;i<days.length;i++){
-    const iso = days[i];
-    const pct = Math.round(((i)/days.length)*100);
-    ring.style.setProperty("--pct", pct);
-    label.textContent = `Loading ${iso}`;
-    sub.textContent   = `day ${i+1} of ${days.length}`;
-    try{
-      const d = await fetchDay(iso, force);
-      parts.push(d);
-    }catch(e){
-      $("overlay").classList.remove("show");
-      $("status").innerHTML = `<span class="error">Error: ${e.message || e}</span>`;
+    // rows
+    if (!filtered.length) {
+      rowsEl.innerHTML = `<tr><td colspan="8" style="color:var(--muted)">No results.</td></tr>`;
       return;
     }
+    rowsEl.innerHTML = filtered.map(r => `
+      <tr>
+        <td>${escapeHtml(r.user || '')}</td>
+        <td>${r.dials||0}</td>
+        <td>${r.inbound||0}</td>
+        <td>${r.outbound||0}</td>
+        <td>${r.answered||0}</td>
+        <td>${r.missed||0}</td>
+        <td>${fmtMMSS(r.duration||0)}</td>
+        <td>${fmtMMSS(r.avg||0)}</td>
+      </tr>
+    `).join('');
+
+    const days = dayDiff(data.range?.from, data.range?.to) + 1;
+    $('footNote').textContent = `Loaded ${days} day(s). Cached on the worker for speed.`;
   }
-  ring.style.setProperty("--pct", 100);
-  label.textContent = `Finishing…`;
-  sub.textContent   = `days loaded: ${days.length}`;
 
-  const merged = mergeAggs(parts);
-  render(merged);
-  $("status").textContent = `Loaded ${days.length} day(s). Cached on the worker for speed.`;
+  function dayDiff(a,b){
+    if(!a||!b) return 0;
+    const A = new Date(a+"T00:00:00Z").getTime();
+    const B = new Date(b+"T00:00:00Z").getTime();
+    return Math.round((B-A)/(24*3600*1000));
+  }
+  function escapeHtml(s){ return String(s).replace(/[&<>"]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])) }
 
-  setTimeout(()=> $("overlay").classList.remove("show"), 200);
-}
-
-/* wiring */
-$("range").addEventListener("change", ()=>{ showCustomDates(); });
-$("load").addEventListener("click", loadLeaderboard);
-$("sortBy").addEventListener("change", ()=>{ $("load").click(); });
-$("sortDir").addEventListener("change", ()=>{ $("load").click(); });
-$("filter").addEventListener("input", ()=>{ $("load").click(); });
-showCustomDates();
+  // events
+  $('loadBtn').addEventListener('click', fetchLeaderboard);
+  $('filter').addEventListener('input', ()=> fetchLeaderboard()); // live re-render after fetch
+  // initial
+  fetchLeaderboard();
 </script>
 </body>
 </html>
+
 
 
 
