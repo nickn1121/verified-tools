@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Order Tracker — Verified Electronics</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/relativeTime.js"></script>
+  <script>dayjs.extend(window.dayjs_plugin_relativeTime)</script>
+  <style>
+    html, body { background: #0b0f1a; }
+  </style>
+
+  <!--
+  ==================================================================================================
+  SUPABASE SETUP (run once in SQL editor)
+  ==================================================================================================
+
+  create extension if not exists pgcrypto;
+
+  -- ORDERS
+  create table if not exists public.orders (
+    id uuid primary key default gen_random_uuid(),
+    order_ref text generated always as (left(id::text, 8)) stored,
+    salesperson text not null,
+    customer text not null,
+    part_number text not null,
+    quantity integer not null check (quantity > 0),
+    priority text not null check (priority in ('Low','Normal','High','Critical')) default 'Normal',
+    status text not null check (status in (
+      'New','PO Raised','Ordered','Awaiting Test','At Test House','Awaiting Vendor Dispatch',
+      'In Transit','At Reshipper','With Us','Delivered to Customer','On Hold','Closed','Cancelled'
+    )) default 'New',
+    vendor text,
+    order_date date not null default now(),
+    eta date,
+    tracking text,
+    ship_path jsonb default '[]'::jsonb, -- [{from:'Vendor', to:'Reshipper', method:'DHL', ref:'123'}]
+    notes text,
+    created_by uuid default auth.uid(),
+    created_at timestamptz default now(),
+    updated_at timestamptz default now()
+  );
+
+  -- keep updated_at fresh
+  create or replace function public.set_updated_at() returns trigger language plpgsql as $$
+  begin new.updated_at = now(); return new; end $$;
+  drop trigger if exists t_orders_updated on public.orders;
+  create trigger t_orders_updated before update on public.orders
+  for each row execute function public.set_updated_at();
+
+  create index if not exists idx_orders_salesperson on public.orders (salesperson);
+  create index if not exists idx_orders_status on public.orders (status);
+  create index if not exists idx_orders_priority on public.orders (priority);
+  create index if not exists idx_orders_order_date on public.orders (order_date desc);
+
+  -- EVENTS (audit trail)
+  create table if not exists public.order_events (
+    id bigserial primary key,
+    order_id uuid references public.orders(id) on delete cascade,
+    actor text not null,
+    action text not null,
+    detail text,
+    created_at timestamptz default now()
+  );
+  create index if not exists idx_order_events_order on public.order_events(order_id);
+
+  -- RLS
+  alter table public.orders enable row level security;
+  alter table public.order_events enable row level security;
+
+  -- allow signed-in @verifiedelectronics.com to read/write (tighten later if needed)
+  create policy orders_select_domain on public.orders
+    for select using (auth.role() = 'authenticated' and position('@verifiedelectronics.com' in auth.email()) > 0);
+  create policy orders_insert_domain on public.orders
+    for insert with check (auth.role() = 'authenticated' and position('@verifiedelectronics.com' in auth.email()) > 0);
+  create policy orders_update_domain on public.orders
+    for update using (auth.role() = 'authenticated' and position('@verifiedelectronics.com' in auth.email()) > 0);
+
+  create policy order_events_rw on public.order_events
+    for all using (auth.role() = 'authenticated' and position('@verifiedelectronics.com' in auth.email()) > 0)
+    with check (auth.role() = 'authenticated' and position('@verifiedelectronics.com' in auth.email()) > 0);
+
+  -- Auth: in Supabase → Auth → Providers, enable "Azure" and set callback URL as given by Supabase.
+  -- Restrict tenant/domain to verifiedelectronics.com in Azure App Registration.
+  ==================================================================================================
+  -->
+</head>
+<body class="min-h-screen text-slate-100">
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-3xl font-semibold">Order Tracker</h1>
+        <p class="text-slate-400">Create, track, and update orders. Filter by salesperson. Designed for purchasing updates.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="userEmail" class="text-slate-300 hidden"></span>
+        <button id="signinBtn" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500">Sign in with Microsoft</button>
+        <button id="signoutBtn" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 hidden">Sign out</button>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
+      <div class="md:col-span-2">
+        <input id="searchInput" type="text" placeholder="Search: customer, part number, order ref..." class="w-full rounded-xl bg-slate-800 border border-slate-700 px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500" />
+      </div>
+      <select id="salesFilter" class="rounded-xl bg-slate-800 border border-slate-700 px-3 py-2">
+        <option value="">All salespeople</option>
+      </select>
+      <select id="statusFilter" class="rounded-xl bg-slate-800 border border-slate-700 px-3 py-2">
+        <option value="">All status</option>
+        <option>New</option><option>PO Raised</option><option>Ordered</option>
+        <option>Awaiting Test</option><option>At Test House</option>
+        <option>Awaiting Vendor Dispatch</option><option>In Transit</option>
+        <option>At Reshipper</option><option>With Us</option>
+        <option>Delivered to Customer</option><option>On Hold</option>
+        <option>Closed</option><option>Cancelled</option>
+      </select>
+      <select id="priorityFilter" class="rounded-xl bg-slate-800 border border-slate-700 px-3 py-2">
+        <option value="">All priorities</option>
+        <option>Critical</option><option>High</option><option>Normal</option><option>Low</option>
+      </select>
+      <div class="md:text-right">
+        <button id="addOrderBtn" class="w-full md:w-auto px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500">+ New Order</button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="rounded-2xl overflow-hidden border border-slate-800 shadow">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-900/60">
+          <tr class="text-left text-slate-300">
+            <th class="p-3">Ref</th>
+            <th class="p-3">Sales</th>
+            <th class="p-3">Customer</th>
+            <th class="p-3">Part</th>
+            <th class="p-3">Qty</th>
+            <th class="p-3">Priority</th>
+            <th class="p-3">Status</th>
+            <th class="p-3">Order Date</th>
+            <th class="p-3">ETA</th>
+            <th class="p-3">Age</th>
+            <th class="p-3">Vendor</th>
+            <th class="p-3">Ship Path</th>
+            <th class="p-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="ordersBody" class="divide-y divide-slate-800 bg-slate-950"></tbody>
+      </table>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+      <div class="w-full max-w-2xl rounded-2xl bg-slate-900 border border-slate-700">
+        <div class="flex items-center justify-between p-4 border-b border-slate-800">
+          <h2 id="modalTitle" class="text-xl font-semibold">New Order</h2>
+          <button id="closeModal" class="p-2 rounded-lg hover:bg-slate-800">✕</button>
+        </div>
+        <form id="orderForm" class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input type="hidden" id="orderId" />
+          <div>
+            <label class="text-sm text-slate-400">Salesperson</label>
+            <input id="salesperson" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" placeholder="e.g. Emir" required />
+          </div>
+          <div>
+            <label class="text-sm text-slate-400">Customer</label>
+            <input id="customer" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" required />
+          </div>
+          <div>
+            <label class="text-sm text-slate-400">Part Number</label>
+            <input id="part_number" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" required />
+          </div>
+          <div>
+            <label class="text-sm text-slate-400">Quantity</label>
+            <input id="quantity" type="number" min="1" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" required />
+          </div>
+          <div>
+            <label class="text-sm text-slate-400">Priority</label>
+            <select id="priority" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2">
+              <option>Normal</option><option>High</option><option>Critical</option><option>Low</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm text-slate-400">Status</label>
+            <select id="status" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2">
+              <option>New</option><option>PO Raised</option><option>Ordered</option>
+              <option>Awaiting Test</option><option>At Test House</option>
+              <option>Awaiting Vendor Dispatch</option><option>In Transit</option>
+              <option>At Reshipper</option><option>With Us</option>
+              <option>Delivered to Customer</option><option>On Hold</option>
+              <option>Closed</option><option>Cancelled</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm text-slate-400">Order Date</label>
+            <input id="order_date" type="date" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" />
+          </div>
+          <div>
+            <label class="text-sm text-slate-400">ETA</label>
+            <input id="eta" type="date" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" />
+          </div>
+          <div>
+            <label class="text-sm text-slate-400">Vendor</label>
+            <input id="vendor" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" />
+          </div>
+          <div>
+            <label class="text-sm text-slate-400">Tracking</label>
+            <input id="tracking" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" />
+          </div>
+          <div class="md:col-span-2">
+            <label class="text-sm text-slate-400">Ship Path (each leg as From → To, Method, Ref)</label>
+            <div id="shipLegs" class="space-y-2"></div>
+            <button id="addLegBtn" type="button" class="mt-2 px-3 py-1 rounded-lg bg-slate-800 border border-slate-700">+ Add leg</button>
+          </div>
+          <div class="md:col-span-2">
+            <label class="text-sm text-slate-400">Notes</label>
+            <textarea id="notes" rows="3" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2"></textarea>
+          </div>
+          <div class="md:col-span-2 flex items-center justify-end gap-3">
+            <button type="button" id="cancelBtn" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600">Cancel</button>
+            <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ======================= CONFIG: set these ======================= */
+const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
+const SUPABASE_ANON_KEY = "YOUR-ANON-KEY";
+/* ================================================================ */
+
+const supabase = window.Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true }
+});
+
+// Elements
+const signinBtn = document.getElementById('signinBtn');
+const signoutBtn = document.getElementById('signoutBtn');
+const userEmail  = document.getElementById('userEmail');
+const addOrderBtn = document.getElementById('addOrderBtn');
+const ordersBody = document.getElementById('ordersBody');
+const salesFilter = document.getElementById('salesFilter');
+const statusFilter = document.getElementById('statusFilter');
+const priorityFilter = document.getElementById('priorityFilter');
+const searchInput = document.getElementById('searchInput');
+
+const modal = document.getElementById('modal');
+const closeModal = document.getElementById('closeModal');
+const cancelBtn = document.getElementById('cancelBtn');
+const modalTitle = document.getElementById('modalTitle');
+const orderForm = document.getElementById('orderForm');
+const shipLegs = document.getElementById('shipLegs');
+const addLegBtn = document.getElementById('addLegBtn');
+const F = id => document.getElementById(id);
+
+// Modal helpers
+function openModal(editRow) {
+  modal.classList.remove('hidden');
+  shipLegs.innerHTML = '';
+  if (!editRow) {
+    modalTitle.textContent = 'New Order';
+    orderForm.reset();
+    F('orderId').value = '';
+    addShipLeg();
+    F('order_date').valueAsDate = new Date();
+  } else {
+    modalTitle.textContent = `Edit Order — ${editRow.order_ref}`;
+    F('orderId').value = editRow.id;
+    F('salesperson').value = editRow.salesperson || '';
+    F('customer').value = editRow.customer || '';
+    F('part_number').value = editRow.part_number || '';
+    F('quantity').value = editRow.quantity || 1;
+    F('priority').value = editRow.priority || 'Normal';
+    F('status').value = editRow.status || 'New';
+    F('order_date').value = editRow.order_date || '';
+    F('eta').value = editRow.eta || '';
+    F('vendor').value = editRow.vendor || '';
+    F('tracking').value = editRow.tracking || '';
+    F('notes').value = editRow.notes || '';
+    const legs = Array.isArray(editRow.ship_path) ? editRow.ship_path : [];
+    if (legs.length === 0) addShipLeg();
+    legs.forEach(l => addShipLeg(l.from, l.to, l.method, l.ref));
+  }
+}
+function closeModalFn(){ modal.classList.add('hidden') }
+closeModal.onclick = cancelBtn.onclick = () => closeModalFn();
+
+function addShipLeg(from='', to='', method='', ref='') {
+  const wrap = document.createElement('div');
+  wrap.className = 'grid grid-cols-2 md:grid-cols-4 gap-2';
+  wrap.innerHTML = `
+    <input placeholder="From" value="${from}" class="rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" />
+    <input placeholder="To" value="${to}" class="rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" />
+    <input placeholder="Method (e.g. DHL)" value="${method}" class="rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" />
+    <div class="flex gap-2">
+      <input placeholder="Ref" value="${ref}" class="flex-1 rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" />
+      <button type="button" class="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-500" title="Remove">−</button>
+    </div>`;
+  wrap.querySelector('button').onclick = () => wrap.remove();
+  shipLegs.appendChild(wrap);
+}
+addLegBtn.onclick = () => addShipLeg();
+
+// Auth
+signinBtn.onclick = async () => { await supabase.auth.signInWithOAuth({ provider: 'azure' }); }
+signoutBtn.onclick = async () => { await supabase.auth.signOut(); location.reload(); }
+
+supabase.auth.onAuthStateChange(async (evt) => { renderAuth(); if (evt === 'SIGNED_IN') loadAll(); });
+renderAuth();
+
+async function renderAuth(){
+  const { data: { user } } = await supabase.auth.getUser();
+  const authed = !!user;
+  signinBtn.classList.toggle('hidden', authed);
+  signoutBtn.classList.toggle('hidden', !authed);
+  userEmail.classList.toggle('hidden', !authed);
+  userEmail.textContent = user?.email || '';
+  addOrderBtn.disabled = !authed;
+}
+
+addOrderBtn.onclick = () => openModal();
+
+// Populate sales filter (distinct names)
+async function populateSalesFilter(){
+  const { data, error } = await supabase.from('orders').select('salesperson');
+  if (error) return;
+  const names = [...new Set((data||[]).map(r=>r.salesperson).filter(Boolean))].sort();
+  salesFilter.innerHTML = '<option value="">All salespeople</option>' + names.map(n=>`<option>${n}</option>`).join('');
+}
+
+// Load orders with filters
+async function loadAll(){
+  const search = searchInput.value.trim().toLowerCase();
+  let query = supabase.from('orders').select('*').order('order_date', { ascending: false }).order('priority', { ascending: true });
+  if (salesFilter.value)   query = query.eq('salesperson', salesFilter.value);
+  if (statusFilter.value)  query = query.eq('status', statusFilter.value);
+  if (priorityFilter.value)query = query.eq('priority', priorityFilter.value);
+
+  const { data, error } = await query;
+  if (error) { console.error(error); ordersBody.innerHTML = `<tr><td colspan="13" class="p-4 text-rose-400">${error.message}</td></tr>`; return; }
+  const rows = (data||[]).filter(r => {
+    if (!search) return true;
+    const blob = `${r.order_ref} ${r.customer} ${r.part_number} ${r.salesperson}`.toLowerCase();
+    return blob.includes(search);
+  });
+  renderTable(rows);
+  populateSalesFilter();
+}
+[searchInput, salesFilter, statusFilter, priorityFilter].forEach(el => el.addEventListener('input', loadAll));
+
+function priorityBadge(p){
+  const map = {
+    'Critical': 'bg-rose-600/20 text-rose-300 border border-rose-700/40',
+    'High':     'bg-amber-600/20 text-amber-300 border border-amber-700/40',
+    'Normal':   'bg-emerald-600/20 text-emerald-300 border border-emerald-700/40',
+    'Low':      'bg-slate-600/20 text-slate-300 border border-slate-700/40'
+  };
+  return `<span class="px-2 py-1 rounded-lg text-xs ${map[p]||map['Normal']}">${p}</span>`;
+}
+function statusBadge(s){
+  const on = 'bg-indigo-600/20 text-indigo-300 border border-indigo-700/40';
+  const done = 'bg-slate-700/30 text-slate-300 border border-slate-700/40';
+  const warn = 'bg-amber-600/20 text-amber-300 border border-amber-700/40';
+  const danger = 'bg-rose-600/20 text-rose-300 border border-rose-700/40';
+  const map = { 'Closed': done, 'Cancelled': danger, 'Delivered to Customer': done, 'On Hold': warn };
+  return `<span class="px-2 py-1 rounded-lg text-xs ${map[s]||on}">${s}</span>`;
+}
+
+function renderTable(rows){
+  if (!rows.length){
+    ordersBody.innerHTML = '<tr><td colspan="13" class="p-6 text-center text-slate-400">No orders yet.</td></tr>';
+    return;
+  }
+  ordersBody.innerHTML = rows.map(r => {
+    const age = r.order_date ? dayjs(r.order_date).fromNow(true) : '-';
+    const eta = r.eta || '';
+    const ship = Array.isArray(r.ship_path) ? r.ship_path.map(l=>`${l.from}→${l.to}`).join(' • ') : '';
+    return `<tr class="hover:bg-slate-900">
+      <td class="p-3 font-mono text-slate-300">${r.order_ref}</td>
+      <td class="p-3">${r.salesperson||''}</td>
+      <td class="p-3">${r.customer||''}</td>
+      <td class="p-3">${r.part_number||''}</td>
+      <td class="p-3">${r.quantity||''}</td>
+      <td class="p-3">${priorityBadge(r.priority)}</td>
+      <td class="p-3">${statusBadge(r.status)}</td>
+      <td class="p-3">${r.order_date||''}</td>
+      <td class="p-3">${eta}</td>
+      <td class="p-3">${age}</td>
+      <td class="p-3">${r.vendor||''}</td>
+      <td class="p-3 text-slate-300">${ship}</td>
+      <td class="p-3">
+        <button data-id="${r.id}" class="editBtn px-3 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700">Edit</button>
+      </td>
+    </tr>`
+  }).join('');
+  document.querySelectorAll('.editBtn').forEach(btn => btn.onclick = () => {
+    const row = rows.find(x => x.id === btn.dataset.id);
+    openModal(row);
+  });
+}
+
+orderForm.onsubmit = async (e) => {
+  e.preventDefault();
+  const id = F('orderId').value || null;
+  const legs = [...shipLegs.children].map(w => {
+    const [from,to,method,refWrap] = w.querySelectorAll('input');
+    return { from: from.value.trim(), to: to.value.trim(), method: method.value.trim(), ref: refWrap.value.trim() };
+  }).filter(l => l.from || l.to || l.method || l.ref);
+  const payload = {
+    salesperson: F('salesperson').value.trim(),
+    customer: F('customer').value.trim(),
+    part_number: F('part_number').value.trim(),
+    quantity: Number(F('quantity').value||0),
+    priority: F('priority').value,
+    status: F('status').value,
+    order_date: F('order_date').value || null,
+    eta: F('eta').value || null,
+    vendor: F('vendor').value.trim() || null,
+    tracking: F('tracking').value.trim() || null,
+    ship_path: legs,
+    notes: F('notes').value.trim() || null
+  };
+  let resp;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (id) {
+    resp = await supabase.from('orders').update(payload).eq('id', id).select('*').single();
+    await supabase.from('order_events').insert({ order_id: id, actor: user?.email || 'unknown', action: 'update', detail: JSON.stringify(payload) });
+  } else {
+    resp = await supabase.from('orders').insert(payload).select('*').single();
+    if (!resp.error) await supabase.from('order_events').insert({ order_id: resp.data.id, actor: user?.email || 'unknown', action: 'create', detail: JSON.stringify(payload) });
+  }
+  if (resp.error) { alert(resp.error.message); return; }
+  closeModalFn();
+  await loadAll();
+}
+
+window.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeModalFn(); });
+
+// initial load after auth
+(async ()=>{ const { data: { user } } = await supabase.auth.getUser(); if (user) loadAll(); })();
+</script>
+</body>
+</html>
