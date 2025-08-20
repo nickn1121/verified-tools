@@ -1,117 +1,94 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Order Tracker — Verified Electronics</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/relativeTime.js"></script>
   <script>dayjs.extend(window.dayjs_plugin_relativeTime)</script>
+
   <style>
-    html, body { background: #0b0f1a; }
+    :root{
+      --brand:#673ab7; --ink:#1e1e1e; --muted:#677085;
+      --bg:#f6f7fb; --card:#fff; --line:#e9e9ef;
+      --ok:#0ea773; --warn:#b7791f; --bad:#d1495b; --link:#3a2db1;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font:15px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+    .wrap{max-width:1160px;margin:24px auto;padding:0 16px}
+
+    /* Header (matches your index) */
+    header{
+      display:flex;align-items:center;gap:14px;
+      background:radial-gradient(1200px 260px at 160px -60px, rgba(103,58,183,.18), transparent 60%),linear-gradient(180deg,#fff,#fafaff);
+      border:1px solid var(--line); padding:22px 18px; border-radius:18px; box-shadow:0 4px 24px rgba(0,0,0,.04);
+    }
+    header img{height:40px}
+    h1{font-size:28px;margin:0;font-weight:800;letter-spacing:.2px}
+    .sub{color:var(--muted);margin-top:2px}
+
+    /* Toolbar */
+    .toolbar{display:grid;grid-template-columns:1.6fr .9fr .9fr .9fr auto auto;gap:10px;margin:16px 0}
+    @media (max-width:1100px){ .toolbar{grid-template-columns:1fr 1fr 1fr} }
+    @media (max-width:720px){ .toolbar{grid-template-columns:1fr} }
+    .input,.select{
+      width:100%;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;outline:none;
+    }
+    .input:focus,.select:focus{border-color:#c9c5ef;box-shadow:0 0 0 3px #ebe9ff}
+    .btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
+    .btn:hover{background:#fafafa}
+    .btn-primary{background:#efeafd;border-color:#e3ddfb;color:#3a2db1}
+    .btn-primary:hover{background:#eae4ff}
+    .btn-danger{border-color:#ffd6dc;background:#ffeff1;color:#a63a49}
+    .right{justify-self:end}
+
+    /* Card table */
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 30px rgba(103,58,183,.06),0 1px 0 rgba(0,0,0,.02)}
+    .table{width:100%;border-collapse:separate;border-spacing:0}
+    .table thead th{background:#fbfbfe;color:#3b3f55;font-weight:700;padding:12px;border-bottom:1px solid var(--line);position:sticky;top:0}
+    .table tbody td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+    .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid #e8e8f5;background:#fbfbff;color:#5a46b6}
+    .b-pri{background:#f2f9f5;border-color:#d8efe3;color:#0d7e5b}
+    .b-warn{background:#fff7ec;border-color:#ffe3bf;color:#8a6119}
+    .b-bad{background:#ffeff1;border-color:#ffd3d9;color:#a63a49}
+    .b-dim{background:#f3f4f6;border-color:#e5e7eb;color:#6b7280}
+
+    /* Modal */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:16px}
+    .modal{width:min(920px,100%);background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 70px rgba(0,0,0,.18)}
+    .modal header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);border-radius:16px 16px 0 0}
+    .modal .body{padding:16px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:720px){ .grid{grid-template-columns:1fr} }
+    .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+    .hint{font-size:12px;color:var(--muted)}
   </style>
-
-  <!--
-  ==================================================================================================
-  SUPABASE SETUP (run once in SQL editor)
-  ==================================================================================================
-
-  create extension if not exists pgcrypto;
-
-  -- ORDERS
-  create table if not exists public.orders (
-    id uuid primary key default gen_random_uuid(),
-    order_ref text generated always as (left(id::text, 8)) stored,
-    salesperson text not null,
-    customer text not null,
-    part_number text not null,
-    quantity integer not null check (quantity > 0),
-    priority text not null check (priority in ('Low','Normal','High','Critical')) default 'Normal',
-    status text not null check (status in (
-      'New','PO Raised','Ordered','Awaiting Test','At Test House','Awaiting Vendor Dispatch',
-      'In Transit','At Reshipper','With Us','Delivered to Customer','On Hold','Closed','Cancelled'
-    )) default 'New',
-    vendor text,
-    order_date date not null default now(),
-    eta date,
-    tracking text,
-    ship_path jsonb default '[]'::jsonb, -- [{from:'Vendor', to:'Reshipper', method:'DHL', ref:'123'}]
-    notes text,
-    created_by uuid default auth.uid(),
-    created_at timestamptz default now(),
-    updated_at timestamptz default now()
-  );
-
-  -- keep updated_at fresh
-  create or replace function public.set_updated_at() returns trigger language plpgsql as $$
-  begin new.updated_at = now(); return new; end $$;
-  drop trigger if exists t_orders_updated on public.orders;
-  create trigger t_orders_updated before update on public.orders
-  for each row execute function public.set_updated_at();
-
-  create index if not exists idx_orders_salesperson on public.orders (salesperson);
-  create index if not exists idx_orders_status on public.orders (status);
-  create index if not exists idx_orders_priority on public.orders (priority);
-  create index if not exists idx_orders_order_date on public.orders (order_date desc);
-
-  -- EVENTS (audit trail)
-  create table if not exists public.order_events (
-    id bigserial primary key,
-    order_id uuid references public.orders(id) on delete cascade,
-    actor text not null,
-    action text not null,
-    detail text,
-    created_at timestamptz default now()
-  );
-  create index if not exists idx_order_events_order on public.order_events(order_id);
-
-  -- RLS
-  alter table public.orders enable row level security;
-  alter table public.order_events enable row level security;
-
-  -- allow signed-in @verifiedelectronics.com to read/write (tighten later if needed)
-  create policy orders_select_domain on public.orders
-    for select using (auth.role() = 'authenticated' and position('@verifiedelectronics.com' in auth.email()) > 0);
-  create policy orders_insert_domain on public.orders
-    for insert with check (auth.role() = 'authenticated' and position('@verifiedelectronics.com' in auth.email()) > 0);
-  create policy orders_update_domain on public.orders
-    for update using (auth.role() = 'authenticated' and position('@verifiedelectronics.com' in auth.email()) > 0);
-
-  create policy order_events_rw on public.order_events
-    for all using (auth.role() = 'authenticated' and position('@verifiedelectronics.com' in auth.email()) > 0)
-    with check (auth.role() = 'authenticated' and position('@verifiedelectronics.com' in auth.email()) > 0);
-
-  -- Auth: in Supabase → Auth → Providers, enable "Azure" and set callback URL as given by Supabase.
-  -- Restrict tenant/domain to verifiedelectronics.com in Azure App Registration.
-  ==================================================================================================
-  -->
 </head>
-<body class="min-h-screen text-slate-100">
-  <div class="max-w-7xl mx-auto px-4 py-8">
+<body>
+  <div class="wrap">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
-      <div>
-        <h1 class="text-3xl font-semibold">Order Tracker</h1>
-        <p class="text-slate-400">Create, track, and update orders. Filter by salesperson. Designed for purchasing updates.</p>
+    <header>
+      <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified Electronics">
+      <div style="flex:1">
+        <h1>Order Tracker</h1>
+        <div class="sub">Create & track orders with priority, ETA, multi-leg shipping; filter by salesperson.</div>
       </div>
-      <div class="flex items-center gap-3">
-        <span id="userEmail" class="text-slate-300 hidden"></span>
-        <button id="signinBtn" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500">Sign in with Microsoft</button>
-        <button id="signoutBtn" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 hidden">Sign out</button>
-      </div>
-    </div>
+    </header>
 
-    <!-- Controls -->
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
-      <div class="md:col-span-2">
-        <input id="searchInput" type="text" placeholder="Search: customer, part number, order ref..." class="w-full rounded-xl bg-slate-800 border border-slate-700 px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500" />
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <input id="searchInput" class="input" placeholder="Search: customer, part number, order ref..." />
+      <div style="display:flex;gap:8px">
+        <select id="salesFilter" class="select" title="Filter by salesperson">
+          <option value="">All salespeople</option>
+        </select>
+        <button id="manageSalesBtn" class="btn" title="Manage salespeople">⋯</button>
       </div>
-      <select id="salesFilter" class="rounded-xl bg-slate-800 border border-slate-700 px-3 py-2">
-        <option value="">All salespeople</option>
-      </select>
-      <select id="statusFilter" class="rounded-xl bg-slate-800 border border-slate-700 px-3 py-2">
+      <select id="statusFilter" class="select">
         <option value="">All status</option>
         <option>New</option><option>PO Raised</option><option>Ordered</option>
         <option>Awaiting Test</option><option>At Test House</option>
@@ -120,73 +97,59 @@
         <option>Delivered to Customer</option><option>On Hold</option>
         <option>Closed</option><option>Cancelled</option>
       </select>
-      <select id="priorityFilter" class="rounded-xl bg-slate-800 border border-slate-700 px-3 py-2">
+      <select id="priorityFilter" class="select">
         <option value="">All priorities</option>
         <option>Critical</option><option>High</option><option>Normal</option><option>Low</option>
       </select>
-      <div class="md:text-right">
-        <button id="addOrderBtn" class="w-full md:w-auto px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500">+ New Order</button>
-      </div>
+      <button id="addOrderBtn" class="btn btn-primary right">+ New Order</button>
+      <button id="exportBtn" class="btn right">Export CSV</button>
     </div>
 
     <!-- Table -->
-    <div class="rounded-2xl overflow-hidden border border-slate-800 shadow">
-      <table class="w-full text-sm">
-        <thead class="bg-slate-900/60">
-          <tr class="text-left text-slate-300">
-            <th class="p-3">Ref</th>
-            <th class="p-3">Sales</th>
-            <th class="p-3">Customer</th>
-            <th class="p-3">Part</th>
-            <th class="p-3">Qty</th>
-            <th class="p-3">Priority</th>
-            <th class="p-3">Status</th>
-            <th class="p-3">Order Date</th>
-            <th class="p-3">ETA</th>
-            <th class="p-3">Age</th>
-            <th class="p-3">Vendor</th>
-            <th class="p-3">Ship Path</th>
-            <th class="p-3">Actions</th>
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Ref</th><th>Sales</th><th>Customer</th><th>Part</th><th>Qty</th>
+            <th>Priority</th><th>Status</th><th>Order Date</th><th>ETA</th><th>Age</th>
+            <th>Vendor</th><th>Incoterm</th><th>Terms</th><th>Pay</th>
+            <th>Ship</th><th>Invoice</th><th>Due</th>
+            <th>Ship Path</th><th>Files</th><th>Actions</th>
           </tr>
         </thead>
-        <tbody id="ordersBody" class="divide-y divide-slate-800 bg-slate-950"></tbody>
+        <tbody id="ordersBody"></tbody>
       </table>
     </div>
+  </div>
 
-    <!-- Modal -->
-    <div id="modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
-      <div class="w-full max-w-2xl rounded-2xl bg-slate-900 border border-slate-700">
-        <div class="flex items-center justify-between p-4 border-b border-slate-800">
-          <h2 id="modalTitle" class="text-xl font-semibold">New Order</h2>
-          <button id="closeModal" class="p-2 rounded-lg hover:bg-slate-800">✕</button>
-        </div>
-        <form id="orderForm" class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+  <!-- Order Modal -->
+  <div id="overlay" class="overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <header>
+        <h3 id="modalTitle" style="margin:0;font-size:18px;font-weight:800">New Order</h3>
+        <button id="closeModal" class="btn">✕</button>
+      </header>
+      <div class="body">
+        <form id="orderForm" class="grid">
           <input type="hidden" id="orderId" />
           <div>
-            <label class="text-sm text-slate-400">Salesperson</label>
-            <input id="salesperson" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" placeholder="e.g. Emir" required />
+            <label>Salesperson</label>
+            <select id="salesperson" class="select"></select>
+            <div class="hint">Use “⋯” to manage this list.</div>
           </div>
+          <div><label>Customer</label><input id="customer" class="input" required></div>
+          <div><label>Part Number</label><input id="part_number" class="input" required></div>
+          <div><label>Quantity</label><input id="quantity" type="number" min="1" class="input" required></div>
+
           <div>
-            <label class="text-sm text-slate-400">Customer</label>
-            <input id="customer" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" required />
-          </div>
-          <div>
-            <label class="text-sm text-slate-400">Part Number</label>
-            <input id="part_number" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" required />
-          </div>
-          <div>
-            <label class="text-sm text-slate-400">Quantity</label>
-            <input id="quantity" type="number" min="1" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" required />
-          </div>
-          <div>
-            <label class="text-sm text-slate-400">Priority</label>
-            <select id="priority" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2">
+            <label>Priority</label>
+            <select id="priority" class="select">
               <option>Normal</option><option>High</option><option>Critical</option><option>Low</option>
             </select>
           </div>
           <div>
-            <label class="text-sm text-slate-400">Status</label>
-            <select id="status" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2">
+            <label>Status</label>
+            <select id="status" class="select">
               <option>New</option><option>PO Raised</option><option>Ordered</option>
               <option>Awaiting Test</option><option>At Test House</option>
               <option>Awaiting Vendor Dispatch</option><option>In Transit</option>
@@ -195,255 +158,421 @@
               <option>Closed</option><option>Cancelled</option>
             </select>
           </div>
+
+          <div><label>Order Date</label><input id="order_date" type="date" class="input"></div>
+          <div><label>ETA</label><input id="eta" type="date" class="input"></div>
+          <div><label>Vendor</label><input id="vendor" class="input"></div>
+          <div><label>Tracking</label><input id="tracking" class="input"></div>
+
           <div>
-            <label class="text-sm text-slate-400">Order Date</label>
-            <input id="order_date" type="date" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" />
+            <label>Incoterm</label>
+            <select id="incoterm" class="select">
+              <option>DAP</option><option>EXW</option><option>FCA</option><option>FOB</option>
+              <option>CFR</option><option>CIF</option><option>CPT</option><option>CIP</option>
+              <option>DPU</option><option>DDP</option>
+            </select>
           </div>
           <div>
-            <label class="text-sm text-slate-400">ETA</label>
-            <input id="eta" type="date" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" />
+            <label>Payment Terms</label>
+            <select id="payment_terms" class="select">
+              <option>Net 5</option><option>Net 10</option><option>Net 15</option><option>Net 20</option>
+              <option selected>Net 30</option>
+              <option>Net 40</option><option>Net 50</option><option>Net 60</option><option>Net 90</option>
+            </select>
           </div>
           <div>
-            <label class="text-sm text-slate-400">Vendor</label>
-            <input id="vendor" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" />
+            <label>Payment Method</label>
+            <select id="payment_method" class="select">
+              <option selected>Bank Transfer</option>
+              <option>Credit Card</option>
+              <option>PayPal</option>
+              <option>Other</option>
+            </select>
           </div>
           <div>
-            <label class="text-sm text-slate-400">Tracking</label>
-            <input id="tracking" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" />
+            <label>Ship Date</label>
+            <input id="ship_date" type="date" class="input">
+            <div class="hint" id="invoice_hint">Invoice Date = Ship Date</div>
           </div>
-          <div class="md:col-span-2">
-            <label class="text-sm text-slate-400">Ship Path (each leg as From → To, Method, Ref)</label>
-            <div id="shipLegs" class="space-y-2"></div>
-            <button id="addLegBtn" type="button" class="mt-2 px-3 py-1 rounded-lg bg-slate-800 border border-slate-700">+ Add leg</button>
+
+          <div style="grid-column:1/-1" id="duePreview" class="hint"></div>
+
+          <div style="grid-column:1/-1">
+            <label>Ship Path (each leg as From → To, Method, Ref)</label>
+            <div id="shipLegs"></div>
+            <div style="margin-top:8px"><button type="button" id="addLegBtn" class="btn">+ Add leg</button></div>
           </div>
-          <div class="md:col-span-2">
-            <label class="text-sm text-slate-400">Notes</label>
-            <textarea id="notes" rows="3" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2"></textarea>
+
+          <div style="grid-column:1/-1">
+            <label>Attachments</label>
+            <div class="grid">
+              <div>
+                <div class="hint" style="margin-bottom:6px">Customer PO (for open orders)</div>
+                <input id="file_po" type="file" accept="application/pdf" class="input">
+                <div id="po_note" class="hint" style="margin-top:6px"></div>
+              </div>
+              <div>
+                <div class="hint" style="margin-bottom:6px">Test Report (for closed orders)</div>
+                <input id="file_test" type="file" accept="application/pdf" class="input">
+                <div id="test_note" class="hint" style="margin-top:6px"></div>
+              </div>
+            </div>
           </div>
-          <div class="md:col-span-2 flex items-center justify-end gap-3">
-            <button type="button" id="cancelBtn" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600">Cancel</button>
-            <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500">Save</button>
-          </div>
+
+          <div style="grid-column:1/-1"><label>Notes</label><textarea id="notes" rows="3" class="input"></textarea></div>
         </form>
+        <div class="actions">
+          <button id="deleteBtn" class="btn btn-danger" style="display:none">Delete</button>
+          <span style="flex:1"></span>
+          <button id="cancelBtn" class="btn">Cancel</button>
+          <button id="saveBtn" class="btn btn-primary">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Salespeople Modal -->
+  <div id="salesOverlay" class="overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="salesTitle">
+      <header>
+        <h3 id="salesTitle" style="margin:0;font-size:18px;font-weight:800">Manage Salespeople</h3>
+        <button id="closeSales" class="btn">✕</button>
+      </header>
+      <div class="body">
+        <div class="hint" style="margin-bottom:10px">Add/remove names. Changes apply to filter and the order form.</div>
+        <div id="salesList"></div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <input id="newSalesName" class="input" placeholder="Add name (e.g. Alice S)">
+          <button id="addSalesNameBtn" class="btn btn-primary">Add</button>
+        </div>
       </div>
     </div>
   </div>
 
 <script>
-/* ======================= CONFIG: set these ======================= */
-const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR-ANON-KEY";
-/* ================================================================ */
+/* ======= Local storage keys ======= */
+const LS_ORDERS = 've.orders';
+const LS_SALES  = 've.salespeople';
 
-const supabase = window.Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true }
+/* ======= Defaults ======= */
+const DEFAULT_SALES = ["Nick N","Dan C","Emir B","Nick K","Jake B"];
+
+/* ======= Helpers ======= */
+const $ = id => document.getElementById(id);
+const uuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
+  const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8); return v.toString(16);
+});
+const shortRef = id => id.replace(/-/g,'').slice(0,8).toUpperCase();
+const safeName = s => (s||'').replace(/[^a-z0-9._-]+/gi,'_');
+
+const TERM_DAYS = { "Net 5":5,"Net 10":10,"Net 15":15,"Net 20":20,"Net 30":30,"Net 40":40,"Net 50":50,"Net 60":60,"Net 90":90 };
+function addDays(dateStr, days){
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + (days||0));
+  return d.toISOString().slice(0,10);
+}
+
+/* ======= Salespeople store ======= */
+function getSalespeople(){
+  try{ const v = JSON.parse(localStorage.getItem(LS_SALES)||'[]'); if (Array.isArray(v) && v.length) return v; }catch{}
+  localStorage.setItem(LS_SALES, JSON.stringify(DEFAULT_SALES));
+  return [...DEFAULT_SALES];
+}
+function setSalespeople(arr){ localStorage.setItem(LS_SALES, JSON.stringify(arr)); refreshSalesControls(); }
+
+/* ======= Orders store (local) ======= */
+function getOrders(){
+  try{ const v = JSON.parse(localStorage.getItem(LS_ORDERS)||'[]'); return Array.isArray(v)?v:[]; }catch{ return []; }
+}
+function setOrders(arr){ localStorage.setItem(LS_ORDERS, JSON.stringify(arr)); }
+
+/* ======= UI wiring ======= */
+const salesFilter = $('salesFilter'), statusFilter=$('statusFilter'), priorityFilter=$('priorityFilter'), searchInput=$('searchInput');
+const ordersBody = $('ordersBody');
+
+function refreshSalesControls(){
+  const list = getSalespeople();
+  // filter
+  salesFilter.innerHTML = '<option value="">All salespeople</option>' + list.map(n=>`<option>${n}</option>`).join('');
+  // form
+  $('salesperson').innerHTML = list.map(n=>`<option>${n}</option>`).join('');
+}
+
+function openOrderModal(row){
+  $('overlay').style.display = 'flex';
+  $('modalTitle').textContent = row ? `Edit Order — ${shortRef(row.id)}` : 'New Order';
+  $('deleteBtn').style.display = row ? 'inline-block' : 'none';
+
+  // reset
+  $('orderForm').reset();
+  $('orderId').value = row ? row.id : '';
+  $('shipLegs').innerHTML = '';
+  addShipLeg();
+
+  // defaults
+  $('order_date').valueAsDate = new Date();
+  $('incoterm').value = 'DAP';
+  $('payment_terms').value = 'Net 30';
+  $('payment_method').value = 'Bank Transfer';
+  updateDuePreview(); // show initial hint
+
+  // clear file notes
+  $('po_note').textContent = '';
+  $('test_note').textContent = '';
+
+  if (row){
+    $('salesperson').value = row.salesperson||getSalespeople()[0];
+    $('customer').value = row.customer||'';
+    $('part_number').value = row.part_number||'';
+    $('quantity').value = row.quantity||1;
+    $('priority').value = row.priority||'Normal';
+    $('status').value = row.status||'New';
+    $('order_date').value = row.order_date||'';
+    $('eta').value = row.eta||'';
+    $('vendor').value = row.vendor||'';
+    $('tracking').value = row.tracking||'';
+    $('incoterm').value = row.incoterm || 'DAP';
+    $('payment_terms').value = row.payment_terms || 'Net 30';
+    $('payment_method').value = row.payment_method || 'Bank Transfer';
+    $('ship_date').value = row.ship_date || '';
+    updateDuePreview();
+
+    $('notes').value = row.notes||'';
+    $('shipLegs').innerHTML = '';
+    const legs = Array.isArray(row.ship_path)?row.ship_path:[];
+    if (legs.length===0) addShipLeg(); else legs.forEach(l=>addShipLeg(l.from,l.to,l.method,l.ref));
+    if (row.files?.po) $('po_note').textContent = `Existing file: ${row.files.po}`;
+    if (row.files?.test_report) $('test_note').textContent = `Existing file: ${row.files.test_report}`;
+  }
+}
+function closeOrderModal(){ $('overlay').style.display='none'; }
+
+function addShipLeg(from='',to='',method='',ref=''){
+  const wrap = document.createElement('div');
+  wrap.className = 'grid';
+  wrap.innerHTML = `
+    <input class="input" placeholder="From" value="${from||''}">
+    <input class="input" placeholder="To" value="${to||''}">
+    <input class="input" placeholder="Method (e.g. DHL)" value="${method||''}">
+    <div style="display:flex;gap:8px">
+      <input class="input" placeholder="Ref" value="${ref||''}">
+      <button type="button" class="btn" aria-label="Remove">−</button>
+    </div>
+  `;
+  wrap.querySelector('button').onclick = ()=>wrap.remove();
+  $('shipLegs').appendChild(wrap);
+}
+
+/* ======= Live due date preview ======= */
+function updateDuePreview(){
+  const ship = $('ship_date').value;
+  const terms = $('payment_terms').value;
+  const inv = ship || '';
+  const due = ship ? addDays(ship, TERM_DAYS[terms]||0) : '';
+  const text = `Invoice Date: ${inv || '—'}  •  Payment Terms: ${terms}  •  Due: ${due || '—'}`;
+  $('duePreview').textContent = text;
+}
+['change','input'].forEach(evt=>{
+  $('ship_date').addEventListener(evt, updateDuePreview);
+  $('payment_terms').addEventListener(evt, updateDuePreview);
 });
 
-// Elements
-const signinBtn = document.getElementById('signinBtn');
-const signoutBtn = document.getElementById('signoutBtn');
-const userEmail  = document.getElementById('userEmail');
-const addOrderBtn = document.getElementById('addOrderBtn');
-const ordersBody = document.getElementById('ordersBody');
-const salesFilter = document.getElementById('salesFilter');
-const statusFilter = document.getElementById('statusFilter');
-const priorityFilter = document.getElementById('priorityFilter');
-const searchInput = document.getElementById('searchInput');
-
-const modal = document.getElementById('modal');
-const closeModal = document.getElementById('closeModal');
-const cancelBtn = document.getElementById('cancelBtn');
-const modalTitle = document.getElementById('modalTitle');
-const orderForm = document.getElementById('orderForm');
-const shipLegs = document.getElementById('shipLegs');
-const addLegBtn = document.getElementById('addLegBtn');
-const F = id => document.getElementById(id);
-
-// Modal helpers
-function openModal(editRow) {
-  modal.classList.remove('hidden');
-  shipLegs.innerHTML = '';
-  if (!editRow) {
-    modalTitle.textContent = 'New Order';
-    orderForm.reset();
-    F('orderId').value = '';
-    addShipLeg();
-    F('order_date').valueAsDate = new Date();
-  } else {
-    modalTitle.textContent = `Edit Order — ${editRow.order_ref}`;
-    F('orderId').value = editRow.id;
-    F('salesperson').value = editRow.salesperson || '';
-    F('customer').value = editRow.customer || '';
-    F('part_number').value = editRow.part_number || '';
-    F('quantity').value = editRow.quantity || 1;
-    F('priority').value = editRow.priority || 'Normal';
-    F('status').value = editRow.status || 'New';
-    F('order_date').value = editRow.order_date || '';
-    F('eta').value = editRow.eta || '';
-    F('vendor').value = editRow.vendor || '';
-    F('tracking').value = editRow.tracking || '';
-    F('notes').value = editRow.notes || '';
-    const legs = Array.isArray(editRow.ship_path) ? editRow.ship_path : [];
-    if (legs.length === 0) addShipLeg();
-    legs.forEach(l => addShipLeg(l.from, l.to, l.method, l.ref));
-  }
+/* ======= Render table ======= */
+function badgePriority(p){
+  const cls = p==='Critical'?'b-bad':p==='High'?'b-warn':p==='Low'?'b-dim':'b-pri';
+  return `<span class="badge ${cls}">${p}</span>`;
 }
-function closeModalFn(){ modal.classList.add('hidden') }
-closeModal.onclick = cancelBtn.onclick = () => closeModalFn();
-
-function addShipLeg(from='', to='', method='', ref='') {
-  const wrap = document.createElement('div');
-  wrap.className = 'grid grid-cols-2 md:grid-cols-4 gap-2';
-  wrap.innerHTML = `
-    <input placeholder="From" value="${from}" class="rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" />
-    <input placeholder="To" value="${to}" class="rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" />
-    <input placeholder="Method (e.g. DHL)" value="${method}" class="rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" />
-    <div class="flex gap-2">
-      <input placeholder="Ref" value="${ref}" class="flex-1 rounded-xl bg-slate-800 border border-slate-700 px-3 py-2" />
-      <button type="button" class="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-500" title="Remove">−</button>
-    </div>`;
-  wrap.querySelector('button').onclick = () => wrap.remove();
-  shipLegs.appendChild(wrap);
+function badgeStatus(s){
+  const done = ['Closed','Delivered to Customer','Cancelled'];
+  const warn = ['On Hold','Awaiting Vendor Dispatch','Awaiting Test','At Test House'];
+  const cls = done.includes(s)?'b-dim':warn.includes(s)?'b-warn':'b-pri';
+  return `<span class="badge ${cls}">${s}</span>`;
 }
-addLegBtn.onclick = () => addShipLeg();
+function shipText(legs){ return (Array.isArray(legs)?legs:[]).map(l=>`${l.from||'?'}→${l.to||'?'}`).join(' • '); }
 
-// Auth
-signinBtn.onclick = async () => { await supabase.auth.signInWithOAuth({ provider: 'azure' }); }
-signoutBtn.onclick = async () => { await supabase.auth.signOut(); location.reload(); }
+function loadAndRender(){
+  const data = getOrders()
+    .sort((a,b)=> (b.order_date||'').localeCompare(a.order_date||'') || (a.priority||'').localeCompare(b.priority||'') );
 
-supabase.auth.onAuthStateChange(async (evt) => { renderAuth(); if (evt === 'SIGNED_IN') loadAll(); });
-renderAuth();
-
-async function renderAuth(){
-  const { data: { user } } = await supabase.auth.getUser();
-  const authed = !!user;
-  signinBtn.classList.toggle('hidden', authed);
-  signoutBtn.classList.toggle('hidden', !authed);
-  userEmail.classList.toggle('hidden', !authed);
-  userEmail.textContent = user?.email || '';
-  addOrderBtn.disabled = !authed;
-}
-
-addOrderBtn.onclick = () => openModal();
-
-// Populate sales filter (distinct names)
-async function populateSalesFilter(){
-  const { data, error } = await supabase.from('orders').select('salesperson');
-  if (error) return;
-  const names = [...new Set((data||[]).map(r=>r.salesperson).filter(Boolean))].sort();
-  salesFilter.innerHTML = '<option value="">All salespeople</option>' + names.map(n=>`<option>${n}</option>`).join('');
-}
-
-// Load orders with filters
-async function loadAll(){
-  const search = searchInput.value.trim().toLowerCase();
-  let query = supabase.from('orders').select('*').order('order_date', { ascending: false }).order('priority', { ascending: true });
-  if (salesFilter.value)   query = query.eq('salesperson', salesFilter.value);
-  if (statusFilter.value)  query = query.eq('status', statusFilter.value);
-  if (priorityFilter.value)query = query.eq('priority', priorityFilter.value);
-
-  const { data, error } = await query;
-  if (error) { console.error(error); ordersBody.innerHTML = `<tr><td colspan="13" class="p-4 text-rose-400">${error.message}</td></tr>`; return; }
-  const rows = (data||[]).filter(r => {
+  const search = (searchInput.value||'').toLowerCase();
+  const rows = data.filter(r=>{
+    if (salesFilter.value && r.salesperson!==salesFilter.value) return false;
+    if (statusFilter.value && r.status!==statusFilter.value) return false;
+    if (priorityFilter.value && r.priority!==priorityFilter.value) return false;
     if (!search) return true;
-    const blob = `${r.order_ref} ${r.customer} ${r.part_number} ${r.salesperson}`.toLowerCase();
+    const blob = `${shortRef(r.id)} ${r.customer} ${r.part_number} ${r.salesperson}`.toLowerCase();
     return blob.includes(search);
   });
-  renderTable(rows);
-  populateSalesFilter();
-}
-[searchInput, salesFilter, statusFilter, priorityFilter].forEach(el => el.addEventListener('input', loadAll));
 
-function priorityBadge(p){
-  const map = {
-    'Critical': 'bg-rose-600/20 text-rose-300 border border-rose-700/40',
-    'High':     'bg-amber-600/20 text-amber-300 border border-amber-700/40',
-    'Normal':   'bg-emerald-600/20 text-emerald-300 border border-emerald-700/40',
-    'Low':      'bg-slate-600/20 text-slate-300 border border-slate-700/40'
-  };
-  return `<span class="px-2 py-1 rounded-lg text-xs ${map[p]||map['Normal']}">${p}</span>`;
-}
-function statusBadge(s){
-  const on = 'bg-indigo-600/20 text-indigo-300 border border-indigo-700/40';
-  const done = 'bg-slate-700/30 text-slate-300 border border-slate-700/40';
-  const warn = 'bg-amber-600/20 text-amber-300 border border-amber-700/40';
-  const danger = 'bg-rose-600/20 text-rose-300 border border-rose-700/40';
-  const map = { 'Closed': done, 'Cancelled': danger, 'Delivered to Customer': done, 'On Hold': warn };
-  return `<span class="px-2 py-1 rounded-lg text-xs ${map[s]||on}">${s}</span>`;
-}
-
-function renderTable(rows){
   if (!rows.length){
-    ordersBody.innerHTML = '<tr><td colspan="13" class="p-6 text-center text-slate-400">No orders yet.</td></tr>';
+    ordersBody.innerHTML = `<tr><td colspan="20" style="padding:16px;color:var(--muted);text-align:center">No orders yet.</td></tr>`;
     return;
   }
-  ordersBody.innerHTML = rows.map(r => {
+
+  ordersBody.innerHTML = rows.map(r=>{
     const age = r.order_date ? dayjs(r.order_date).fromNow(true) : '-';
-    const eta = r.eta || '';
-    const ship = Array.isArray(r.ship_path) ? r.ship_path.map(l=>`${l.from}→${l.to}`).join(' • ') : '';
-    return `<tr class="hover:bg-slate-900">
-      <td class="p-3 font-mono text-slate-300">${r.order_ref}</td>
-      <td class="p-3">${r.salesperson||''}</td>
-      <td class="p-3">${r.customer||''}</td>
-      <td class="p-3">${r.part_number||''}</td>
-      <td class="p-3">${r.quantity||''}</td>
-      <td class="p-3">${priorityBadge(r.priority)}</td>
-      <td class="p-3">${statusBadge(r.status)}</td>
-      <td class="p-3">${r.order_date||''}</td>
-      <td class="p-3">${eta}</td>
-      <td class="p-3">${age}</td>
-      <td class="p-3">${r.vendor||''}</td>
-      <td class="p-3 text-slate-300">${ship}</td>
-      <td class="p-3">
-        <button data-id="${r.id}" class="editBtn px-3 py-1 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700">Edit</button>
-      </td>
-    </tr>`
+    const files = r.files||{};
+    const filesTxt = [files.po?'PO':'' , files.test_report?'Report':''].filter(Boolean).join(' · ');
+    const ship = r.ship_date || '';
+    const invoice = ship || '';
+    const due = ship ? addDays(ship, TERM_DAYS[r.payment_terms||'Net 30']||0) : '';
+    return `<tr>
+      <td class="mono">${shortRef(r.id)}</td>
+      <td>${r.salesperson||''}</td>
+      <td>${r.customer||''}</td>
+      <td>${r.part_number||''}</td>
+      <td>${r.quantity||''}</td>
+      <td>${badgePriority(r.priority||'Normal')}</td>
+      <td>${badgeStatus(r.status||'New')}</td>
+      <td>${r.order_date||''}</td>
+      <td>${r.eta||''}</td>
+      <td>${age}</td>
+      <td>${r.vendor||''}</td>
+      <td>${r.incoterm||''}</td>
+      <td>${r.payment_terms||''}</td>
+      <td>${r.payment_method||''}</td>
+      <td>${ship}</td>
+      <td>${invoice}</td>
+      <td>${due}</td>
+      <td>${shipText(r.ship_path)}</td>
+      <td>${filesTxt}</td>
+      <td><button class="btn" data-edit="${r.id}">Edit</button></td>
+    </tr>`;
   }).join('');
-  document.querySelectorAll('.editBtn').forEach(btn => btn.onclick = () => {
-    const row = rows.find(x => x.id === btn.dataset.id);
-    openModal(row);
+
+  // wire edit
+  [...ordersBody.querySelectorAll('[data-edit]')].forEach(b=>{
+    b.onclick = ()=>{
+      const row = getOrders().find(x=>x.id===b.dataset.edit);
+      openOrderModal(row);
+    };
   });
 }
 
-orderForm.onsubmit = async (e) => {
+/* ======= Save / Delete ======= */
+$('saveBtn').onclick = (e)=>{
   e.preventDefault();
-  const id = F('orderId').value || null;
-  const legs = [...shipLegs.children].map(w => {
-    const [from,to,method,refWrap] = w.querySelectorAll('input');
-    return { from: from.value.trim(), to: to.value.trim(), method: method.value.trim(), ref: refWrap.value.trim() };
-  }).filter(l => l.from || l.to || l.method || l.ref);
-  const payload = {
-    salesperson: F('salesperson').value.trim(),
-    customer: F('customer').value.trim(),
-    part_number: F('part_number').value.trim(),
-    quantity: Number(F('quantity').value||0),
-    priority: F('priority').value,
-    status: F('status').value,
-    order_date: F('order_date').value || null,
-    eta: F('eta').value || null,
-    vendor: F('vendor').value.trim() || null,
-    tracking: F('tracking').value.trim() || null,
+  const id = $('orderId').value || uuid();
+
+  const legs = [...$('shipLegs').children].map(w=>{
+    const [from,to,method,ref] = w.querySelectorAll('input');
+    return { from:from.value.trim(), to:to.value.trim(), method:method.value.trim(), ref:ref.value.trim() };
+  }).filter(l=>l.from||l.to||l.method||l.ref);
+
+  const filesObj = {};
+  const fpo = $('file_po').files[0];     if (fpo) filesObj.po = safeName(fpo.name) + ' (pending upload)';
+  const ftest = $('file_test').files[0]; if (ftest) filesObj.test_report = safeName(ftest.name) + ' (pending upload)';
+
+  const rec = {
+    id,
+    salesperson: $('salesperson').value,
+    customer: $('customer').value.trim(),
+    part_number: $('part_number').value.trim(),
+    quantity: Number($('quantity').value||0),
+    priority: $('priority').value,
+    status: $('status').value,
+    order_date: $('order_date').value || null,
+    eta: $('eta').value || null,
+    vendor: $('vendor').value.trim() || null,
+    tracking: $('tracking').value.trim() || null,
+    incoterm: $('incoterm').value,
+    payment_terms: $('payment_terms').value,
+    payment_method: $('payment_method').value,
+    ship_date: $('ship_date').value || null,                // invoice date = ship date
     ship_path: legs,
-    notes: F('notes').value.trim() || null
+    files: filesObj,
+    notes: $('notes').value.trim() || null
   };
-  let resp;
-  const { data: { user } } = await supabase.auth.getUser();
-  if (id) {
-    resp = await supabase.from('orders').update(payload).eq('id', id).select('*').single();
-    await supabase.from('order_events').insert({ order_id: id, actor: user?.email || 'unknown', action: 'update', detail: JSON.stringify(payload) });
-  } else {
-    resp = await supabase.from('orders').insert(payload).select('*').single();
-    if (!resp.error) await supabase.from('order_events').insert({ order_id: resp.data.id, actor: user?.email || 'unknown', action: 'create', detail: JSON.stringify(payload) });
-  }
-  if (resp.error) { alert(resp.error.message); return; }
-  closeModalFn();
-  await loadAll();
+
+  const all = getOrders();
+  const i = all.findIndex(x=>x.id===id);
+  if (i>=0) all[i]=rec; else all.unshift(rec);
+  setOrders(all);
+
+  closeOrderModal();
+  loadAndRender();
+};
+
+$('deleteBtn').onclick = ()=>{
+  const id = $('orderId').value;
+  if (!id) return;
+  if (!confirm('Delete this order?')) return;
+  const all = getOrders().filter(x=>x.id!==id);
+  setOrders(all);
+  closeOrderModal();
+  loadAndRender();
+};
+
+/* ======= Manage Salespeople ======= */
+function renderSalesMgr(){
+  const box = $('salesList'); box.innerHTML='';
+  getSalespeople().forEach((name, idx)=>{
+    const row = document.createElement('div');
+    row.style = 'display:flex;gap:8px;align-items:center;margin:6px 0';
+    row.innerHTML = `
+      <input class="input" value="${name}">
+      <button class="btn btn-danger">Remove</button>
+    `;
+    const input = row.querySelector('input');
+    row.querySelector('button').onclick = ()=>{
+      const list = getSalespeople().filter((_,i)=>i!==idx);
+      setSalespeople(list);
+      renderSalesMgr();
+    };
+    input.onchange = ()=>{
+      const list = getSalespeople(); list[idx] = input.value.trim() || list[idx];
+      setSalespeople(list);
+      renderSalesMgr();
+    };
+    box.appendChild(row);
+  });
 }
+$('manageSalesBtn').onclick = ()=>{ $('salesOverlay').style.display='flex'; renderSalesMgr(); };
+$('closeSales').onclick = ()=>{ $('salesOverlay').style.display='none'; };
+$('addSalesNameBtn').onclick = ()=>{
+  const v = $('newSalesName').value.trim(); if (!v) return;
+  const list = getSalespeople(); if (!list.includes(v)) list.push(v);
+  $('newSalesName').value = '';
+  setSalespeople(list);
+  renderSalesMgr();
+};
 
-window.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeModalFn(); });
+/* ======= Export CSV ======= */
+$('exportBtn').onclick = ()=>{
+  const rows = getOrders();
+  const headers = ["Ref","Salesperson","Customer","Part Number","Quantity","Priority","Status","Order Date","ETA","Vendor","Tracking","Incoterm","Payment Terms","Payment Method","Ship Date","Invoice Date","Due Date","Ship Path","Notes"];
+  const csvRows = [headers.join(',')];
+  rows.forEach(r=>{
+    const ship = r.ship_date || '';
+    const invoice = ship || '';
+    const due = ship ? addDays(ship, TERM_DAYS[r.payment_terms||'Net 30']||0) : '';
+    const shipPath = shipText(r.ship_path);
+    const vals = [shortRef(r.id), r.salesperson, r.customer, r.part_number, r.quantity, r.priority, r.status, r.order_date||'', r.eta||'', r.vendor||'', r.tracking||'', r.incoterm||'', r.payment_terms||'', r.payment_method||'', ship, invoice, due, shipPath, (r.notes||'').replace(/[\n\r]+/g,' ')];
+    csvRows.push(vals.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(','));
+  });
+  const blob = new Blob([csvRows.join('\n')], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'orders.csv'; a.click();
+  URL.revokeObjectURL(url);
+};
 
-// initial load after auth
-(async ()=>{ const { data: { user } } = await supabase.auth.getUser(); if (user) loadAll(); })();
+/* ======= Wire up ======= */
+['input','change'].forEach(evt=>{
+  $('searchInput').addEventListener(evt, loadAndRender);
+  $('salesFilter').addEventListener(evt, loadAndRender);
+  $('statusFilter').addEventListener(evt, loadAndRender);
+  $('priorityFilter').addEventListener(evt, loadAndRender);
+});
+$('addOrderBtn').onclick = ()=>openOrderModal();
+$('addLegBtn').onclick = ()=>addShipLeg();
+$('cancelBtn').onclick = closeOrderModal;
+$('closeModal').onclick = closeOrderModal;
+
+/* ======= Init ======= */
+refreshSalesControls();
+loadAndRender();
 </script>
 </body>
 </html>
+
