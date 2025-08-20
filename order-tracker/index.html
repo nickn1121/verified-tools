@@ -14,13 +14,14 @@
       --brand:#673ab7; --ink:#1e1e1e; --muted:#677085;
       --bg:#f6f7fb; --card:#fff; --line:#e9e9ef;
       --ok:#0ea773; --warn:#b7791f; --bad:#d1495b; --link:#3a2db1;
+      --pill:#efeafd; --pill-b:#e3ddfb;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0;font:15px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
     .wrap{max-width:1160px;margin:24px auto;padding:0 16px}
 
-    /* Header (matches your index) */
+    /* Header */
     header{
       display:flex;align-items:center;gap:14px;
       background:radial-gradient(1200px 260px at 160px -60px, rgba(103,58,183,.18), transparent 60%),linear-gradient(180deg,#fff,#fafaff);
@@ -40,7 +41,7 @@
     .input:focus,.select:focus{border-color:#c9c5ef;box-shadow:0 0 0 3px #ebe9ff}
     .btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
     .btn:hover{background:#fafafa}
-    .btn-primary{background:#efeafd;border-color:#e3ddfb;color:#3a2db1}
+    .btn-primary{background:var(--pill);border-color:var(--pill-b);color:#3a2db1}
     .btn-primary:hover{background:#eae4ff}
     .btn-danger{border-color:#ffd6dc;background:#ffeff1;color:#a63a49}
     .right{justify-self:end}
@@ -57,15 +58,24 @@
     .b-bad{background:#ffeff1;border-color:#ffd3d9;color:#a63a49}
     .b-dim{background:#f3f4f6;border-color:#e5e7eb;color:#6b7280}
 
-    /* Modal */
+    /* Modal (scroll-safe) */
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:16px}
-    .modal{width:min(920px,100%);background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 70px rgba(0,0,0,.18)}
-    .modal header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);border-radius:16px 16px 0 0}
-    .modal .body{padding:16px}
+    .modal{width:min(980px,100%);max-height:92vh;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 70px rgba(0,0,0,.18);display:flex;flex-direction:column}
+    .modal header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);border-radius:16px 16px 0 0;background:linear-gradient(180deg,#fff,#fbf9ff)}
+    .modal .body{padding:16px;overflow:auto}
+    .modal .footer{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;background:#fff;border-radius:0 0 16px 16px}
+
+    /* Section cards inside modal */
+    .section{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px;background:#fff}
+    .section h4{margin:0 0 10px;font-size:13px;letter-spacing:.4px;font-weight:800;color:#382e8c}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     @media (max-width:720px){ .grid{grid-template-columns:1fr} }
-    .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+    .inline-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
     .hint{font-size:12px;color:var(--muted)}
+
+    /* Tiny "other" input */
+    .other-wrap{display:none}
+    .other-wrap input{margin-top:6px}
   </style>
 </head>
 <body>
@@ -129,111 +139,138 @@
         <h3 id="modalTitle" style="margin:0;font-size:18px;font-weight:800">New Order</h3>
         <button id="closeModal" class="btn">✕</button>
       </header>
+
       <div class="body">
-        <form id="orderForm" class="grid">
-          <input type="hidden" id="orderId" />
-          <div>
-            <label>Salesperson</label>
-            <select id="salesperson" class="select"></select>
-            <div class="hint">Use “⋯” to manage this list.</div>
-          </div>
-          <div><label>Customer</label><input id="customer" class="input" required></div>
-          <div><label>Part Number</label><input id="part_number" class="input" required></div>
-          <div><label>Quantity</label><input id="quantity" type="number" min="1" class="input" required></div>
+        <!-- SALES SECTION -->
+        <div class="section">
+          <h4>SALES — what Sales enters</h4>
+          <div class="grid">
+            <div>
+              <label>Salesperson</label>
+              <select id="salesperson" class="select"></select>
+              <div class="hint">Use “⋯” to manage this list.</div>
+            </div>
+            <div><label>Customer</label><input id="customer" class="input" required></div>
 
-          <div>
-            <label>Priority</label>
-            <select id="priority" class="select">
-              <option>Normal</option><option>High</option><option>Critical</option><option>Low</option>
-            </select>
-          </div>
-          <div>
-            <label>Status</label>
-            <select id="status" class="select">
-              <option>New</option><option>PO Raised</option><option>Ordered</option>
-              <option>Awaiting Test</option><option>At Test House</option>
-              <option>Awaiting Vendor Dispatch</option><option>In Transit</option>
-              <option>At Reshipper</option><option>With Us</option>
-              <option>Delivered to Customer</option><option>On Hold</option>
-              <option>Closed</option><option>Cancelled</option>
-            </select>
-          </div>
+            <div><label>Part Number</label><input id="part_number" class="input" required></div>
+            <div><label>Quantity</label><input id="quantity" type="number" min="1" class="input" required></div>
 
-          <div><label>Order Date</label><input id="order_date" type="date" class="input"></div>
-          <div><label>ETA</label><input id="eta" type="date" class="input"></div>
-          <div><label>Vendor</label><input id="vendor" class="input"></div>
-          <div><label>Tracking</label><input id="tracking" class="input"></div>
+            <div>
+              <label>Priority</label>
+              <select id="priority" class="select">
+                <option>Normal</option><option>High</option><option>Critical</option><option>Low</option>
+              </select>
+            </div>
 
-          <div>
-            <label>Incoterm</label>
-            <select id="incoterm" class="select">
-              <option>DAP</option><option>EXW</option><option>FCA</option><option>FOB</option>
-              <option>CFR</option><option>CIF</option><option>CPT</option><option>CIP</option>
-              <option>DPU</option><option>DDP</option>
-            </select>
-          </div>
-          <div>
-            <label>Payment Terms</label>
-            <select id="payment_terms" class="select">
-              <option>Net 5</option><option>Net 10</option><option>Net 15</option><option>Net 20</option>
-              <option selected>Net 30</option>
-              <option>Net 40</option><option>Net 50</option><option>Net 60</option><option>Net 90</option>
-            </select>
-          </div>
-          <div>
-            <label>Payment Method</label>
-            <select id="payment_method" class="select">
-              <option selected>Bank Transfer</option>
-              <option>Credit Card</option>
-              <option>PayPal</option>
-              <option>Other</option>
-            </select>
-          </div>
-          <div>
-            <label>Ship Date</label>
-            <input id="ship_date" type="date" class="input">
-            <div class="hint" id="invoice_hint">Invoice Date = Ship Date</div>
-          </div>
+            <div>
+              <label>Status</label>
+              <select id="status" class="select">
+                <option>New</option><option>PO Raised</option><option>Ordered</option>
+                <option>Awaiting Test</option><option>At Test House</option>
+                <option>Awaiting Vendor Dispatch</option><option>In Transit</option>
+                <option>At Reshipper</option><option>With Us</option>
+                <option>Delivered to Customer</option><option>On Hold</option>
+                <option>Closed</option><option>Cancelled</option>
+                <option value="__other">Other…</option>
+              </select>
+              <div id="status_other" class="other-wrap"><input class="input" placeholder="Enter custom status"></div>
+            </div>
 
-          <div style="grid-column:1/-1" id="duePreview" class="hint"></div>
+            <div><label>Order Date</label><input id="order_date" type="date" class="input"></div>
+            <div><label>ETA</label><input id="eta" type="date" class="input"></div>
 
-          <div style="grid-column:1/-1">
-            <label>Ship Path (each leg as From → To, Method, Ref)</label>
-            <div id="shipLegs"></div>
-            <div style="margin-top:8px"><button type="button" id="addLegBtn" class="btn">+ Add leg</button></div>
-          </div>
+            <div>
+              <label>Incoterm</label>
+              <select id="incoterm" class="select">
+                <option>DAP</option><option>EXW</option><option>FCA</option><option>FOB</option>
+                <option>CFR</option><option>CIF</option><option>CPT</option><option>CIP</option>
+                <option>DPU</option><option>DDP</option>
+                <option value="__other">Other…</option>
+              </select>
+              <div id="incoterm_other" class="other-wrap"><input class="input" placeholder="Enter custom incoterm"></div>
+            </div>
 
-          <div style="grid-column:1/-1">
-            <label>Attachments</label>
-            <div class="grid">
-              <div>
-                <div class="hint" style="margin-bottom:6px">Customer PO (for open orders)</div>
-                <input id="file_po" type="file" accept="application/pdf" class="input">
-                <div id="po_note" class="hint" style="margin-top:6px"></div>
-              </div>
-              <div>
-                <div class="hint" style="margin-bottom:6px">Test Report (for closed orders)</div>
-                <input id="file_test" type="file" accept="application/pdf" class="input">
-                <div id="test_note" class="hint" style="margin-top:6px"></div>
-              </div>
+            <div>
+              <label>Payment Terms</label>
+              <select id="payment_terms" class="select">
+                <option>Net 5</option><option>Net 10</option><option>Net 15</option><option>Net 20</option>
+                <option selected>Net 30</option><option>Net 40</option><option>Net 50</option>
+                <option>Net 60</option><option>Net 90</option>
+                <option value="__other">Other…</option>
+              </select>
+              <div id="payment_terms_other" class="other-wrap"><input class="input" placeholder="Enter custom terms (e.g., Prepaid)"></div>
+            </div>
+
+            <div>
+              <label>Payment Method</label>
+              <select id="payment_method" class="select">
+                <option selected>Bank Transfer</option><option>Credit Card</option><option>PayPal</option><option>Other</option>
+                <option value="__other">Other…</option>
+              </select>
+              <div id="payment_method_other" class="other-wrap"><input class="input" placeholder="Enter custom method"></div>
+            </div>
+
+            <div style="grid-column:1/-1">
+              <label>Customer PO (for open orders)</label>
+              <input id="file_po" type="file" accept="application/pdf" class="input">
+              <div id="po_note" class="hint" style="margin-top:6px"></div>
             </div>
           </div>
-
-          <div style="grid-column:1/-1"><label>Notes</label><textarea id="notes" rows="3" class="input"></textarea></div>
-        </form>
-        <div class="actions">
-          <button id="deleteBtn" class="btn btn-danger" style="display:none">Delete</button>
-          <span style="flex:1"></span>
-          <button id="cancelBtn" class="btn">Cancel</button>
-          <button id="saveBtn" class="btn btn-primary">Save</button>
         </div>
+
+        <!-- PURCHASING SECTION -->
+        <div class="section">
+          <h4>PURCHASING — what Purchasing updates</h4>
+          <div class="grid">
+            <div><label>Vendor</label><input id="vendor" class="input"></div>
+            <div><label>Tracking</label><input id="tracking" class="input"></div>
+
+            <div><label>Ship Date</label><input id="ship_date" type="date" class="input"></div>
+            <div class="inline-grid">
+              <div>
+                <label>Invoice Date</label>
+                <input id="invoice_date" type="date" class="input" disabled>
+                <div class="hint">Automatically equals Ship Date</div>
+              </div>
+              <div>
+                <label>Due Date</label>
+                <input id="due_date" type="date" class="input" disabled>
+                <div class="hint">Invoice + Payment Terms</div>
+              </div>
+            </div>
+
+            <div style="grid-column:1/-1">
+              <label>Ship Path (From → To, Method, Ref)</label>
+              <div id="shipLegs"></div>
+              <div style="margin-top:8px"><button type="button" id="addLegBtn" class="btn">+ Add leg</button></div>
+            </div>
+
+            <div style="grid-column:1/-1">
+              <label>Test Report (for closed orders)</label>
+              <input id="file_test" type="file" accept="application/pdf" class="input">
+              <div id="test_note" class="hint" style="margin-top:6px"></div>
+            </div>
+
+            <div style="grid-column:1/-1">
+              <label>Notes</label>
+              <textarea id="notes" rows="3" class="input"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <button id="deleteBtn" class="btn btn-danger" style="display:none">Delete</button>
+        <span style="flex:1"></span>
+        <button id="cancelBtn" class="btn">Cancel</button>
+        <button id="saveBtn" class="btn btn-primary">Save</button>
       </div>
     </div>
   </div>
 
   <!-- Manage Salespeople Modal -->
   <div id="salesOverlay" class="overlay" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="salesTitle">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="salesTitle" style="max-width:560px">
       <header>
         <h3 id="salesTitle" style="margin:0;font-size:18px;font-weight:800">Manage Salespeople</h3>
         <button id="closeSales" class="btn">✕</button>
@@ -266,10 +303,10 @@ const shortRef = id => id.replace(/-/g,'').slice(0,8).toUpperCase();
 const safeName = s => (s||'').replace(/[^a-z0-9._-]+/gi,'_');
 
 const TERM_DAYS = { "Net 5":5,"Net 10":10,"Net 15":15,"Net 20":20,"Net 30":30,"Net 40":40,"Net 50":50,"Net 60":60,"Net 90":90 };
+
 function addDays(dateStr, days){
   if (!dateStr) return '';
-  const d = new Date(dateStr + 'T00:00:00');
-  d.setDate(d.getDate() + (days||0));
+  const d = new Date(dateStr + 'T00:00:00'); d.setDate(d.getDate() + (days||0));
   return d.toISOString().slice(0,10);
 }
 
@@ -293,61 +330,99 @@ const ordersBody = $('ordersBody');
 
 function refreshSalesControls(){
   const list = getSalespeople();
-  // filter
   salesFilter.innerHTML = '<option value="">All salespeople</option>' + list.map(n=>`<option>${n}</option>`).join('');
-  // form
   $('salesperson').innerHTML = list.map(n=>`<option>${n}</option>`).join('');
 }
 
+/* ======= "Other…" helpers ======= */
+function getChoice(selectId, otherWrapId){
+  const sel = $(selectId), wrap = $(otherWrapId);
+  return sel.value === '__other' ? wrap.querySelector('input').value.trim() : sel.value;
+}
+function setChoice(selectId, otherWrapId, value, options){
+  const sel = $(selectId), wrap=$(otherWrapId);
+  if (options.includes(value)) { sel.value = value; wrap.style.display='none'; wrap.querySelector('input').value=''; }
+  else { sel.value='__other'; wrap.style.display='block'; wrap.querySelector('input').value=value||''; }
+}
+function wireOther(selectId, otherWrapId){
+  const sel = $(selectId), wrap=$(otherWrapId);
+  sel.addEventListener('change', ()=>{ wrap.style.display = sel.value==='__other' ? 'block' : 'none'; if (sel.value!=='__other') wrap.querySelector('input').value=''; });
+}
+
+/* ======= Modal open/close ======= */
 function openOrderModal(row){
   $('overlay').style.display = 'flex';
   $('modalTitle').textContent = row ? `Edit Order — ${shortRef(row.id)}` : 'New Order';
   $('deleteBtn').style.display = row ? 'inline-block' : 'none';
 
-  // reset
-  $('orderForm').reset();
-  $('orderId').value = row ? row.id : '';
+  $('order_date').valueAsDate = new Date();
+  $('invoice_date').value = '';
+  $('due_date').value = '';
+
+  $('orderForm')?.reset();
   $('shipLegs').innerHTML = '';
   addShipLeg();
 
-  // defaults
-  $('order_date').valueAsDate = new Date();
-  $('incoterm').value = 'DAP';
-  $('payment_terms').value = 'Net 30';
-  $('payment_method').value = 'Bank Transfer';
-  updateDuePreview(); // show initial hint
-
-  // clear file notes
+  // clean file notes
   $('po_note').textContent = '';
   $('test_note').textContent = '';
 
+  // defaults
+  $('payment_terms').value = 'Net 30';
+  $('payment_method').value = 'Bank Transfer';
+  $('incoterm').value = 'DAP';
+
+  // reset "other" boxes hidden
+  ['status_other','incoterm_other','payment_terms_other','payment_method_other'].forEach(id=>$(id).style.display='none');
+
   if (row){
+    $('orderId').value = row.id;
     $('salesperson').value = row.salesperson||getSalespeople()[0];
     $('customer').value = row.customer||'';
     $('part_number').value = row.part_number||'';
     $('quantity').value = row.quantity||1;
     $('priority').value = row.priority||'Normal';
-    $('status').value = row.status||'New';
+
+    setChoice('status','status_other', row.status||'New', [
+      'New','PO Raised','Ordered','Awaiting Test','At Test House','Awaiting Vendor Dispatch','In Transit','At Reshipper','With Us','Delivered to Customer','On Hold','Closed','Cancelled'
+    ]);
     $('order_date').value = row.order_date||'';
     $('eta').value = row.eta||'';
     $('vendor').value = row.vendor||'';
     $('tracking').value = row.tracking||'';
-    $('incoterm').value = row.incoterm || 'DAP';
-    $('payment_terms').value = row.payment_terms || 'Net 30';
-    $('payment_method').value = row.payment_method || 'Bank Transfer';
+
+    setChoice('incoterm','incoterm_other', row.incoterm||'DAP',
+      ['DAP','EXW','FCA','FOB','CFR','CIF','CPT','CIP','DPU','DDP']
+    );
+    setChoice('payment_terms','payment_terms_other', row.payment_terms||'Net 30',
+      ['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90']
+    );
+    setChoice('payment_method','payment_method_other', row.payment_method||'Bank Transfer',
+      ['Bank Transfer','Credit Card','PayPal','Other']
+    );
+
     $('ship_date').value = row.ship_date || '';
-    updateDuePreview();
+    if (row.ship_date){
+      $('invoice_date').value = row.ship_date;
+      const td = getChoice('payment_terms','payment_terms_other');
+      $('due_date').value = addDays(row.ship_date, TERM_DAYS[td]||0);
+    }
 
     $('notes').value = row.notes||'';
-    $('shipLegs').innerHTML = '';
+
     const legs = Array.isArray(row.ship_path)?row.ship_path:[];
+    $('shipLegs').innerHTML = '';
     if (legs.length===0) addShipLeg(); else legs.forEach(l=>addShipLeg(l.from,l.to,l.method,l.ref));
+
     if (row.files?.po) $('po_note').textContent = `Existing file: ${row.files.po}`;
     if (row.files?.test_report) $('test_note').textContent = `Existing file: ${row.files.test_report}`;
+  } else {
+    $('orderId').value = '';
   }
 }
 function closeOrderModal(){ $('overlay').style.display='none'; }
 
+/* ======= Ship legs ======= */
 function addShipLeg(from='',to='',method='',ref=''){
   const wrap = document.createElement('div');
   wrap.className = 'grid';
@@ -364,21 +439,15 @@ function addShipLeg(from='',to='',method='',ref=''){
   $('shipLegs').appendChild(wrap);
 }
 
-/* ======= Live due date preview ======= */
-function updateDuePreview(){
+/* ======= Live invoice/due dates ======= */
+function recomputeInvoiceDue(){
   const ship = $('ship_date').value;
-  const terms = $('payment_terms').value;
-  const inv = ship || '';
-  const due = ship ? addDays(ship, TERM_DAYS[terms]||0) : '';
-  const text = `Invoice Date: ${inv || '—'}  •  Payment Terms: ${terms}  •  Due: ${due || '—'}`;
-  $('duePreview').textContent = text;
+  $('invoice_date').value = ship || '';
+  const pt = getChoice('payment_terms','payment_terms_other');
+  $('due_date').value = ship ? addDays(ship, TERM_DAYS[pt]||0) : '';
 }
-['change','input'].forEach(evt=>{
-  $('ship_date').addEventListener(evt, updateDuePreview);
-  $('payment_terms').addEventListener(evt, updateDuePreview);
-});
 
-/* ======= Render table ======= */
+/* ======= Table helpers ======= */
 function badgePriority(p){
   const cls = p==='Critical'?'b-bad':p==='High'?'b-warn':p==='Low'?'b-dim':'b-pri';
   return `<span class="badge ${cls}">${p}</span>`;
@@ -391,6 +460,7 @@ function badgeStatus(s){
 }
 function shipText(legs){ return (Array.isArray(legs)?legs:[]).map(l=>`${l.from||'?'}→${l.to||'?'}`).join(' • '); }
 
+/* ======= Render ======= */
 function loadAndRender(){
   const data = getOrders()
     .sort((a,b)=> (b.order_date||'').localeCompare(a.order_date||'') || (a.priority||'').localeCompare(b.priority||'') );
@@ -416,7 +486,7 @@ function loadAndRender(){
     const filesTxt = [files.po?'PO':'' , files.test_report?'Report':''].filter(Boolean).join(' · ');
     const ship = r.ship_date || '';
     const invoice = ship || '';
-    const due = ship ? addDays(ship, TERM_DAYS[r.payment_terms||'Net 30']||0) : '';
+    const due = ship ? addDays(ship, TERM_DAYS[r.payment_terms]||0) : '';
     return `<tr>
       <td class="mono">${shortRef(r.id)}</td>
       <td>${r.salesperson||''}</td>
@@ -441,7 +511,6 @@ function loadAndRender(){
     </tr>`;
   }).join('');
 
-  // wire edit
   [...ordersBody.querySelectorAll('[data-edit]')].forEach(b=>{
     b.onclick = ()=>{
       const row = getOrders().find(x=>x.id===b.dataset.edit);
@@ -464,6 +533,11 @@ $('saveBtn').onclick = (e)=>{
   const fpo = $('file_po').files[0];     if (fpo) filesObj.po = safeName(fpo.name) + ' (pending upload)';
   const ftest = $('file_test').files[0]; if (ftest) filesObj.test_report = safeName(ftest.name) + ' (pending upload)';
 
+  const statusVal = getChoice('status','status_other');
+  const termsVal  = getChoice('payment_terms','payment_terms_other');
+  const incotermVal = getChoice('incoterm','incoterm_other');
+  const methodVal = getChoice('payment_method','payment_method_other');
+
   const rec = {
     id,
     salesperson: $('salesperson').value,
@@ -471,15 +545,15 @@ $('saveBtn').onclick = (e)=>{
     part_number: $('part_number').value.trim(),
     quantity: Number($('quantity').value||0),
     priority: $('priority').value,
-    status: $('status').value,
+    status: statusVal,
     order_date: $('order_date').value || null,
     eta: $('eta').value || null,
     vendor: $('vendor').value.trim() || null,
     tracking: $('tracking').value.trim() || null,
-    incoterm: $('incoterm').value,
-    payment_terms: $('payment_terms').value,
-    payment_method: $('payment_method').value,
-    ship_date: $('ship_date').value || null,                // invoice date = ship date
+    incoterm: incotermVal,
+    payment_terms: termsVal,
+    payment_method: methodVal,
+    ship_date: $('ship_date').value || null,
     ship_path: legs,
     files: filesObj,
     notes: $('notes').value.trim() || null
@@ -544,9 +618,8 @@ $('exportBtn').onclick = ()=>{
   const headers = ["Ref","Salesperson","Customer","Part Number","Quantity","Priority","Status","Order Date","ETA","Vendor","Tracking","Incoterm","Payment Terms","Payment Method","Ship Date","Invoice Date","Due Date","Ship Path","Notes"];
   const csvRows = [headers.join(',')];
   rows.forEach(r=>{
-    const ship = r.ship_date || '';
-    const invoice = ship || '';
-    const due = ship ? addDays(ship, TERM_DAYS[r.payment_terms||'Net 30']||0) : '';
+    const ship = r.ship_date || ''; const invoice = ship || '';
+    const due = ship ? addDays(ship, TERM_DAYS[r.payment_terms]||0) : '';
     const shipPath = shipText(r.ship_path);
     const vals = [shortRef(r.id), r.salesperson, r.customer, r.part_number, r.quantity, r.priority, r.status, r.order_date||'', r.eta||'', r.vendor||'', r.tracking||'', r.incoterm||'', r.payment_terms||'', r.payment_method||'', ship, invoice, due, shipPath, (r.notes||'').replace(/[\n\r]+/g,' ')];
     csvRows.push(vals.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(','));
@@ -557,17 +630,26 @@ $('exportBtn').onclick = ()=>{
   URL.revokeObjectURL(url);
 };
 
-/* ======= Wire up ======= */
+/* ======= Wiring ======= */
 ['input','change'].forEach(evt=>{
-  $('searchInput').addEventListener(evt, loadAndRender);
-  $('salesFilter').addEventListener(evt, loadAndRender);
-  $('statusFilter').addEventListener(evt, loadAndRender);
-  $('priorityFilter').addEventListener(evt, loadAndRender);
+  searchInput.addEventListener(evt, loadAndRender);
+  salesFilter.addEventListener(evt, loadAndRender);
+  statusFilter.addEventListener(evt, loadAndRender);
+  priorityFilter.addEventListener(evt, loadAndRender);
 });
 $('addOrderBtn').onclick = ()=>openOrderModal();
 $('addLegBtn').onclick = ()=>addShipLeg();
 $('cancelBtn').onclick = closeOrderModal;
 $('closeModal').onclick = closeOrderModal;
+
+// Show/hide "Other…" inputs and recompute due dates
+wireOther('status','status_other');
+wireOther('incoterm','incoterm_other');
+wireOther('payment_terms','payment_terms_other');
+wireOther('payment_method','payment_method_other');
+$('ship_date').addEventListener('change', recomputeInvoiceDue);
+$('payment_terms').addEventListener('change', recomputeInvoiceDue);
+$('payment_terms_other').querySelector('input').addEventListener('input', recomputeInvoiceDue);
 
 /* ======= Init ======= */
 refreshSalesControls();
@@ -575,4 +657,5 @@ loadAndRender();
 </script>
 </body>
 </html>
+
 
