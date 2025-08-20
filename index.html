@@ -1,478 +1,286 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Call Stats Leaderboard</title>
-<style>
-  :root {
-    --bg: #ffffff;
-    --fg: #0b0f19;
-    --muted: #6b7280;
-    --card: #f8fafc;
-    --line: #eef2f7;
-    --accent: #2563eb;
-    --accent-weak: #dbeafe;
-    --danger: #ef4444;
-    --success: #16a34a;
-    --radius: 14px;
-    --shadow: 0 6px 24px rgba(10, 15, 25, 0.08), 0 1px 2px rgba(10, 15, 25, 0.06);
-  }
-  * { box-sizing: border-box; }
-  html, body { margin:0; height:100%; background:var(--bg); color:var(--fg); font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"; }
-  a { color:var(--accent); text-decoration:none; }
-  .container { max-width: 1100px; margin: 28px auto 80px; padding: 0 16px; }
-  header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; }
-  .title { font-weight:700; letter-spacing:.2px; }
-  .title .sub { color:var(--muted); font-weight:500; margin-left:10px; font-size:12px; }
-  .controls { display:grid; grid-template-columns: 1.2fr 1.2fr 1fr 1fr 1fr auto; gap:10px; }
-  .controls .group { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px; display:flex; align-items:center; gap:8px; }
-  .controls label { color:var(--muted); font-size:12px; white-space:nowrap; }
-  .controls input[type="date"],
-  .controls input[type="number"],
-  .controls input[type="text"],
-  .controls select {
-    border:1px solid var(--line); border-radius:10px; padding:8px 10px; background:#fff; min-width:0;
-  }
-  .toggle { display:flex; align-items:center; gap:8px; }
-  .toggle input { width:18px; height:18px; }
-  .btn {
-    border:0; background:var(--accent); color:#fff; padding:12px 16px; border-radius:12px; font-weight:600; cursor:pointer;
-    box-shadow: var(--shadow);
-  }
-  .btn[disabled] { background:#9bb7ff; cursor:not-allowed; opacity:.9; }
-  .row { display:flex; gap:12px; margin-top:16px; flex-wrap:wrap; }
-  .card {
-    flex:1 1 160px; min-width:160px; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px;
-    box-shadow: var(--shadow);
-  }
-  .k { color:var(--muted); font-size:12px; }
-  .v { font-size:20px; font-weight:700; margin-top:6px; }
-  .v.good { color: var(--success); }
-  .v.bad { color: var(--danger); }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Verified Electronics — Tools</title>
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+  <style>
+    :root{
+      --brand:#673ab7; --ink:#1e1e1e; --muted:#677085;
+      --bg:#f6f7fb; --card:#fff; --line:#e9e9ef;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font:15px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+    .wrap{max-width:1160px;margin:24px auto;padding:0 16px}
+    header{
+      display:flex;align-items:center;gap:14px;
+      background:radial-gradient(1200px 260px at 160px -60px, rgba(103,58,183,.18), transparent 60%),
+                 linear-gradient(180deg,#fff, #fafaff);
+      border-bottom:1px solid var(--line);
+      padding:22px 18px;
+      border-radius:18px;
+      box-shadow:0 4px 24px rgba(0,0,0,.04);
+    }
+    header img{height:40px}
+    h1{font-size:28px;margin:0;font-weight:800;letter-spacing:.2px}
+    .sub{color:var(--muted);margin-top:2px}
+    .section-title{margin:22px 6px 8px;font-weight:800;color:#262b3a}
+    .grid{
+      display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:12px
+    }
+    @media (max-width:960px){ .grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+    @media (max-width:640px){ .grid{grid-template-columns:1fr} }
 
-  .table-wrap { margin-top:16px; background:#fff; border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
-  table { width:100%; border-collapse:collapse; }
-  thead th {
-    background:#fff; position:sticky; top:0; z-index:2; font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted);
-    text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); cursor:pointer; user-select:none;
-  }
-  tbody td { padding:10px 12px; border-bottom:1px solid var(--line); }
-  tbody tr:hover { background:#fafafa; }
-  .user { font-weight:600; }
-  .subtle { color:var(--muted); font-size:12px; }
-
-  .actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin: 8px 0 4px; }
-  .pill {
-    background:var(--card); border:1px solid var(--line); padding:8px 10px; border-radius:999px; color:var(--muted); font-weight:600; font-size:12px;
-  }
-
-  /* Loader bar */
-  .loader {
-    margin-top:12px; border:1px solid var(--line); background:#fff; border-radius:12px; overflow:hidden; box-shadow: var(--shadow);
-  }
-  .loader-inner {
-    height:10px; background: linear-gradient(90deg, var(--accent), #60a5fa);
-    width:0%; transition: width .2s ease;
-  }
-  .loader-header { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; color:var(--muted); font-size:12px; background:#fff; }
-  .error { margin-top:12px; background:#fff1f2; border:1px solid #fecdd3; color:#991b1b; padding:10px 12px; border-radius:12px; }
-
-  .badgelike { background:var(--accent-weak); color:var(--accent); padding:2px 8px; border-radius:999px; font-size:12px; font-weight:700; }
-  .search { margin-left:auto; display:flex; gap:8px; align-items:center; padding:6px 10px; border:1px solid var(--line); border-radius:999px; background:#fff; }
-  .search input { border:0; outline:0; min-width:180px; }
-  .footnote { margin-top:8px; color:var(--muted); font-size:12px; }
-</style>
+    .card{
+      background:var(--card);border:1px solid var(--line);border-radius:16px;
+      box-shadow:0 8px 30px rgba(103,58,183,.06), 0 1px 0 rgba(0,0,0,.02);
+      padding:18px; display:flex; flex-direction:column; gap:10px; min-height:160px
+    }
+    .top{display:flex;align-items:center;gap:12px}
+    .logo-badge{
+      width:44px;height:44px;border-radius:12px;background:#efeafd;display:grid;place-items:center;
+      box-shadow:inset 0 0 0 1px #e3ddfb;
+    }
+    .logo-badge img{max-width:28px;max-height:28px;object-fit:contain}
+    .title{font-size:18px;font-weight:800;margin:0}
+    .desc{color:var(--muted);font-size:14px}
+    .row{display:flex;align-items:center;gap:10px;margin-top:auto}
+    .tag{margin-left:auto;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #e8e8f5;background:#fbfbff;color:#5a46b6}
+    .soon{background:#fff5eb;border-color:#ffe1c4;color:#a66b2f}
+    a.cta{font-weight:700;color:#3a2db1;text-decoration:none}
+    a.cta:hover{text-decoration:underline}
+  </style>
 </head>
 <body>
-  <div class="container">
+  <div class="wrap">
     <header>
-      <div class="title">
-        <div style="font-size:24px;">Call Stats Leaderboard</div>
-        <div class="sub">Modern, fast, and cached via your Cloudflare Worker</div>
+      <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified Electronics">
+      <div>
+        <h1>Verified Electronics — Tools</h1>
+        <div class="sub">Built in-house at Verified Electronics for sales & operations.</div>
       </div>
-      <div class="badgelike" id="tzBadge">tz: …</div>
     </header>
 
-    <div class="controls">
-      <div class="group">
-        <label>Quick range</label>
-        <select id="preset">
-          <option value="today">Today</option>
-          <option value="yesterday">Yesterday</option>
-          <option value="thisweek">This Week</option>
-          <option value="last7">Last 7 Days</option>
-          <option value="thismonth">This Month (to date)</option>
-          <option value="custom">Custom…</option>
-        </select>
-      </div>
-      <div class="group">
-        <label>From</label>
-        <input type="date" id="fromDate" />
-      </div>
-      <div class="group">
-        <label>To</label>
-        <input type="date" id="toDate" />
-      </div>
-      <div class="group">
-        <label>Timezone (mins)</label>
-        <input type="number" id="tz" step="1" />
-      </div>
-      <div class="group">
-        <label>Cap / day</label>
-        <input type="number" id="cap" step="1" min="1" max="1000" />
-      </div>
-      <div class="group" style="justify-content:space-between;">
-        <div class="toggle"><input type="checkbox" id="force"/> <label>Force refresh</label></div>
-        <div class="toggle"><input type="checkbox" id="progressMode" checked/> <label>Per-day progress</label></div>
-      </div>
+    <!-- Available now -->
+    <h2 class="section-title">Available now</h2>
+    <div class="grid">
+      <!-- Sales Order / Invoice -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Sales Order / Invoice PDF</h3>
+        </div>
+        <div class="desc">Generate branded PDFs with VAT, delivery terms, currency & totals.</div>
+        <div class="row">
+          <a class="cta" href="./so-confirmation/index.html">Open tool →</a>
+          <span class="tag">Internal</span>
+        </div>
+      </article>
+
+      <!-- Excess Hub (renamed from Excess Checker) -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Excess Hub</h3>
+        </div>
+        <div class="desc">Excess Leaderboard, search, upload & remove excess lists.</div>
+        <div class="row">
+          <a class="cta" href="./excess-checker/index.html">Open tool →</a>
+          <span class="tag">Internal</span>
+        </div>
+      </article>
+
+      <!-- Certificate of Conformance -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Certificate of Conformance</h3>
+        </div>
+        <div class="desc">Generate a clean, modern PDF certificate with PO refs, lot numbers, date codes and dates.</div>
+        <div class="row">
+          <a class="cta" href="./coc.index.html">Open tool →</a>
+          <span class="tag">Internal</span>
+        </div>
+      </article>
+
+      <!-- Document Signing -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Document Signing</h3>
+        </div>
+        <div class="desc">Upload Word/PDF, add signature/initials/date stamps, and download a signed PDF.</div>
+        <div class="row">
+          <a class="cta" href="./sign/index.html">Open tool →</a>
+          <span class="tag">Internal</span>
+        </div>
+      </article>
+
+      <!-- Company Info -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Company Info</h3>
+        </div>
+        <div class="desc">Addresses, VAT numbers, bank account details, and certificates (centralised).</div>
+        <div class="row">
+          <a class="cta" href="./company-info/index.html">Open tool →</a>
+          <span class="tag">Internal</span>
+        </div>
+      </article>
+
+      <!-- PDF Editor -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">PDF Editor</h3>
+        </div>
+        <div class="desc">Edit PDFs in-browser: whiteout, text, shapes, highlights — then download the edited PDF.</div>
+        <div class="row">
+          <a class="cta" href="./pdf-editor/index.html">Open tool →</a>
+          <span class="tag">Internal</span>
+        </div>
+      </article>
+
+      <!-- Call Stats (moved from Coming soon) -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Call Stats</h3>
+        </div>
+        <div class="desc">Daily call activity and follow-up automation insights.</div>
+        <div class="row">
+          <a class="cta" href="./call-stats/index.html">Open tool →</a>
+          <span class="tag">Internal</span>
+        </div>
+      </article>
     </div>
 
-    <div class="actions">
-      <button class="btn" id="loadBtn">Load</button>
-      <div class="pill" id="pagesInfo">Pages: 0</div>
-      <div class="pill" id="rangeInfo">—</div>
-      <div class="search">
-        <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#64748b" d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79L20 21.49 21.49 20 15.5 14zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-        <input id="search" placeholder="Filter by user…" />
-      </div>
-    </div>
+    <!-- Coming soon -->
+    <h2 class="section-title">Coming soon</h2>
+    <div class="grid">
+      <!-- Sales Leaderboard -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Sales Leaderboard</h3>
+        </div>
+        <div class="desc">Live revenue and GP by rep with time filters and drill-downs.</div>
+        <div class="row">
+          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
+          <span class="tag soon">Coming soon</span>
+        </div>
+      </article>
 
-    <div id="loader" style="display:none;">
-      <div class="loader-header">
-        <div id="loaderText">Loading…</div>
-        <div id="loaderPct">0%</div>
-      </div>
-      <div class="loader"><div class="loader-inner" id="loaderBar"></div></div>
-      <div class="footnote" id="loaderFoot">Starting…</div>
-    </div>
+      <!-- Document Editor (templates) -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Document Editor</h3>
+        </div>
+        <div class="desc">Create internal docs & templates with team-ready sharing.</div>
+        <div class="row">
+          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
+          <span class="tag soon">Coming soon</span>
+        </div>
+      </article>
 
-    <div id="error" class="error" style="display:none;"></div>
+      <!-- Upload Excess -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Upload Excess</h3>
+        </div>
+        <div class="desc">Bulk upload & manage excess stock lists with CSV templates and quick publishing.</div>
+        <div class="row">
+          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
+          <span class="tag soon">Coming soon</span>
+        </div>
+      </article>
 
-    <div class="row" id="cards" style="display:none;">
-      <div class="card"><div class="k">Total Duration</div><div class="v" id="totDur">0:00</div></div>
-      <div class="card"><div class="k">Avg / Call</div><div class="v" id="totAvg">0:00</div></div>
-      <div class="card"><div class="k">Dials</div><div class="v" id="totDials">0</div></div>
-      <div class="card"><div class="k">Answered</div><div class="v good" id="totAns">0</div></div>
-      <div class="card"><div class="k">Missed</div><div class="v bad" id="totMiss">0</div></div>
-      <div class="card"><div class="k">Inbound / Outbound</div><div class="v" id="totIO">0 / 0</div></div>
-    </div>
+      <!-- Distribution Stock Monitor -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Distribution Stock Monitor</h3>
+        </div>
+        <div class="desc">Track distributor inventory & pricing across partners with alerts and trends.</div>
+        <div class="row">
+          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
+          <span class="tag soon">Coming soon</span>
+        </div>
+      </article>
 
-    <div class="table-wrap" id="tableWrap" style="display:none;">
-      <table id="table">
-        <thead>
-          <tr>
-            <th data-k="user">User</th>
-            <th data-k="dials">Dials</th>
-            <th data-k="answered">Answered</th>
-            <th data-k="missed">Missed</th>
-            <th data-k="inbound">Inbound</th>
-            <th data-k="outbound">Outbound</th>
-            <th data-k="total_mmss">Total</th>
-            <th data-k="avg_mmss">Avg</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
+      <!-- Purchasing Requests -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Purchasing Requests</h3>
+        </div>
+        <div class="desc">Create, track and approve buy requests with supplier quotes and attachments.</div>
+        <div class="row">
+          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
+          <span class="tag soon">Coming soon</span>
+        </div>
+      </article>
 
-    <div class="footnote">
-      Results come from your Worker’s <code>/stats-leaderboard</code> with per-day caching in KV when available.
+      <!-- Open Sales Orders -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Open Sales Orders</h3>
+        </div>
+        <div class="desc">Live view of open SOs with status, delivery dates, and fulfillment progress.</div>
+        <div class="row">
+          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
+          <span class="tag soon">Coming soon</span>
+        </div>
+      </article>
+
+      <!-- Auto IC Source Uploader -->
+      <article class="card">
+        <div class="top">
+          <div class="logo-badge">
+            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+          </div>
+          <h3 class="title">Auto IC Source Uploader</h3>
+        </div>
+        <div class="desc">Upload parts lists or links and auto-collect supplier offers for IC sourcing.</div>
+        <div class="row">
+          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
+          <span class="tag soon">Coming soon</span>
+        </div>
+      </article>
     </div>
   </div>
-
-<script>
-  // ====== CONFIG ======
-  const API_BASE = 'https://ve-dialpad-proxy.nick-north.workers.dev'; // change if needed
-  const DEFAULT_CAP = 40;
-  const CONCURRENCY = 3; // per-day progress mode
-
-  // ====== DOM ======
-  const el = (id) => document.getElementById(id);
-  const loadBtn = el('loadBtn'), tzBadge = el('tzBadge');
-  const fromDate = el('fromDate'), toDate = el('toDate'), preset = el('preset');
-  const tzInput = el('tz'), capInput = el('cap'), forceInput = el('force'), progressModeInput = el('progressMode');
-  const loader = el('loader'), loaderText = el('loaderText'), loaderPct = el('loaderPct'), loaderBar = el('loaderBar'), loaderFoot = el('loaderFoot');
-  const errorBox = el('error');
-  const cards = el('cards'), tableWrap = el('tableWrap'), tbody = el('tbody');
-  const totDur = el('totDur'), totAvg = el('totAvg'), totDials = el('totDials'), totAns = el('totAns'), totMiss = el('totMiss'), totIO = el('totIO');
-  const pagesInfo = el('pagesInfo'), rangeInfo = el('rangeInfo'), searchInput = el('search');
-
-  // ====== Helpers ======
-  const pad = (n) => String(n).padStart(2,'0');
-  const toISO = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-  const todayLocal = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); };
-  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate()+n);
-  const weekRange = (d) => { // Monday..Sunday, inclusive
-    const day = d.getDay(); // Sun=0..Sat=6
-    const diffToMon = (day + 6) % 7;
-    const mon = addDays(d, -diffToMon);
-    const sun = addDays(mon, 6);
-    return [mon, sun];
-  };
-  const monthStart = (d) => new Date(d.getFullYear(), d.getMonth(), 1);
-
-  const fmtMMSS = (secs) => {
-    const s = Math.max(0, Math.round(secs||0));
-    const m = Math.floor(s/60), r = s % 60;
-    return `${m}:${pad(r)}`;
-  };
-
-  function updateTZBadge() {
-    tzBadge.textContent = `tz: ${tzInput.value}`;
-  }
-
-  function setPreset(which) {
-    const t = todayLocal();
-    if (which === 'today') {
-      fromDate.value = toISO(t);
-      toDate.value = toISO(t);
-    } else if (which === 'yesterday') {
-      const y = addDays(t, -1);
-      fromDate.value = toISO(y);
-      toDate.value = toISO(y);
-    } else if (which === 'thisweek') {
-      const [mon, sun] = weekRange(t);
-      fromDate.value = toISO(mon);
-      toDate.value = toISO(sun);
-    } else if (which === 'last7') {
-      fromDate.value = toISO(addDays(t, -6));
-      toDate.value = toISO(t);
-    } else if (which === 'thismonth') {
-      fromDate.value = toISO(monthStart(t));
-      toDate.value = toISO(t);
-    }
-  }
-
-  function showLoader(label, pct = 0, foot='') {
-    loader.style.display = '';
-    loaderText.textContent = label;
-    loaderPct.textContent = `${Math.round(pct)}%`;
-    loaderBar.style.width = `${Math.max(0, Math.min(100, pct))}%`;
-    loaderFoot.textContent = foot || '';
-  }
-  function hideLoader() { loader.style.display = 'none'; }
-
-  function showError(msg) { errorBox.style.display=''; errorBox.textContent = msg; }
-  function clearError() { errorBox.style.display='none'; errorBox.textContent=''; }
-
-  function setCards(totals) {
-    cards.style.display='';
-    totDur.textContent = totals.total_mmss || fmtMMSS(totals.sumDur||0);
-    totAvg.textContent = totals.avg_mmss || fmtMMSS((totals.sumDur||0)/(totals.dials||1));
-    totDials.textContent = totals.dials ?? 0;
-    totAns.textContent = totals.answered ?? 0;
-    totMiss.textContent = totals.missed ?? 0;
-    totIO.textContent = `${totals.inbound ?? 0} / ${totals.outbound ?? 0}`;
-  }
-
-  let sortKey = 'dials';
-  let sortDir = 'desc';
-  function renderRows(rows) {
-    // filter
-    const q = (searchInput.value || '').trim().toLowerCase();
-    const filtered = q ? rows.filter(r => String(r.user||'').toLowerCase().includes(q)) : rows.slice();
-
-    // sort
-    filtered.sort((a,b) => {
-      const av = a[sortKey] ?? 0, bv = b[sortKey] ?? 0;
-      if (sortKey === 'user') return (String(av).localeCompare(String(bv))) * (sortDir === 'asc' ? 1 : -1);
-      return (bv - av) * (sortDir === 'desc' ? 1 : -1);
-    });
-
-    // render
-    tableWrap.style.display='';
-    tbody.innerHTML = filtered.map(r => `
-      <tr>
-        <td class="user">${esc(r.user||'Unknown')}</td>
-        <td>${r.dials ?? 0}</td>
-        <td>${r.answered ?? 0}</td>
-        <td>${r.missed ?? 0}</td>
-        <td>${r.inbound ?? 0}</td>
-        <td>${r.outbound ?? 0}</td>
-        <td>${r.total_mmss || fmtMMSS(r.sumDur||0)}</td>
-        <td>${r.avg_mmss || fmtMMSS((r.sumDur||0)/(r.dials||1))}</td>
-      </tr>
-    `).join('');
-  }
-
-  function esc(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-
-  function setPagesInfo(pages, fromISO, toISO) {
-    pagesInfo.textContent = `Pages: ${pages}`;
-    rangeInfo.textContent = `${fromISO} → ${toISO}`;
-  }
-
-  // ====== Fetchers ======
-  async function fetchSingleRange(fromISO, toISO, tz, cap, force) {
-    const u = new URL(`${API_BASE}/stats-leaderboard`);
-    u.searchParams.set('from', fromISO);
-    u.searchParams.set('to', toISO);
-    u.searchParams.set('tz', tz);
-    u.searchParams.set('cap', cap);
-    if (force) u.searchParams.set('force','true');
-    const r = await fetch(u, { cache: 'no-store' });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r.json();
-  }
-
-  // Progressive per-day mode with concurrency + real % updates
-  async function fetchPerDayProgress(fromISO, toISO, tz, cap, force) {
-    const days = collectDaysInclusive(fromISO, toISO);
-    const total = days.length;
-    const acc = newAccumulator();
-
-    let done = 0, pages = 0, active = 0, idx = 0;
-    const results = new Array(total);
-
-    showLoader(`Loading ${total} day${total>1?'s':''}…`, 0, `Fetching…`);
-
-    async function worker() {
-      while (idx < total) {
-        const myIndex = idx++;
-        const day = days[myIndex];
-        active++;
-        try {
-          const u = new URL(`${API_BASE}/stats-leaderboard`);
-          u.searchParams.set('from', day);
-          u.searchParams.set('to', day);
-          u.searchParams.set('tz', tz);
-          u.searchParams.set('cap', cap);
-          if (force) u.searchParams.set('force','true');
-
-          const r = await fetch(u, { cache: 'no-store' });
-          const data = await r.json();
-          if (!data.ok) throw new Error(data.error || 'Day fetch failed');
-
-          results[myIndex] = data;
-          pages += data.pages || 0;
-        } catch (e) {
-          results[myIndex] = { ok:false, error:String(e) };
-        } finally {
-          done++;
-          active--;
-          const pct = (done/total)*100;
-          showLoader(`Loading…`, pct, `Days: ${done}/${total} • Active: ${active} • Pages: ${pages}`);
-        }
-      }
-    }
-
-    const workers = [];
-    for (let i=0;i<Math.min(CONCURRENCY,total);i++) workers.push(worker());
-    await Promise.all(workers);
-
-    // Merge results
-    for (const d of results) {
-      if (d && d.ok) mergeDayInto(acc, d);
-    }
-
-    return { ok:true, totals: acc.totals, rows: acc.rows, pages, days, merged: true };
-  }
-
-  // client-side accumulator to merge day responses
-  function newAccumulator() {
-    return { totals: blankTotals(), rows: [] };
-  }
-  function blankTotals() { return { dials:0, inbound:0, outbound:0, answered:0, missed:0, sumDur:0 }; }
-  function mergeDayInto(acc, day) {
-    const t = acc.totals, s = day.totals;
-    t.dials += s.dials; t.inbound += s.inbound; t.outbound += s.outbound; t.answered += s.answered; t.missed += s.missed; t.sumDur += s.sumDur;
-    const map = new Map(acc.rows.map(r=>[r.user,r]));
-    for (const r of day.rows) {
-      const cur = map.get(r.user) || { user:r.user, dials:0, inbound:0, outbound:0, answered:0, missed:0, sumDur:0 };
-      cur.dials += r.dials; cur.inbound += r.inbound; cur.outbound += r.outbound; cur.answered += r.answered; cur.missed += r.missed; cur.sumDur += r.sumDur;
-      map.set(r.user, cur);
-    }
-    acc.rows = [...map.values()];
-  }
-
-  function collectDaysInclusive(fromISO, toISO) {
-    const out = [];
-    const start = new Date(`${fromISO}T00:00:00Z`);
-    const end = new Date(`${toISO}T00:00:00Z`);
-    if (isNaN(start) || isNaN(end) || start > end) return out;
-    for (let d = new Date(start); d <= end; d = new Date(d.getTime()+86400000)) out.push(d.toISOString().slice(0,10));
-    return out;
-  }
-
-  // ====== Events ======
-  document.querySelectorAll('thead th').forEach(th=>{
-    th.addEventListener('click', ()=>{
-      const k = th.dataset.k;
-      if (!k) return;
-      if (sortKey === k) sortDir = (sortDir === 'asc') ? 'desc' : 'asc';
-      else { sortKey = k; sortDir = (k === 'user') ? 'asc' : 'desc'; }
-      renderRows(window.__rows || []);
-    });
-  });
-  searchInput.addEventListener('input', ()=> renderRows(window.__rows || []));
-
-  preset.addEventListener('change', (e)=>{
-    if (e.target.value !== 'custom') setPreset(e.target.value);
-  });
-
-  loadBtn.addEventListener('click', async ()=>{
-    try {
-      clearError();
-      loadBtn.disabled = true; loadBtn.textContent = 'Loading…';
-      cards.style.display='none'; tableWrap.style.display='none';
-
-      const fromISO = fromDate.value;
-      const toISO = toDate.value;
-      const tz = parseInt(tzInput.value || '0', 10) || 0;
-      const cap = parseInt(capInput.value || String(DEFAULT_CAP), 10) || DEFAULT_CAP;
-      const force = !!forceInput.checked;
-      const progressMode = !!progressModeInput.checked;
-
-      showLoader('Preparing…', 5, `${fromISO} → ${toISO} • tz=${tz} • cap=${cap}${force?' • force':''}`);
-
-      let data;
-      if (progressMode && fromISO === toISO) {
-        // single day: just call once (fast) but still show progress to 100
-        data = await fetchSingleRange(fromISO, toISO, tz, cap, force);
-        showLoader('Finalizing…', 90, `Merging`);
-      } else if (progressMode) {
-        data = await fetchPerDayProgress(fromISO, toISO, tz, cap, force);
-      } else {
-        data = await fetchSingleRange(fromISO, toISO, tz, cap, force);
-      }
-
-      if (!data || !data.ok) throw new Error(data?.error || 'Unknown error');
-
-      const totals = data.totals || {};
-      const rows = (data.rows || []).map(r => ({
-        ...r,
-        total_mmss: r.total_mmss || fmtMMSS(r.sumDur||0),
-        avg_mmss: r.avg_mmss || fmtMMSS((r.sumDur||0)/(r.dials||1))
-      }));
-
-      window.__rows = rows.slice();
-      setCards(totals);
-      renderRows(rows);
-      setPagesInfo(data.pages || 0, fromISO, toISO);
-
-      showLoader('Done', 100, `Loaded ${rows.length} users`);
-      setTimeout(hideLoader, 500);
-    } catch (e) {
-      hideLoader();
-      showError(String(e.message || e));
-    } finally {
-      loadBtn.disabled = false; loadBtn.textContent = 'Load';
-    }
-  });
-
-  // ====== Init defaults ======
-  (function init(){
-    // tz minutes east of UTC
-    const tz = -new Date().getTimezoneOffset();
-    tzInput.value = tz; updateTZBadge();
-    tzInput.addEventListener('input', updateTZBadge);
-
-    capInput.value = DEFAULT_CAP;
-    preset.value = 'today';
-    setPreset('today');
-  })();
-</script>
 </body>
 </html>
 
