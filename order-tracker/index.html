@@ -32,11 +32,11 @@
     .sub{color:var(--muted);margin-top:2px}
 
     /* Toolbar */
-    .toolbar{display:grid;grid-template-columns:1.6fr .9fr .9fr .9fr auto auto;gap:10px;margin:16px 0}
+    .toolbar{display:grid;grid-template-columns:1.6fr .9fr auto .9fr auto auto;gap:10px;margin:16px 0}
     @media (max-width:1100px){ .toolbar{grid-template-columns:1fr 1fr 1fr} }
     @media (max-width:720px){ .toolbar{grid-template-columns:1fr} }
     .input,.select{
-      width:100%;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;outline:none;
+      width:100%;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;outline:none;
     }
     .input:focus,.select:focus{border-color:#c9c5ef;box-shadow:0 0 0 3px #ebe9ff}
     .btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
@@ -44,9 +44,8 @@
     .btn-primary{background:var(--pill);border-color:var(--pill-b);color:#3a2db1}
     .btn-primary:hover{background:#eae4ff}
     .btn-danger{border-color:#ffd6dc;background:#ffeff1;color:#a63a49}
-    .right{justify-self:end}
 
-    /* Card table */
+    /* Card & Table */
     .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 30px rgba(103,58,183,.06),0 1px 0 rgba(0,0,0,.02)}
     .table{width:100%;border-collapse:separate;border-spacing:0}
     .table thead th{background:#fbfbfe;color:#3b3f55;font-weight:700;padding:12px;border-bottom:1px solid var(--line);position:sticky;top:0}
@@ -58,24 +57,27 @@
     .b-bad{background:#ffeff1;border-color:#ffd3d9;color:#a63a49}
     .b-dim{background:#f3f4f6;border-color:#e5e7eb;color:#6b7280}
 
-    /* Modal (scroll-safe) */
+    /* Modal */
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:16px}
-    .modal{width:min(980px,100%);max-height:92vh;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 70px rgba(0,0,0,.18);display:flex;flex-direction:column}
+    .modal{width:min(980px,100%);max-height:92vh;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 70px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden}
     .modal header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);border-radius:16px 16px 0 0;background:linear-gradient(180deg,#fff,#fbf9ff)}
     .modal .body{padding:16px;overflow:auto}
     .modal .footer{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;background:#fff;border-radius:0 0 16px 16px}
 
-    /* Section cards inside modal */
+    /* Section cards */
     .section{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px;background:#fff}
     .section h4{margin:0 0 10px;font-size:13px;letter-spacing:.4px;font-weight:800;color:#382e8c}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     @media (max-width:720px){ .grid{grid-template-columns:1fr} }
     .inline-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
     .hint{font-size:12px;color:var(--muted)}
-
-    /* Tiny "other" input */
     .other-wrap{display:none}
     .other-wrap input{margin-top:6px}
+
+    /* Test chips */
+    .checks{display:flex;flex-wrap:wrap;gap:8px}
+    .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:6px 10px;background:#fff}
+    .pill input{accent-color:var(--brand);width:16px;height:16px}
   </style>
 </head>
 <body>
@@ -85,7 +87,7 @@
       <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified Electronics">
       <div style="flex:1">
         <h1>Order Tracker</h1>
-        <div class="sub">Create & track orders with priority, ETA, multi-leg shipping; filter by salesperson.</div>
+        <div class="sub">Create & track orders with priority, requested-by date, and multi-leg shipping. Filter by salesperson.</div>
       </div>
     </header>
 
@@ -111,8 +113,8 @@
         <option value="">All priorities</option>
         <option>Critical</option><option>High</option><option>Normal</option><option>Low</option>
       </select>
-      <button id="addOrderBtn" class="btn btn-primary right">+ New Order</button>
-      <button id="exportBtn" class="btn right">Export CSV</button>
+      <button id="addOrderBtn" class="btn btn-primary">+ New Order</button>
+      <button id="exportBtn" class="btn">Export CSV</button>
     </div>
 
     <!-- Table -->
@@ -121,8 +123,8 @@
         <thead>
           <tr>
             <th>Ref</th><th>Sales</th><th>Customer</th><th>Part</th><th>Qty</th>
-            <th>Priority</th><th>Status</th><th>Order Date</th><th>ETA</th><th>Age</th>
-            <th>Vendor</th><th>Incoterm</th><th>Terms</th><th>Pay</th>
+            <th>Priority</th><th>Status</th><th>Order Date</th><th>Requested by</th><th>Age</th>
+            <th>Tests</th><th>Vendor</th><th>Incoterm</th><th>Terms</th><th>Pay</th>
             <th>Ship</th><th>Invoice</th><th>Due</th>
             <th>Ship Path</th><th>Files</th><th>Actions</th>
           </tr>
@@ -141,7 +143,7 @@
       </header>
 
       <div class="body">
-        <!-- SALES SECTION -->
+        <!-- SALES -->
         <div class="section">
           <h4>SALES — what Sales enters</h4>
           <div class="grid">
@@ -161,7 +163,6 @@
                 <option>Normal</option><option>High</option><option>Critical</option><option>Low</option>
               </select>
             </div>
-
             <div>
               <label>Status</label>
               <select id="status" class="select">
@@ -177,7 +178,7 @@
             </div>
 
             <div><label>Order Date</label><input id="order_date" type="date" class="input"></div>
-            <div><label>ETA</label><input id="eta" type="date" class="input"></div>
+            <div><label>Requested by</label><input id="requested_by" type="date" class="input"></div>
 
             <div>
               <label>Incoterm</label>
@@ -189,13 +190,11 @@
               </select>
               <div id="incoterm_other" class="other-wrap"><input class="input" placeholder="Enter custom incoterm"></div>
             </div>
-
             <div>
               <label>Payment Terms</label>
               <select id="payment_terms" class="select">
                 <option>Net 5</option><option>Net 10</option><option>Net 15</option><option>Net 20</option>
-                <option selected>Net 30</option><option>Net 40</option><option>Net 50</option>
-                <option>Net 60</option><option>Net 90</option>
+                <option selected>Net 30</option><option>Net 40</option><option>Net 50</option><option>Net 60</option><option>Net 90</option>
                 <option value="__other">Other…</option>
               </select>
               <div id="payment_terms_other" class="other-wrap"><input class="input" placeholder="Enter custom terms (e.g., Prepaid)"></div>
@@ -211,6 +210,19 @@
             </div>
 
             <div style="grid-column:1/-1">
+              <label>Testing required</label>
+              <div class="checks" id="tests_group">
+                <label class="pill"><input type="checkbox" id="t_none"  name="test_req" value="No test"><span>No test</span></label>
+                <label class="pill"><input type="checkbox"           name="test_req" value="EVI"><span>EVI</span></label>
+                <label class="pill"><input type="checkbox"           name="test_req" value="Solderability"><span>Solderability</span></label>
+                <label class="pill"><input type="checkbox"           name="test_req" value="Electrical"><span>Electrical</span></label>
+                <label class="pill"><input type="checkbox" id="t_other" name="test_req" value="Other"><span>Other</span></label>
+              </div>
+              <div id="test_other_wrap" class="other-wrap"><input id="test_other_input" class="input" placeholder="Describe other test"></div>
+              <div class="hint">Tip: “No test” is exclusive. Selecting it will clear other choices.</div>
+            </div>
+
+            <div style="grid-column:1/-1">
               <label>Customer PO (for open orders)</label>
               <input id="file_po" type="file" accept="application/pdf" class="input">
               <div id="po_note" class="hint" style="margin-top:6px"></div>
@@ -218,7 +230,7 @@
           </div>
         </div>
 
-        <!-- PURCHASING SECTION -->
+        <!-- PURCHASING -->
         <div class="section">
           <h4>PURCHASING — what Purchasing updates</h4>
           <div class="grid">
@@ -287,206 +299,186 @@
   </div>
 
 <script>
-/* ======= Local storage keys ======= */
-const LS_ORDERS = 've.orders';
-const LS_SALES  = 've.salespeople';
+/* ===== LocalStorage keys & defaults ===== */
+const LS_ORDERS='ve.orders', LS_SALES='ve.salespeople';
+const DEFAULT_SALES=["Nick N","Dan C","Emir B","Nick K","Jake B"];
+const TERM_DAYS={ "Net 5":5,"Net 10":10,"Net 15":15,"Net 20":20,"Net 30":30,"Net 40":40,"Net 50":50,"Net 60":60,"Net 90":90 };
 
-/* ======= Defaults ======= */
-const DEFAULT_SALES = ["Nick N","Dan C","Emir B","Nick K","Jake B"];
+/* ===== Utils ===== */
+const $=id=>document.getElementById(id);
+const uuid=()=> 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);});
+const shortRef=id=>id.replace(/-/g,'').slice(0,8).toUpperCase();
+const safe=s=>(s||'').replace(/[^a-z0-9._-]+/gi,'_');
+function addDays(dateStr,days){ if(!dateStr) return ''; const d=new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+(days||0)); return d.toISOString().slice(0,10); }
 
-/* ======= Helpers ======= */
-const $ = id => document.getElementById(id);
-const uuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{
-  const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8); return v.toString(16);
-});
-const shortRef = id => id.replace(/-/g,'').slice(0,8).toUpperCase();
-const safeName = s => (s||'').replace(/[^a-z0-9._-]+/gi,'_');
+/* ===== Stores ===== */
+function getSalespeople(){ try{const v=JSON.parse(localStorage.getItem(LS_SALES)||'[]'); if(Array.isArray(v)&&v.length) return v;}catch{} localStorage.setItem(LS_SALES,JSON.stringify(DEFAULT_SALES)); return [...DEFAULT_SALES]; }
+function setSalespeople(list){ localStorage.setItem(LS_SALES,JSON.stringify(list)); refreshSalesControls(); }
+function getOrders(){ try{const v=JSON.parse(localStorage.getItem(LS_ORDERS)||'[]'); return Array.isArray(v)?v:[];}catch{return[];} }
+function setOrders(list){ localStorage.setItem(LS_ORDERS,JSON.stringify(list)); }
 
-const TERM_DAYS = { "Net 5":5,"Net 10":10,"Net 15":15,"Net 20":20,"Net 30":30,"Net 40":40,"Net 50":50,"Net 60":60,"Net 90":90 };
-
-function addDays(dateStr, days){
-  if (!dateStr) return '';
-  const d = new Date(dateStr + 'T00:00:00'); d.setDate(d.getDate() + (days||0));
-  return d.toISOString().slice(0,10);
-}
-
-/* ======= Salespeople store ======= */
-function getSalespeople(){
-  try{ const v = JSON.parse(localStorage.getItem(LS_SALES)||'[]'); if (Array.isArray(v) && v.length) return v; }catch{}
-  localStorage.setItem(LS_SALES, JSON.stringify(DEFAULT_SALES));
-  return [...DEFAULT_SALES];
-}
-function setSalespeople(arr){ localStorage.setItem(LS_SALES, JSON.stringify(arr)); refreshSalesControls(); }
-
-/* ======= Orders store (local) ======= */
-function getOrders(){
-  try{ const v = JSON.parse(localStorage.getItem(LS_ORDERS)||'[]'); return Array.isArray(v)?v:[]; }catch{ return []; }
-}
-function setOrders(arr){ localStorage.setItem(LS_ORDERS, JSON.stringify(arr)); }
-
-/* ======= UI wiring ======= */
-const salesFilter = $('salesFilter'), statusFilter=$('statusFilter'), priorityFilter=$('priorityFilter'), searchInput=$('searchInput');
-const ordersBody = $('ordersBody');
+/* ===== UI basics ===== */
+const ordersBody=$('ordersBody');
+const salesFilter=$('salesFilter'), statusFilter=$('statusFilter'), priorityFilter=$('priorityFilter'), searchInput=$('searchInput');
 
 function refreshSalesControls(){
-  const list = getSalespeople();
-  salesFilter.innerHTML = '<option value="">All salespeople</option>' + list.map(n=>`<option>${n}</option>`).join('');
-  $('salesperson').innerHTML = list.map(n=>`<option>${n}</option>`).join('');
+  const list=getSalespeople();
+  salesFilter.innerHTML='<option value="">All salespeople</option>'+list.map(n=>`<option>${n}</option>`).join('');
+  $('salesperson').innerHTML=list.map(n=>`<option>${n}</option>`).join('');
 }
 
-/* ======= "Other…" helpers ======= */
-function getChoice(selectId, otherWrapId){
-  const sel = $(selectId), wrap = $(otherWrapId);
-  return sel.value === '__other' ? wrap.querySelector('input').value.trim() : sel.value;
+/* ===== “Other…” helpers for selects ===== */
+function wireOther(selectId,wrapId){
+  const sel=$(selectId), wrap=$(wrapId), inp=wrap.querySelector('input');
+  const toggle=()=>{ wrap.style.display = sel.value==='__other' ? 'block':'none'; if(sel.value!=='__other') inp.value=''; };
+  sel.addEventListener('change',toggle); toggle();
 }
-function setChoice(selectId, otherWrapId, value, options){
-  const sel = $(selectId), wrap=$(otherWrapId);
-  if (options.includes(value)) { sel.value = value; wrap.style.display='none'; wrap.querySelector('input').value=''; }
-  else { sel.value='__other'; wrap.style.display='block'; wrap.querySelector('input').value=value||''; }
+function readChoice(selectId,wrapId){
+  const sel=$(selectId), wrap=$(wrapId), inp=wrap.querySelector('input');
+  return sel.value==='__other' ? inp.value.trim() : sel.value;
 }
-function wireOther(selectId, otherWrapId){
-  const sel = $(selectId), wrap=$(otherWrapId);
-  sel.addEventListener('change', ()=>{ wrap.style.display = sel.value==='__other' ? 'block' : 'none'; if (sel.value!=='__other') wrap.querySelector('input').value=''; });
+function setChoice(selectId,wrapId,value,allowed){
+  const sel=$(selectId), wrap=$(wrapId), inp=wrap.querySelector('input');
+  if(allowed.includes(value)){ sel.value=value; wrap.style.display='none'; inp.value=''; }
+  else { sel.value='__other'; wrap.style.display='block'; inp.value=value||''; }
 }
 
-/* ======= Modal open/close ======= */
-function openOrderModal(row){
-  $('overlay').style.display = 'flex';
-  $('modalTitle').textContent = row ? `Edit Order — ${shortRef(row.id)}` : 'New Order';
-  $('deleteBtn').style.display = row ? 'inline-block' : 'none';
-
-  $('order_date').valueAsDate = new Date();
-  $('invoice_date').value = '';
-  $('due_date').value = '';
-
-  $('orderForm')?.reset();
-  $('shipLegs').innerHTML = '';
-  addShipLeg();
-
-  // clean file notes
-  $('po_note').textContent = '';
-  $('test_note').textContent = '';
-
-  // defaults
-  $('payment_terms').value = 'Net 30';
-  $('payment_method').value = 'Bank Transfer';
-  $('incoterm').value = 'DAP';
-
-  // reset "other" boxes hidden
-  ['status_other','incoterm_other','payment_terms_other','payment_method_other'].forEach(id=>$(id).style.display='none');
-
-  if (row){
-    $('orderId').value = row.id;
-    $('salesperson').value = row.salesperson||getSalespeople()[0];
-    $('customer').value = row.customer||'';
-    $('part_number').value = row.part_number||'';
-    $('quantity').value = row.quantity||1;
-    $('priority').value = row.priority||'Normal';
-
-    setChoice('status','status_other', row.status||'New', [
-      'New','PO Raised','Ordered','Awaiting Test','At Test House','Awaiting Vendor Dispatch','In Transit','At Reshipper','With Us','Delivered to Customer','On Hold','Closed','Cancelled'
-    ]);
-    $('order_date').value = row.order_date||'';
-    $('eta').value = row.eta||'';
-    $('vendor').value = row.vendor||'';
-    $('tracking').value = row.tracking||'';
-
-    setChoice('incoterm','incoterm_other', row.incoterm||'DAP',
-      ['DAP','EXW','FCA','FOB','CFR','CIF','CPT','CIP','DPU','DDP']
-    );
-    setChoice('payment_terms','payment_terms_other', row.payment_terms||'Net 30',
-      ['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90']
-    );
-    setChoice('payment_method','payment_method_other', row.payment_method||'Bank Transfer',
-      ['Bank Transfer','Credit Card','PayPal','Other']
-    );
-
-    $('ship_date').value = row.ship_date || '';
-    if (row.ship_date){
-      $('invoice_date').value = row.ship_date;
-      const td = getChoice('payment_terms','payment_terms_other');
-      $('due_date').value = addDays(row.ship_date, TERM_DAYS[td]||0);
-    }
-
-    $('notes').value = row.notes||'';
-
-    const legs = Array.isArray(row.ship_path)?row.ship_path:[];
-    $('shipLegs').innerHTML = '';
-    if (legs.length===0) addShipLeg(); else legs.forEach(l=>addShipLeg(l.from,l.to,l.method,l.ref));
-
-    if (row.files?.po) $('po_note').textContent = `Existing file: ${row.files.po}`;
-    if (row.files?.test_report) $('test_note').textContent = `Existing file: ${row.files.test_report}`;
-  } else {
-    $('orderId').value = '';
+/* ===== Testing group ===== */
+function testsToArray(){
+  const boxes=[...document.querySelectorAll('input[name="test_req"]')];
+  let out=boxes.filter(b=>b.checked).map(b=>b.value);
+  if(out.includes('Other')){
+    const extra=$('test_other_input').value.trim();
+    if(extra) out.push('Other: '+extra);
   }
+  if(out.includes('No test') && out.length>1) out=['No test']; // exclusive
+  return out;
 }
-function closeOrderModal(){ $('overlay').style.display='none'; }
+function setTests(arr){
+  const set=new Set(arr||[]);
+  const boxes=[...document.querySelectorAll('input[name="test_req"]')];
+  boxes.forEach(b=>b.checked=false);
+  boxes.forEach(b=>{
+    if(b.value==='Other'){
+      const otherVal=(arr||[]).find(v=>/^Other:\s*/i.test(v));
+      b.checked= set.has('Other') || !!otherVal;
+      $('test_other_wrap').style.display=b.checked?'block':'none';
+      $('test_other_input').value=otherVal? otherVal.replace(/^Other:\s*/i,'') : '';
+    } else {
+      b.checked=set.has(b.value);
+    }
+  });
+}
+function wireTests(){
+  const none=$('t_none'), other=$('t_other');
+  document.querySelectorAll('input[name="test_req"]').forEach(cb=>{
+    cb.addEventListener('change',()=>{
+      if(cb===none && none.checked){
+        document.querySelectorAll('input[name="test_req"]').forEach(b=>{ if(b!==none) b.checked=false; });
+        $('test_other_wrap').style.display='none'; $('test_other_input').value='';
+      }else{
+        if(none.checked && cb!==none) none.checked=false;
+        if(other.checked) $('test_other_wrap').style.display='block';
+        else { $('test_other_wrap').style.display='none'; $('test_other_input').value=''; }
+      }
+    });
+  });
+}
 
-/* ======= Ship legs ======= */
+/* ===== Modal helpers ===== */
 function addShipLeg(from='',to='',method='',ref=''){
-  const wrap = document.createElement('div');
-  wrap.className = 'grid';
-  wrap.innerHTML = `
+  const row=document.createElement('div');
+  row.className='grid';
+  row.innerHTML=`
     <input class="input" placeholder="From" value="${from||''}">
     <input class="input" placeholder="To" value="${to||''}">
     <input class="input" placeholder="Method (e.g. DHL)" value="${method||''}">
     <div style="display:flex;gap:8px">
       <input class="input" placeholder="Ref" value="${ref||''}">
-      <button type="button" class="btn" aria-label="Remove">−</button>
-    </div>
-  `;
-  wrap.querySelector('button').onclick = ()=>wrap.remove();
-  $('shipLegs').appendChild(wrap);
+      <button type="button" class="btn">−</button>
+    </div>`;
+  row.querySelector('button').onclick=()=>row.remove();
+  $('shipLegs').appendChild(row);
 }
 
-/* ======= Live invoice/due dates ======= */
-function recomputeInvoiceDue(){
-  const ship = $('ship_date').value;
-  $('invoice_date').value = ship || '';
-  const pt = getChoice('payment_terms','payment_terms_other');
-  $('due_date').value = ship ? addDays(ship, TERM_DAYS[pt]||0) : '';
-}
+function openModal(order){
+  $('overlay').style.display='flex';
+  $('modalTitle').textContent=order?`Edit Order — ${shortRef(order.id)}`:'New Order';
+  $('deleteBtn').style.display=order?'inline-block':'none';
 
-/* ======= Table helpers ======= */
-function badgePriority(p){
-  const cls = p==='Critical'?'b-bad':p==='High'?'b-warn':p==='Low'?'b-dim':'b-pri';
-  return `<span class="badge ${cls}">${p}</span>`;
+  // reset defaults
+  $('shipLegs').innerHTML=''; addShipLeg();
+  $('po_note').textContent=''; $('test_note').textContent='';
+  $('invoice_date').value=''; $('due_date').value='';
+  $('order_date').valueAsDate=new Date();
+  $('payment_terms').value='Net 30'; $('payment_method').value='Bank Transfer'; $('incoterm').value='DAP';
+  ['status_other','incoterm_other','payment_terms_other','payment_method_other'].forEach(id=>$(id).style.display='none');
+  setTests([]);
+
+  if(order){
+    $('orderId').value=order.id;
+    $('salesperson').value=order.salesperson||getSalespeople()[0];
+    $('customer').value=order.customer||'';
+    $('part_number').value=order.part_number||'';
+    $('quantity').value=order.quantity||1;
+    $('priority').value=order.priority||'Normal';
+
+    setChoice('status','status_other', order.status||'New', [
+      'New','PO Raised','Ordered','Awaiting Test','At Test House','Awaiting Vendor Dispatch','In Transit','At Reshipper','With Us','Delivered to Customer','On Hold','Closed','Cancelled'
+    ]);
+    $('order_date').value=order.order_date||'';
+    $('requested_by').value=order.requested_by||'';
+
+    $('vendor').value=order.vendor||''; $('tracking').value=order.tracking||'';
+
+    setChoice('incoterm','incoterm_other', order.incoterm||'DAP', ['DAP','EXW','FCA','FOB','CFR','CIF','CPT','CIP','DPU','DDP']);
+    setChoice('payment_terms','payment_terms_other', order.payment_terms||'Net 30', ['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90']);
+    setChoice('payment_method','payment_method_other', order.payment_method||'Bank Transfer', ['Bank Transfer','Credit Card','PayPal','Other']);
+
+    $('ship_date').value=order.ship_date||'';
+    if(order.ship_date){
+      $('invoice_date').value=order.ship_date;
+      $('due_date').value=addDays(order.ship_date, TERM_DAYS[order.payment_terms]||0);
+    }
+
+    setTests(order.tests||[]);
+    $('notes').value=order.notes||'';
+
+    const legs=Array.isArray(order.ship_path)?order.ship_path:[];
+    $('shipLegs').innerHTML=''; if(!legs.length) addShipLeg(); else legs.forEach(l=>addShipLeg(l.from,l.to,l.method,l.ref));
+
+    if(order.files?.po) $('po_note').textContent=`Existing file: ${order.files.po}`;
+    if(order.files?.test_report) $('test_note').textContent=`Existing file: ${order.files.test_report}`;
+  }else{
+    $('orderId').value='';
+  }
 }
-function badgeStatus(s){
-  const done = ['Closed','Delivered to Customer','Cancelled'];
-  const warn = ['On Hold','Awaiting Vendor Dispatch','Awaiting Test','At Test House'];
-  const cls = done.includes(s)?'b-dim':warn.includes(s)?'b-warn':'b-pri';
-  return `<span class="badge ${cls}">${s}</span>`;
-}
+function closeModal(){ $('overlay').style.display='none'; }
+
+/* ===== Render table ===== */
+function badgePriority(p){ const cls=p==='Critical'?'b-bad':p==='High'?'b-warn':p==='Low'?'b-dim':'b-pri'; return `<span class="badge ${cls}">${p}</span>`; }
+function badgeStatus(s){ const done=['Closed','Delivered to Customer','Cancelled']; const warn=['On Hold','Awaiting Vendor Dispatch','Awaiting Test','At Test House']; const cls=done.includes(s)?'b-dim':warn.includes(s)?'b-warn':'b-pri'; return `<span class="badge ${cls}">${s}</span>`; }
 function shipText(legs){ return (Array.isArray(legs)?legs:[]).map(l=>`${l.from||'?'}→${l.to||'?'}`).join(' • '); }
 
-/* ======= Render ======= */
-function loadAndRender(){
-  const data = getOrders()
-    .sort((a,b)=> (b.order_date||'').localeCompare(a.order_date||'') || (a.priority||'').localeCompare(b.priority||'') );
-
-  const search = (searchInput.value||'').toLowerCase();
-  const rows = data.filter(r=>{
-    if (salesFilter.value && r.salesperson!==salesFilter.value) return false;
-    if (statusFilter.value && r.status!==statusFilter.value) return false;
-    if (priorityFilter.value && r.priority!==priorityFilter.value) return false;
-    if (!search) return true;
-    const blob = `${shortRef(r.id)} ${r.customer} ${r.part_number} ${r.salesperson}`.toLowerCase();
-    return blob.includes(search);
+function render(){
+  const data=getOrders().sort((a,b)=> (b.order_date||'').localeCompare(a.order_date||'') || (a.priority||'').localeCompare(b.priority||'') );
+  const q=(searchInput.value||'').toLowerCase();
+  const rows=data.filter(r=>{
+    if(salesFilter.value && r.salesperson!==salesFilter.value) return false;
+    if(statusFilter.value && r.status!==statusFilter.value) return false;
+    if(priorityFilter.value && r.priority!==priorityFilter.value) return false;
+    if(!q) return true;
+    const blob=`${shortRef(r.id)} ${r.customer} ${r.part_number} ${r.salesperson}`.toLowerCase();
+    return blob.includes(q);
   });
 
-  if (!rows.length){
-    ordersBody.innerHTML = `<tr><td colspan="20" style="padding:16px;color:var(--muted);text-align:center">No orders yet.</td></tr>`;
-    return;
-  }
+  if(!rows.length){ ordersBody.innerHTML=`<tr><td colspan="21" style="padding:16px;color:var(--muted);text-align:center">No orders yet.</td></tr>`; return; }
 
-  ordersBody.innerHTML = rows.map(r=>{
-    const age = r.order_date ? dayjs(r.order_date).fromNow(true) : '-';
-    const files = r.files||{};
-    const filesTxt = [files.po?'PO':'' , files.test_report?'Report':''].filter(Boolean).join(' · ');
-    const ship = r.ship_date || '';
-    const invoice = ship || '';
-    const due = ship ? addDays(ship, TERM_DAYS[r.payment_terms]||0) : '';
+  ordersBody.innerHTML=rows.map(r=>{
+    const age=r.order_date?dayjs(r.order_date).fromNow(true):'-';
+    const files=r.files||{}; const filesTxt=[files.po?'PO':'',files.test_report?'Report':''].filter(Boolean).join(' · ');
+    const ship=r.ship_date||''; const invoice=ship||''; const due=ship?addDays(ship,TERM_DAYS[r.payment_terms]||0):'';
+    const tests=(r.tests||[]).join(' · ');
     return `<tr>
       <td class="mono">${shortRef(r.id)}</td>
       <td>${r.salesperson||''}</td>
@@ -496,8 +488,9 @@ function loadAndRender(){
       <td>${badgePriority(r.priority||'Normal')}</td>
       <td>${badgeStatus(r.status||'New')}</td>
       <td>${r.order_date||''}</td>
-      <td>${r.eta||''}</td>
+      <td>${r.requested_by||''}</td>
       <td>${age}</td>
+      <td>${tests}</td>
       <td>${r.vendor||''}</td>
       <td>${r.incoterm||''}</td>
       <td>${r.payment_terms||''}</td>
@@ -512,150 +505,114 @@ function loadAndRender(){
   }).join('');
 
   [...ordersBody.querySelectorAll('[data-edit]')].forEach(b=>{
-    b.onclick = ()=>{
-      const row = getOrders().find(x=>x.id===b.dataset.edit);
-      openOrderModal(row);
-    };
+    b.addEventListener('click',()=>{ const row=getOrders().find(x=>x.id===b.dataset.edit); openModal(row); });
   });
 }
 
-/* ======= Save / Delete ======= */
-$('saveBtn').onclick = (e)=>{
+/* ===== Save/Delete ===== */
+$('saveBtn').addEventListener('click',(e)=>{
   e.preventDefault();
-  const id = $('orderId').value || uuid();
+  const qty=Number($('quantity').value||0);
+  if(!$('customer').value.trim() || !$('part_number').value.trim() || !qty){ alert('Please fill Customer, Part Number and Quantity.'); return; }
 
-  const legs = [...$('shipLegs').children].map(w=>{
-    const [from,to,method,ref] = w.querySelectorAll('input');
-    return { from:from.value.trim(), to:to.value.trim(), method:method.value.trim(), ref:ref.value.trim() };
+  const id=$('orderId').value || uuid();
+  const legs=[...$('shipLegs').children].map(row=>{
+    const [from,to,method,ref]=row.querySelectorAll('input');
+    return {from:from.value.trim(),to:to.value.trim(),method:method.value.trim(),ref:ref.value.trim()};
   }).filter(l=>l.from||l.to||l.method||l.ref);
 
-  const filesObj = {};
-  const fpo = $('file_po').files[0];     if (fpo) filesObj.po = safeName(fpo.name) + ' (pending upload)';
-  const ftest = $('file_test').files[0]; if (ftest) filesObj.test_report = safeName(ftest.name) + ' (pending upload)';
+  const files={}; const po=$('file_po').files[0]; if(po) files.po=safe(po.name)+' (pending upload)';
+  const tr=$('file_test').files[0]; if(tr) files.test_report=safe(tr.name)+' (pending upload)';
 
-  const statusVal = getChoice('status','status_other');
-  const termsVal  = getChoice('payment_terms','payment_terms_other');
-  const incotermVal = getChoice('incoterm','incoterm_other');
-  const methodVal = getChoice('payment_method','payment_method_other');
-
-  const rec = {
+  const rec={
     id,
-    salesperson: $('salesperson').value,
-    customer: $('customer').value.trim(),
-    part_number: $('part_number').value.trim(),
-    quantity: Number($('quantity').value||0),
-    priority: $('priority').value,
-    status: statusVal,
-    order_date: $('order_date').value || null,
-    eta: $('eta').value || null,
-    vendor: $('vendor').value.trim() || null,
-    tracking: $('tracking').value.trim() || null,
-    incoterm: incotermVal,
-    payment_terms: termsVal,
-    payment_method: methodVal,
-    ship_date: $('ship_date').value || null,
-    ship_path: legs,
-    files: filesObj,
-    notes: $('notes').value.trim() || null
+    salesperson:$('salesperson').value,
+    customer:$('customer').value.trim(),
+    part_number:$('part_number').value.trim(),
+    quantity:qty,
+    priority:$('priority').value,
+    status:readChoice('status','status_other'),
+    order_date:$('order_date').value || null,
+    requested_by:$('requested_by').value || null,
+    vendor:$('vendor').value.trim() || null,
+    tracking:$('tracking').value.trim() || null,
+    incoterm:readChoice('incoterm','incoterm_other'),
+    payment_terms:readChoice('payment_terms','payment_terms_other'),
+    payment_method:readChoice('payment_method','payment_method_other'),
+    ship_date:$('ship_date').value || null,
+    ship_path:legs,
+    files,
+    notes:$('notes').value.trim() || null,
+    tests:testsToArray()
   };
 
-  const all = getOrders();
-  const i = all.findIndex(x=>x.id===id);
-  if (i>=0) all[i]=rec; else all.unshift(rec);
+  const all=getOrders(); const i=all.findIndex(x=>x.id===id);
+  if(i>=0) all[i]=rec; else all.unshift(rec);
   setOrders(all);
 
-  closeOrderModal();
-  loadAndRender();
-};
+  closeModal(); render();
+});
 
-$('deleteBtn').onclick = ()=>{
-  const id = $('orderId').value;
-  if (!id) return;
-  if (!confirm('Delete this order?')) return;
-  const all = getOrders().filter(x=>x.id!==id);
-  setOrders(all);
-  closeOrderModal();
-  loadAndRender();
-};
+$('deleteBtn').addEventListener('click',()=>{
+  const id=$('orderId').value; if(!id) return;
+  if(!confirm('Delete this order?')) return;
+  setOrders(getOrders().filter(x=>x.id!==id)); closeModal(); render();
+});
 
-/* ======= Manage Salespeople ======= */
+/* ===== Manage Salespeople ===== */
 function renderSalesMgr(){
-  const box = $('salesList'); box.innerHTML='';
-  getSalespeople().forEach((name, idx)=>{
-    const row = document.createElement('div');
-    row.style = 'display:flex;gap:8px;align-items:center;margin:6px 0';
-    row.innerHTML = `
-      <input class="input" value="${name}">
-      <button class="btn btn-danger">Remove</button>
-    `;
-    const input = row.querySelector('input');
-    row.querySelector('button').onclick = ()=>{
-      const list = getSalespeople().filter((_,i)=>i!==idx);
-      setSalespeople(list);
-      renderSalesMgr();
-    };
-    input.onchange = ()=>{
-      const list = getSalespeople(); list[idx] = input.value.trim() || list[idx];
-      setSalespeople(list);
-      renderSalesMgr();
-    };
+  const list=getSalespeople(), box=$('salesList'); box.innerHTML='';
+  list.forEach((name,i)=>{
+    const row=document.createElement('div');
+    row.style='display:flex;gap:8px;align-items:center;margin:6px 0';
+    row.innerHTML=`<input class="input" value="${name}"><button class="btn btn-danger">Remove</button>`;
+    const inp=row.querySelector('input');
+    row.querySelector('button').onclick=()=>{ const l=getSalespeople().filter((_,idx)=>idx!==i); setSalespeople(l); renderSalesMgr(); };
+    inp.onchange=()=>{ const l=getSalespeople(); l[i]=inp.value.trim()||l[i]; setSalespeople(l); renderSalesMgr(); };
     box.appendChild(row);
   });
 }
-$('manageSalesBtn').onclick = ()=>{ $('salesOverlay').style.display='flex'; renderSalesMgr(); };
-$('closeSales').onclick = ()=>{ $('salesOverlay').style.display='none'; };
-$('addSalesNameBtn').onclick = ()=>{
-  const v = $('newSalesName').value.trim(); if (!v) return;
-  const list = getSalespeople(); if (!list.includes(v)) list.push(v);
-  $('newSalesName').value = '';
-  setSalespeople(list);
-  renderSalesMgr();
-};
+$('manageSalesBtn').onclick=()=>{ $('salesOverlay').style.display='flex'; renderSalesMgr(); };
+$('closeSales').onclick=()=>{ $('salesOverlay').style.display='none'; };
+$('addSalesNameBtn').onclick=()=>{ const v=$('newSalesName').value.trim(); if(!v) return; const l=getSalespeople(); if(!l.includes(v)) l.push(v); setSalespeople(l); $('newSalesName').value=''; renderSalesMgr(); };
 
-/* ======= Export CSV ======= */
-$('exportBtn').onclick = ()=>{
-  const rows = getOrders();
-  const headers = ["Ref","Salesperson","Customer","Part Number","Quantity","Priority","Status","Order Date","ETA","Vendor","Tracking","Incoterm","Payment Terms","Payment Method","Ship Date","Invoice Date","Due Date","Ship Path","Notes"];
-  const csvRows = [headers.join(',')];
+/* ===== Export CSV ===== */
+$('exportBtn').onclick=()=>{
+  const rows=getOrders();
+  const headers=["Ref","Salesperson","Customer","Part Number","Quantity","Priority","Status","Order Date","Requested by","Tests","Vendor","Tracking","Incoterm","Payment Terms","Payment Method","Ship Date","Invoice Date","Due Date","Ship Path","Notes"];
+  const csv=[headers.join(',')];
   rows.forEach(r=>{
-    const ship = r.ship_date || ''; const invoice = ship || '';
-    const due = ship ? addDays(ship, TERM_DAYS[r.payment_terms]||0) : '';
-    const shipPath = shipText(r.ship_path);
-    const vals = [shortRef(r.id), r.salesperson, r.customer, r.part_number, r.quantity, r.priority, r.status, r.order_date||'', r.eta||'', r.vendor||'', r.tracking||'', r.incoterm||'', r.payment_terms||'', r.payment_method||'', ship, invoice, due, shipPath, (r.notes||'').replace(/[\n\r]+/g,' ')];
-    csvRows.push(vals.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(','));
+    const ship=r.ship_date||''; const invoice=ship||''; const due=ship?addDays(ship,TERM_DAYS[r.payment_terms]||0):'';
+    const line=[shortRef(r.id),r.salesperson,r.customer,r.part_number,r.quantity,r.priority,r.status,r.order_date||'',r.requested_by||'',(r.tests||[]).join(' · '),r.vendor||'',r.tracking||'',r.incoterm||'',r.payment_terms||'',r.payment_method||'',ship,invoice,due,(Array.isArray(r.ship_path)?r.ship_path.map(l=>`${l.from||'?'}→${l.to||'?'}`).join(' • '):''),(r.notes||'').replace(/[\n\r]+/g,' ')];
+    csv.push(line.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(','));
   });
-  const blob = new Blob([csvRows.join('\n')], {type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'orders.csv'; a.click();
-  URL.revokeObjectURL(url);
+  const blob=new Blob([csv.join('\n')],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='orders.csv'; a.click(); URL.revokeObjectURL(url);
 };
 
-/* ======= Wiring ======= */
+/* ===== Wire up ===== */
 ['input','change'].forEach(evt=>{
-  searchInput.addEventListener(evt, loadAndRender);
-  salesFilter.addEventListener(evt, loadAndRender);
-  statusFilter.addEventListener(evt, loadAndRender);
-  priorityFilter.addEventListener(evt, loadAndRender);
+  searchInput.addEventListener(evt,render);
+  salesFilter.addEventListener(evt,render);
+  statusFilter.addEventListener(evt,render);
+  priorityFilter.addEventListener(evt,render);
 });
-$('addOrderBtn').onclick = ()=>openOrderModal();
-$('addLegBtn').onclick = ()=>addShipLeg();
-$('cancelBtn').onclick = closeOrderModal;
-$('closeModal').onclick = closeOrderModal;
+$('addOrderBtn').onclick=()=>openModal(null);
+$('closeModal').onclick=closeModal;
+$('cancelBtn').onclick=closeModal;
+$('addLegBtn').onclick=()=>addShipLeg();
+wireOther('status','status_other'); wireOther('incoterm','incoterm_other'); wireOther('payment_terms','payment_terms_other'); wireOther('payment_method','payment_method_other');
+$('ship_date').addEventListener('change',()=>{ $('invoice_date').value=$('ship_date').value||''; const t=readChoice('payment_terms','payment_terms_other'); $('due_date').value=$('ship_date').value?addDays($('ship_date').value,TERM_DAYS[t]||0):''; });
+$('payment_terms').addEventListener('change',()=>{ if($('ship_date').value){ const t=readChoice('payment_terms','payment_terms_other'); $('due_date').value=addDays($('ship_date').value,TERM_DAYS[t]||0); }});
+$('payment_terms_other').querySelector('input').addEventListener('input',()=>{ if($('ship_date').value){ const t=readChoice('payment_terms','payment_terms_other'); $('due_date').value=addDays($('ship_date').value,TERM_DAYS[t]||0); }});
+wireTests();
 
-// Show/hide "Other…" inputs and recompute due dates
-wireOther('status','status_other');
-wireOther('incoterm','incoterm_other');
-wireOther('payment_terms','payment_terms_other');
-wireOther('payment_method','payment_method_other');
-$('ship_date').addEventListener('change', recomputeInvoiceDue);
-$('payment_terms').addEventListener('change', recomputeInvoiceDue);
-$('payment_terms_other').querySelector('input').addEventListener('input', recomputeInvoiceDue);
-
-/* ======= Init ======= */
+/* ===== Init ===== */
 refreshSalesControls();
-loadAndRender();
+render();
 </script>
 </body>
 </html>
+
 
 
