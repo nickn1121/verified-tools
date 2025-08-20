@@ -1,257 +1,326 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Order Tracker — Verified Electronics</title>
-  <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
-  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/relativeTime.js"></script>
-  <script>dayjs.extend(window.dayjs_plugin_relativeTime)</script>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Order Tracker — Verified Electronics</title>
+<link rel="icon" href="data:;base64,iVBORw0KGgo="/>
+<script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/relativeTime.js"></script>
+<script>dayjs.extend(window.dayjs_plugin_relativeTime)</script>
+<style>
+:root{
+  --brand:#673ab7; --ink:#1e1e1e; --muted:#677085;
+  --bg:#f6f7fb; --card:#fff; --line:#e9e9ef; --line-strong:#d9d9e6;
+  --pill:#efeafd; --pill-b:#e3ddfb;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font:15px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);overflow-x:hidden}
+.wrap{max-width:1160px;margin:24px auto;padding:0 16px}
 
-  <style>
-    :root{
-      --brand:#673ab7; --ink:#1e1e1e; --muted:#677085;
-      --bg:#f6f7fb; --card:#fff; --line:#e9e9ef;
-      --pill:#efeafd; --pill-b:#e3ddfb;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;font:15px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);overflow-x:hidden}
-    .wrap{max-width:1160px;margin:24px auto;padding:0 16px}
+header{
+  display:flex;align-items:center;gap:14px;
+  background:radial-gradient(1200px 260px at 160px -60px, rgba(103,58,183,.18), transparent 60%),linear-gradient(180deg,#fff,#fafaff);
+  border:1px solid var(--line); padding:22px 18px; border-radius:18px; box-shadow:0 4px 24px rgba(0,0,0,.04);
+}
+header img{height:40px}
+h1{font-size:28px;margin:0;font-weight:800}
+.sub{color:var(--muted);margin-top:2px}
 
-    header{
-      display:flex;align-items:center;gap:14px;
-      background:radial-gradient(1200px 260px at 160px -60px, rgba(103,58,183,.18), transparent 60%),linear-gradient(180deg,#fff,#fafaff);
-      border:1px solid var(--line); padding:22px 18px; border-radius:18px; box-shadow:0 4px 24px rgba(0,0,0,.04);
-    }
-    header img{height:40px}
-    h1{font-size:28px;margin:0;font-weight:800}
-    .sub{color:var(--muted);margin-top:2px}
+.toolbar{display:grid;grid-template-columns:1.6fr .9fr auto .9fr auto auto;gap:10px;margin:16px 0}
+@media (max-width:1100px){ .toolbar{grid-template-columns:1fr 1fr 1fr} }
+@media (max-width:720px){ .toolbar{grid-template-columns:1fr} }
+.input,.select{width:100%;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;outline:none}
+.input:focus,.select:focus{border-color:#c9c5ef;box-shadow:0 0 0 3px #ebe9ff}
+.btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
+.btn:hover{background:#fafafa}
+.btn-primary{background:var(--pill);border-color:var(--pill-b);color:#3a2db1}
+.btn-primary:hover{background:#eae4ff}
+.btn-danger{border-color:#ffd6dc;background:#ffeff1;color:#a63a49}
 
-    .toolbar{display:grid;grid-template-columns:1.6fr .9fr auto .9fr auto auto;gap:10px;margin:16px 0}
-    @media (max-width:1100px){ .toolbar{grid-template-columns:1fr 1fr 1fr} }
-    @media (max-width:720px){ .toolbar{grid-template-columns:1fr} }
-    .input,.select{width:100%;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;outline:none}
-    .input:focus,.select:focus{border-color:#c9c5ef;box-shadow:0 0 0 3px #ebe9ff}
-    .btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
-    .btn:hover{background:#fafafa}
-    .btn-primary{background:var(--pill);border-color:var(--pill-b);color:#3a2db1}
-    .btn-primary:hover{background:#eae4ff}
-    .btn-danger{border-color:#ffd6dc;background:#ffeff1;color:#a63a49}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 30px rgba(103,58,183,.06),0 1px 0 rgba(0,0,0,.02)}
+.table-wrap{border-radius:16px}
+.table{width:100%;border-collapse:separate;border-spacing:0}
+.table thead th{background:#fbfbfe;color:#3b3f55;font-weight:700;padding:12px;border-bottom:1px solid var(--line);position:sticky;top:0;white-space:nowrap}
+.table tbody td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top;word-break:break-word}
+.sep{border-right:2px solid var(--line-strong)}
+.table thead th.sep{border-right:2px solid var(--line-strong)}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid #e8e8f5;background:#fbfbff;color:#5a46b6}
+.b-pri{background:#f2f9f5;border-color:#d8efe3;color:#0d7e5b}
+.b-warn{background:#fff7ec;border-color:#ffe3bf;color:#8a6119}
+.b-dim{background:#f3f4f6;border-color:#e5e7eb;color:#6b7280}
+.cell-edit{display:inline-flex;align-items:center;gap:6px}
+.icon-btn{border:none;background:transparent;padding:2px 4px;border-radius:6px;cursor:pointer}
+.icon-btn:hover{background:#f2f2ff}
+.inline-select{padding:6px 8px;border:1px solid var(--line);border-radius:8px;outline:none}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace}
 
-    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 30px rgba(103,58,183,.06),0 1px 0 rgba(0,0,0,.02)}
-    .table-wrap{overflow-x:auto;border-radius:16px}
-    .table{width:100%;border-collapse:separate;border-spacing:0;min-width:1200px}
-    @media (max-width:1280px){ .table{min-width:1100px} }
-    @media (max-width:1024px){ .table{min-width:960px} }
-    .table thead th{background:#fbfbfe;color:#3b3f55;font-weight:700;padding:12px;border-bottom:1px solid var(--line);position:sticky;top:0}
-    .table tbody td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace}
-    .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid #e8e8f5;background:#fbfbff;color:#5a46b6}
-    .b-pri{background:#f2f9f5;border-color:#d8efe3;color:#0d7e5b}
-    .b-warn{background:#fff7ec;border-color:#ffe3bf;color:#8a6119}
-    .b-dim{background:#f3f4f6;border-color:#e5e7eb;color:#6b7280}
+.gp-pos{color:#0d7e5b;font-weight:800}
+.gp-neg{color:#a63a49;font-weight:800}
+.small{font-size:12px;color:#6b7280}
 
-    /* Modal */
-    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:16px}
-    .modal{width:min(980px,100%);max-height:92vh;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 70px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden}
-    .modal header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);border-radius:16px 16px 0 0;background:linear-gradient(180deg,#fff,#fbf9ff)}
-    .modal .body{padding:16px;overflow:auto}
-    .modal .footer{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;background:#fff;border-radius:0 0 16px 16px}
-    .section{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px;background:#fff}
-    .section h4{margin:0 0 10px;font-size:13px;letter-spacing:.4px;font-weight:800;color:#382e8c}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    @media (max-width:720px){ .grid{grid-template-columns:1fr} }
-    .inline-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .hint{font-size:12px;color:var(--muted)}
-    .other-wrap{display:none}
-    .other-wrap input{margin-top:6px}
+/* Modal base */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:16px;z-index:30}
+.modal{width:min(980px,100%);max-height:92vh;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 70px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden}
+.modal header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);border-radius:16px 16px 0 0;background:linear-gradient(180deg,#fff,#fbf9ff)}
+.modal .body{padding:16px;overflow:auto}
+.modal .footer{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;background:#fff;border-radius:0 0 16px 16px}
+.section{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px;background:#fff}
+.section h4{margin:0 0 10px;font-size:13px;letter-spacing:.4px;font-weight:800;color:#382e8c}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:720px){ .grid{grid-template-columns:1fr} }
+.inline-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hint{font-size:12px;color:var(--muted)}
+.other-wrap{display:none}
+.other-wrap input{margin-top:6px}
 
-    .checks{display:flex;flex-wrap:wrap;gap:8px}
-    .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:6px 10px;background:#fff}
-    .pill input{accent-color:var(--brand);width:16px;height:16px}
+/* Checks */
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:6px 10px;background:#fff}
+.pill input{accent-color:var(--brand);width:16px;height:16px}
 
-    /* Inline edit */
-    .cell-edit{display:inline-flex;align-items:center;gap:6px}
-    .icon-btn{border:none;background:transparent;padding:2px 4px;border-radius:6px;cursor:pointer}
-    .icon-btn:hover{background:#f2f2ff}
-    .inline-select{padding:6px 8px;border:1px solid var(--line);border-radius:8px;outline:none}
-  </style>
+/* Mini table */
+.mini-table{width:100%;border-collapse:separate;border-spacing:0}
+.mini-table th,.mini-table td{padding:8px;border-bottom:1px solid var(--line)}
+.mini-table thead th{background:#fbfbfe;font-weight:700;color:#3b3f55}
+.mini-actions{display:flex;gap:8px}
+
+/* View modal */
+.kv{display:grid;grid-template-columns:220px 1fr;gap:8px;margin:6px 0}
+.kv label{color:#48506a;font-weight:700}
+.muted{color:var(--muted)}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified Electronics">
-      <div style="flex:1">
-        <h1>Order Tracker</h1>
-        <div class="sub">Create & track orders with priority, requested-by date, tests and multi-leg shipping.</div>
-      </div>
-    </header>
-
-    <!-- Toolbar -->
-    <div class="toolbar">
-      <input id="searchInput" class="input" placeholder="Search: customer, part number, order ref..." />
-      <div style="display:flex;gap:8px">
-        <select id="salesFilter" class="select"><option value="">All salespeople</option></select>
-        <button id="manageSalesBtn" class="btn" title="Manage salespeople">⋯</button>
-      </div>
-      <select id="statusFilter" class="select">
-        <option value="">All status</option>
-        <option>New</option><option>PO Raised</option><option>Ordered</option>
-        <option>Awaiting Test</option><option>At Test House</option>
-        <option>Awaiting Vendor Dispatch</option><option>In Transit</option>
-        <option>At Reshipper</option><option>With Us</option>
-        <option>Delivered to Customer</option><option>On Hold</option>
-        <option>Closed</option><option>Cancelled</option>
-      </select>
-      <select id="priorityFilter" class="select">
-        <option value="">All priorities</option>
-        <option>Critical</option><option>High</option><option>Normal</option><option>Low</option>
-      </select>
-      <button id="addOrderBtn" class="btn btn-primary">+ New Order</button>
-      <button id="exportBtn" class="btn">Export CSV</button>
+<div class="wrap">
+  <header>
+    <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified Electronics">
+    <div style="flex:1">
+      <h1>Order Tracker</h1>
+      <div class="sub">Create & track orders with priority, requested-by date, tests, partial shipments, costs & GP.</div>
     </div>
+  </header>
 
-    <!-- Table -->
-    <div class="card table-wrap">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Ref</th><th>Sales</th><th>Customer</th><th>Part</th><th>Qty</th>
-            <th>Priority</th><th>Status</th><th>Order Date</th><th>Requested by</th><th>Age</th>
-            <th>Tests</th><th>Vendor</th><th>Incoterm</th><th>Terms</th><th>Pay</th>
-            <th>Ship</th><th>Invoice</th><th>Due</th>
-            <th>Ship Path</th><th>Files</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="ordersBody"></tbody>
-      </table>
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <input id="searchInput" class="input" placeholder="Search: customer, part number, order ref..."/>
+    <div style="display:flex;gap:8px">
+      <select id="salesFilter" class="select"><option value="">All salespeople</option></select>
+      <button id="manageSalesBtn" class="btn" title="Manage salespeople">⋯</button>
     </div>
+    <select id="statusFilter" class="select">
+      <option value="">All status</option>
+      <option>New</option><option>PO Raised</option><option>Ordered</option>
+      <option>Awaiting Test</option><option>At Test House</option>
+      <option>Awaiting Vendor Dispatch</option><option>In Transit</option>
+      <option>At Reshipper</option><option>With Us</option>
+      <option>Delivered to Customer</option><option>On Hold</option>
+      <option>Closed</option><option>Cancelled</option>
+    </select>
+    <select id="priorityFilter" class="select">
+      <option value="">All priorities</option>
+      <option>Critical</option><option>High</option><option>Normal</option><option>Low</option>
+    </select>
+    <button id="addOrderBtn" class="btn btn-primary">+ New Order</button>
+    <button id="exportBtn" class="btn">Export CSV</button>
   </div>
 
-  <!-- Order modal (unchanged core layout, trimmed here for brevity) -->
-  <div id="overlay" class="overlay" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <header>
-        <h3 id="modalTitle" style="margin:0;font-size:18px;font-weight:800">New Order</h3>
-        <button id="closeModal" class="btn">✕</button>
-      </header>
-      <div class="body">
-        <input type="hidden" id="orderId" />
-        <!-- SALES section -->
-        <div class="section">
-          <h4>SALES — what Sales enters</h4>
-          <div class="grid">
-            <div><label>Salesperson</label><select id="salesperson" class="select"></select><div class="hint">Use “⋯” to manage this list.</div></div>
-            <div><label>Customer</label><input id="customer" class="input" required></div>
-            <div><label>Part Number</label><input id="part_number" class="input" required></div>
-            <div><label>Quantity</label><input id="quantity" type="number" min="0" class="input"></div>
-            <div><label>Priority</label><select id="priority" class="select"><option>Normal</option><option>High</option><option>Critical</option><option>Low</option></select></div>
-            <div>
-              <label>Status</label>
-              <select id="status" class="select">
-                <option>New</option><option>PO Raised</option><option>Ordered</option>
-                <option>Awaiting Test</option><option>At Test House</option>
-                <option>Awaiting Vendor Dispatch</option><option>In Transit</option>
-                <option>At Reshipper</option><option>With Us</option>
-                <option>Delivered to Customer</option><option>On Hold</option>
-                <option>Closed</option><option>Cancelled</option>
-                <option value="__other">Other…</option>
-              </select>
-              <div id="status_other" class="other-wrap"><input class="input" placeholder="Enter custom status"></div>
+  <!-- Table -->
+  <div class="card table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th class="sep">Order Date</th>
+          <th>Requested by</th>
+          <th>Age</th>
+          <th class="sep">Qty</th>
+          <th>Sell £</th>
+          <th>GP</th>
+          <th class="sep">Tests</th>
+          <th>Vendor</th>
+          <th>Incoterm</th>
+          <th class="sep">Terms</th>
+          <th>Pay</th>
+          <th class="sep">Ship</th>
+          <th>Invoice</th>
+          <th class="sep">Due</th>
+          <th>Ship Path</th>
+          <th class="sep">Files</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="ordersBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ORDER modal -->
+<div id="overlay" class="overlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <header>
+      <h3 id="modalTitle" style="margin:0;font-size:18px;font-weight:800">New Order</h3>
+      <button id="closeModal" class="btn">✕</button>
+    </header>
+    <div class="body">
+      <input type="hidden" id="orderId"/>
+
+      <!-- SALES -->
+      <div class="section">
+        <h4>SALES — what Sales enters</h4>
+        <div class="grid">
+          <div><label>Salesperson</label><select id="salesperson" class="select"></select><div class="hint">Use “⋯” to manage this list.</div></div>
+          <div><label>Customer</label><input id="customer" class="input" required></div>
+
+          <div><label>Part Number</label><input id="part_number" class="input" required></div>
+          <div><label>Quantity</label><input id="quantity" type="number" min="0" class="input"></div>
+
+          <div><label>Unit Sell Price (£)</label><input id="sell_price" type="number" step="0.01" min="0" class="input"></div>
+          <div><label>Priority</label><select id="priority" class="select"><option>Normal</option><option>High</option><option>Critical</option><option>Low</option></select></div>
+
+          <div>
+            <label>Status</label>
+            <select id="status" class="select">
+              <option>New</option><option>PO Raised</option><option>Ordered</option>
+              <option>Awaiting Test</option><option>At Test House</option>
+              <option>Awaiting Vendor Dispatch</option><option>In Transit</option>
+              <option>At Reshipper</option><option>With Us</option>
+              <option>Delivered to Customer</option><option>On Hold</option>
+              <option>Closed</option><option>Cancelled</option>
+              <option value="__other">Other…</option>
+            </select>
+            <div id="status_other" class="other-wrap"><input class="input" placeholder="Enter custom status"></div>
+          </div>
+
+          <div><label>Order Date</label><input id="order_date" type="date" class="input"></div>
+          <div><label>Requested by</label><input id="requested_by" type="date" class="input"></div>
+
+          <div>
+            <label>Incoterm</label>
+            <select id="incoterm" class="select">
+              <option>DAP</option><option>EXW</option><option>FCA</option><option>FOB</option>
+              <option>CFR</option><option>CIF</option><option>CPT</option><option>CIP</option>
+              <option>DPU</option><option>DDP</option>
+              <option value="__other">Other…</option>
+            </select>
+            <div id="incoterm_other" class="other-wrap"><input class="input" placeholder="Enter custom incoterm"></div>
+          </div>
+          <div>
+            <label>Payment Terms</label>
+            <select id="payment_terms" class="select">
+              <option>Net 5</option><option>Net 10</option><option>Net 15</option><option>Net 20</option>
+              <option selected>Net 30</option><option>Net 40</option><option>Net 50</option><option>Net 60</option><option>Net 90</option>
+              <option value="__other">Other…</option>
+            </select>
+            <div id="payment_terms_other" class="other-wrap"><input class="input" placeholder="Enter custom terms (e.g., Prepaid)"></div>
+          </div>
+          <div>
+            <label>Payment Method</label>
+            <select id="payment_method" class="select">
+              <option selected>Bank Transfer</option><option>Credit Card</option><option>PayPal</option><option>Other</option>
+              <option value="__other">Other…</option>
+            </select>
+            <div id="payment_method_other" class="other-wrap"><input class="input" placeholder="Enter custom method"></div>
+          </div>
+
+          <div style="grid-column:1/-1">
+            <label>Testing required</label>
+            <div class="checks" id="tests_group">
+              <label class="pill"><input type="checkbox" id="t_none"  name="test_req" value="No test"><span>No test</span></label>
+              <label class="pill"><input type="checkbox"           name="test_req" value="EVI"><span>EVI</span></label>
+              <label class="pill"><input type="checkbox"           name="test_req" value="Solderability"><span>Solderability</span></label>
+              <label class="pill"><input type="checkbox"           name="test_req" value="Electrical"><span>Electrical</span></label>
+              <label class="pill"><input type="checkbox" id="t_other" name="test_req" value="Other"><span>Other</span></label>
             </div>
-            <div><label>Order Date</label><input id="order_date" type="date" class="input"></div>
-            <div><label>Requested by</label><input id="requested_by" type="date" class="input"></div>
-            <div>
-              <label>Incoterm</label>
-              <select id="incoterm" class="select">
-                <option>DAP</option><option>EXW</option><option>FCA</option><option>FOB</option>
-                <option>CFR</option><option>CIF</option><option>CPT</option><option>CIP</option>
-                <option>DPU</option><option>DDP</option>
-                <option value="__other">Other…</option>
-              </select>
-              <div id="incoterm_other" class="other-wrap"><input class="input" placeholder="Enter custom incoterm"></div>
-            </div>
-            <div>
-              <label>Payment Terms</label>
-              <select id="payment_terms" class="select">
-                <option>Net 5</option><option>Net 10</option><option>Net 15</option><option>Net 20</option>
-                <option selected>Net 30</option><option>Net 40</option><option>Net 50</option><option>Net 60</option><option>Net 90</option>
-                <option value="__other">Other…</option>
-              </select>
-              <div id="payment_terms_other" class="other-wrap"><input class="input" placeholder="Enter custom terms (e.g., Prepaid)"></div>
-            </div>
-            <div>
-              <label>Payment Method</label>
-              <select id="payment_method" class="select">
-                <option selected>Bank Transfer</option><option>Credit Card</option><option>PayPal</option><option>Other</option>
-                <option value="__other">Other…</option>
-              </select>
-              <div id="payment_method_other" class="other-wrap"><input class="input" placeholder="Enter custom method"></div>
-            </div>
-            <div style="grid-column:1/-1">
-              <label>Testing required</label>
-              <div class="checks" id="tests_group">
-                <label class="pill"><input type="checkbox" id="t_none"  name="test_req" value="No test"><span>No test</span></label>
-                <label class="pill"><input type="checkbox"           name="test_req" value="EVI"><span>EVI</span></label>
-                <label class="pill"><input type="checkbox"           name="test_req" value="Solderability"><span>Solderability</span></label>
-                <label class="pill"><input type="checkbox"           name="test_req" value="Electrical"><span>Electrical</span></label>
-                <label class="pill"><input type="checkbox" id="t_other" name="test_req" value="Other"><span>Other</span></label>
-              </div>
-              <div id="test_other_wrap" class="other-wrap"><input id="test_other_input" class="input" placeholder="Describe other test"></div>
-            </div>
-            <div style="grid-column:1/-1">
-              <label>Customer PO (for open orders)</label>
-              <input id="file_po" type="file" accept="application/pdf" class="input"><div id="po_note" class="hint" style="margin-top:6px"></div>
-            </div>
+            <div id="test_other_wrap" class="other-wrap"><input id="test_other_input" class="input" placeholder="Describe other test"></div>
+          </div>
+
+          <div style="grid-column:1/-1">
+            <label>Customer PO (for open orders)</label>
+            <input id="file_po" type="file" accept="application/pdf" class="input">
+            <div id="po_note" class="hint" style="margin-top:6px"></div>
           </div>
         </div>
+      </div>
 
-        <!-- PURCHASING -->
-        <div class="section">
-          <h4>PURCHASING — what Purchasing updates</h4>
-          <div class="grid">
-            <div><label>Vendor</label><input id="vendor" class="input"></div>
-            <div><label>Tracking (vendor/reshipper)</label><input id="tracking" class="input"></div>
-            <div><label>Ship Date</label><input id="ship_date" type="date" class="input"></div>
-            <div class="inline-grid">
-              <div><label>Invoice Date</label><input id="invoice_date" type="date" class="input" disabled><div class="hint">Automatically equals Ship Date</div></div>
-              <div><label>Due Date</label><input id="due_date" type="date" class="input" disabled><div class="hint">Invoice + Payment Terms</div></div>
-            </div>
-            <div style="grid-column:1/-1">
-              <label>Ship Path (From → To, Method, Ref)</label>
-              <div id="shipLegs"></div>
-              <div style="margin-top:8px"><button type="button" id="addLegBtn" class="btn">+ Add leg</button></div>
-            </div>
+      <!-- PURCHASING -->
+      <div class="section">
+        <h4>PURCHASING — what Purchasing updates</h4>
+        <div class="grid">
+          <div><label>Vendor</label><input id="vendor" class="input"></div>
+          <div><label>Tracking (vendor/reshipper)</label><input id="tracking" class="input"></div>
 
-            <!-- Warehouse shipping -->
-            <div class="section" style="grid-column:1/-1">
-              <h4>WAREHOUSE — shipping from our warehouse</h4>
-              <div class="grid">
-                <div>
-                  <label>Warehouse</label>
-                  <select id="wh_location" class="select">
-                    <option>UK Warehouse</option><option>HK Warehouse</option>
-                    <option>US Warehouse</option><option>CN Warehouse</option>
-                    <option value="__other">Other…</option>
-                  </select>
-                  <div id="wh_location_other" class="other-wrap"><input class="input" placeholder="Enter warehouse"></div>
-                </div>
-                <div>
-                  <label>Courier</label>
-                  <select id="wh_courier" class="select">
-                    <option>DHL</option><option>FedEx</option><option>UPS</option><option>TNT</option><option>DPD</option><option>Royal Mail</option>
-                    <option value="__other">Other…</option>
-                  </select>
-                  <div id="wh_courier_other" class="other-wrap"><input class="input" placeholder="Enter courier"></div>
-                </div>
-                <div><label>Tracking No.</label><input id="wh_tracking" class="input" placeholder="e.g. 1234567890"></div>
+          <!-- Costs -->
+          <div><label>Unit Cost (£)</label><input id="unit_cost" type="number" step="0.01" min="0" class="input"></div>
+          <div><label>Test Cost (£)</label><input id="test_cost" type="number" step="0.01" min="0" class="input"></div>
+          <div><label>Shipping Cost (£)</label><input id="shipping_cost" type="number" step="0.01" min="0" class="input"></div>
+
+          <!-- Live financials preview -->
+          <div class="section" style="grid-column:1/-1">
+            <h4>Financials (auto)</h4>
+            <div class="kv"><label>Revenue</label><div id="fin_revenue">£0.00</div></div>
+            <div class="kv"><label>Total Cost</label><div id="fin_cost">£0.00</div></div>
+            <div class="kv"><label>Gross Profit</label><div id="fin_gp" class="gp-pos">£0.00 (0%)</div></div>
+            <div class="hint">Revenue = Qty × Unit Sell Price. Total Cost = Qty × Unit Cost + Test + Shipping.</div>
+          </div>
+
+          <!-- Shipments -->
+          <div style="grid-column:1/-1">
+            <div class="section" style="margin:0">
+              <h4>Shipments (partial allowed)</h4>
+              <table class="mini-table" id="shipmentsTable">
+                <thead><tr><th style="width:160px">Date</th><th style="width:140px">Qty</th><th style="width:220px">Courier</th><th>Tracking</th><th style="width:120px"></th></tr></thead>
+                <tbody id="shipmentsBody"></tbody>
+              </table>
+              <div class="mini-actions" style="margin-top:8px">
+                <button type="button" id="addShipmentBtn" class="btn">+ Add shipment</button>
+                <div class="hint">Invoice = shipment date. Due = shipment date + Payment Terms.</div>
               </div>
             </div>
+          </div>
 
-            <div style="grid-column:1/-1"><label>Test Report (for closed orders)</label><input id="file_test" type="file" accept="application/pdf" class="input"><div id="test_note" class="hint" style="margin-top:6px"></div></div>
-            <div style="grid-column:1/-1"><label>Notes</label><textarea id="notes" rows="3" class="input"></textarea></div>
+          <!-- Ship path -->
+          <div style="grid-column:1/-1">
+            <label>Ship Path (From → To, Method, Ref)</label>
+            <div id="shipLegs"></div>
+            <div style="margin-top:8px"><button type="button" id="addLegBtn" class="btn">+ Add leg</button></div>
+          </div>
+
+          <!-- Warehouse -->
+          <div class="section" style="grid-column:1/-1">
+            <h4>WAREHOUSE — shipping from our warehouse</h4>
+            <div class="grid">
+              <div>
+                <label>Warehouse</label>
+                <select id="wh_location" class="select">
+                  <option>UK Warehouse</option><option>HK Warehouse</option>
+                  <option>US Warehouse</option><option>CN Warehouse</option>
+                  <option value="__other">Other…</option>
+                </select>
+                <div id="wh_location_other" class="other-wrap"><input class="input" placeholder="Enter warehouse"></div>
+              </div>
+              <div>
+                <label>Courier</label>
+                <select id="wh_courier" class="select">
+                  <option>DHL</option><option>FedEx</option><option>UPS</option><option>TNT</option><option>DPD</option><option>Royal Mail</option>
+                  <option value="__other">Other…</option>
+                </select>
+                <div id="wh_courier_other" class="other-wrap"><input class="input" placeholder="Enter courier"></div>
+              </div>
+              <div><label>Tracking No.</label><input id="wh_tracking" class="input" placeholder="e.g. 1234567890"></div>
+            </div>
+          </div>
+
+          <div style="grid-column:1/-1">
+            <label>Test Report (for closed orders)</label>
+            <input id="file_test" type="file" accept="application/pdf" class="input">
+            <div id="test_note" class="hint" style="margin-top:6px"></div>
+          </div>
+
+          <div style="grid-column:1/-1">
+            <label>Notes</label>
+            <textarea id="notes" rows="3" class="input"></textarea>
           </div>
         </div>
       </div>
@@ -264,18 +333,37 @@
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Manage Salespeople -->
-  <div id="salesOverlay" class="overlay" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="salesTitle" style="max-width:560px">
-      <header><h3 id="salesTitle" style="margin:0;font-size:18px;font-weight:800">Manage Salespeople</h3><button id="closeSales" class="btn">✕</button></header>
-      <div class="body">
-        <div class="hint" style="margin-bottom:10px">Add/remove names. Changes apply to filter and the order form.</div>
-        <div id="salesList"></div>
-        <div style="display:flex;gap:8px;margin-top:10px"><input id="newSalesName" class="input" placeholder="Add name (e.g. Alice S)"><button id="addSalesNameBtn" class="btn btn-primary">Add</button></div>
-      </div>
+<!-- VIEW modal -->
+<div id="viewOverlay" class="overlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="viewTitle">
+    <header>
+      <h3 id="viewTitle" style="margin:0;font-size:18px;font-weight:800">Order</h3>
+      <button id="closeView" class="btn">✕</button>
+    </header>
+    <div class="body" id="viewBody"></div>
+    <div class="footer"><button id="closeView2" class="btn btn-primary">Close</button></div>
+  </div>
+</div>
+
+<!-- Manage Salespeople -->
+<div id="salesOverlay" class="overlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="salesTitle" style="max-width:560px">
+    <header><h3 id="salesTitle" style="margin:0;font-size:18px;font-weight:800">Manage Salespeople</h3><button id="closeSales" class="btn">✕</button></header>
+    <div class="body">
+      <div class="hint" style="margin-bottom:10px">Add/remove names. Changes apply to filter and the order form.</div>
+      <div id="salesList"></div>
+      <div style="display:flex;gap:8px;margin-top:10px"><input id="newSalesName" class="input" placeholder="Add name (e.g. Alice S)"><button id="addSalesNameBtn" class="btn btn-primary">Add</button></div>
     </div>
   </div>
+</div>
+
+<!-- Courier suggestions -->
+<datalist id="couriers">
+  <option value="DHL"><option value="FedEx"><option value="UPS">
+  <option value="TNT"><option value="DPD"><option value="Royal Mail">
+</datalist>
 
 <script>
 /* ===== Storage & helpers ===== */
@@ -288,6 +376,7 @@ const uuid=()=> 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const
 const shortRef=id=>id.replace(/-/g,'').slice(0,8).toUpperCase();
 const safe=s=>(s||'').replace(/[^a-z0-9._-]+/gi,'_');
 function addDays(dateStr,days){ if(!dateStr) return ''; const d=new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+(days||0)); return d.toISOString().slice(0,10); }
+const fmtDays=(dateStr)=>{ if(!dateStr) return '-'; const n=dayjs().diff(dayjs(dateStr),'day'); return isNaN(n)?'-':`${n} day${n===1?'':'s'}`; };
 
 function getOrders(){ try{const v=JSON.parse(localStorage.getItem(LS_ORDERS)||'[]'); return Array.isArray(v)?v:[];}catch{return[];} }
 function setOrders(v){ localStorage.setItem(LS_ORDERS,JSON.stringify(v)); }
@@ -297,7 +386,6 @@ function setSalespeople(v){ localStorage.setItem(LS_SALES,JSON.stringify(v)); re
 /* ===== UI basics ===== */
 const ordersBody=$('ordersBody');
 const salesFilter=$('salesFilter'), statusFilter=$('statusFilter'), priorityFilter=$('priorityFilter'), searchInput=$('searchInput');
-
 function refreshSalesControls(){
   const list=getSalespeople();
   salesFilter.innerHTML='<option value="">All salespeople</option>'+list.map(n=>`<option>${n}</option>`).join('');
@@ -376,6 +464,47 @@ function addShipLeg(from='',to='',method='',ref=''){
   $('shipLegs').appendChild(row);
 }
 
+/* ===== Shipments (partial) ===== */
+function shipmentsToRows(){
+  return [...$('shipmentsBody').querySelectorAll('tr')].map(tr=>{
+    const [d,q,c,t]=tr.querySelectorAll('input');
+    const qty = q.value===''? null : Number(q.value);
+    return {date:d.value||null, qty, courier:c.value.trim()||null, tracking:t.value.trim()||null};
+  }).filter(s=>s.date || s.qty || s.courier || s.tracking);
+}
+function addShipmentRow(date='',qty='',courier='',tracking=''){
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td><input type="date" class="input" style="padding:8px" value="${date||''}"></td>
+    <td><input type="number" min="0" class="input" style="padding:8px" value="${qty||''}"></td>
+    <td><input class="input" style="padding:8px" list="couriers" placeholder="DHL, FedEx…" value="${courier||''}"></td>
+    <td><input class="input" style="padding:8px" placeholder="Tracking number" value="${tracking||''}"></td>
+    <td><button type="button" class="btn btn-danger">Remove</button></td>`;
+  tr.querySelector('button').onclick=()=>tr.remove();
+  $('shipmentsBody').appendChild(tr);
+}
+
+/* ===== Financials ===== */
+function toNum(v){ const n=Number(v); return isFinite(n)?n:0; }
+function computeFinancials(o){
+  const qty=toNum(o.quantity);
+  const rev = qty * toNum(o.sell_price);
+  const cost = (qty * toNum(o.unit_cost)) + toNum(o.test_cost) + toNum(o.shipping_cost);
+  const gp = rev - cost;
+  const gpPct = rev>0 ? (gp/rev*100) : 0;
+  return {rev,cost,gp,gpPct};
+}
+function fmtMoney(n){ return '£'+(toNum(n)).toFixed(2); }
+function updateFinPreview(){
+  const rec=collectPartial(); // only values needed
+  const F=computeFinancials(rec);
+  $('fin_revenue').textContent=fmtMoney(F.rev);
+  $('fin_cost').textContent=fmtMoney(F.cost);
+  const el=$('fin_gp');
+  el.textContent=`${fmtMoney(F.gp)} (${isFinite(F.gpPct)?F.gpPct.toFixed(0):0}%)`;
+  el.className = F.gp>=0 ? 'gp-pos' : 'gp-neg';
+}
+
 /* ===== Modal open/close & populate ===== */
 function openModal(order){
   $('overlay').style.display='flex';
@@ -384,13 +513,14 @@ function openModal(order){
   $('orderId').value='';
 
   $('shipLegs').innerHTML=''; addShipLeg();
+  $('shipmentsBody').innerHTML=''; addShipmentRow();
   $('po_note').textContent=''; $('test_note').textContent='';
-  $('invoice_date').value=''; $('due_date').value='';
   $('order_date').valueAsDate=new Date();
   $('payment_terms').value='Net 30'; $('payment_method').value='Bank Transfer'; $('incoterm').value='DAP';
   ['status_other','incoterm_other','payment_terms_other','payment_method_other','wh_location_other','wh_courier_other'].forEach(id=>$(id).style.display='none');
   setTests([]);
   $('wh_location').value='UK Warehouse'; $('wh_courier').value='DHL'; $('wh_tracking').value='';
+  $('sell_price').value=''; $('unit_cost').value=''; $('test_cost').value=''; $('shipping_cost').value='';
 
   if(order){
     $('orderId').value=order.id;
@@ -398,6 +528,10 @@ function openModal(order){
     $('customer').value=order.customer||'';
     $('part_number').value=order.part_number||'';
     $('quantity').value=order.quantity??'';
+    $('sell_price').value=order.sell_price??'';
+    $('unit_cost').value=order.unit_cost??'';
+    $('test_cost').value=order.test_cost??'';
+    $('shipping_cost').value=order.shipping_cost??'';
     $('priority').value=order.priority||'Normal';
 
     setChoice('status','status_other', order.status||'New', [
@@ -412,17 +546,14 @@ function openModal(order){
     setChoice('payment_terms','payment_terms_other', order.payment_terms||'Net 30', ['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90']);
     setChoice('payment_method','payment_method_other', order.payment_method||'Bank Transfer', ['Bank Transfer','Credit Card','PayPal','Other']);
 
-    $('ship_date').value=order.ship_date||'';
-    if(order.ship_date){
-      $('invoice_date').value=order.ship_date;
-      $('due_date').value=addDays(order.ship_date, TERM_DAYS[order.payment_terms]||0);
-    }
-
     setTests(order.tests||[]);
     $('notes').value=order.notes||'';
 
     const legs=Array.isArray(order.ship_path)?order.ship_path:[];
     $('shipLegs').innerHTML=''; if(!legs.length) addShipLeg(); else legs.forEach(l=>addShipLeg(l.from,l.to,l.method,l.ref));
+
+    const shipments=Array.isArray(order.shipments)?order.shipments:[];
+    $('shipmentsBody').innerHTML=''; if(!shipments.length) addShipmentRow(); else shipments.forEach(s=>addShipmentRow(s.date||'', s.qty??'', s.courier||'', s.tracking||''));
 
     if(order.files?.po) $('po_note').textContent=`Existing file: ${order.files.po}`;
     if(order.files?.test_report) $('test_note').textContent=`Existing file: ${order.files.test_report}`;
@@ -431,13 +562,18 @@ function openModal(order){
     setChoice('wh_courier','wh_courier_other', order.wh_courier||'DHL', ['DHL','FedEx','UPS','TNT','DPD','Royal Mail']);
     $('wh_tracking').value=order.wh_tracking||'';
   }
+  updateFinPreview();
 }
 function closeModal(){ $('overlay').style.display='none'; }
+
+/* ===== Derived helpers ===== */
+function latestShipmentDate(shipments){ const dates=(shipments||[]).map(s=>s.date).filter(Boolean).sort(); return dates.length?dates[dates.length-1]:''; }
+function shippedQty(shipments){ return (shipments||[]).reduce((a,s)=>a+(Number(s.qty)||0),0); }
+function shipText(legs){ return (Array.isArray(legs)?legs:[]).map(l=>`${l.from||'?'}→${l.to||'?'}`).join(' • '); }
 
 /* ===== Render table ===== */
 function badgePriority(p){ const cls=p==='Critical'?'b-bad':p==='High'?'b-warn':p==='Low'?'b-dim':'b-pri'; return `<span class="badge ${cls}">${p}</span>`; }
 function badgeStatus(s){ const done=['Closed','Delivered to Customer','Cancelled']; const warn=['On Hold','Awaiting Vendor Dispatch','Awaiting Test','At Test House']; const cls=done.includes(s)?'b-dim':warn.includes(s)?'b-warn':'b-pri'; return `<span class="badge ${cls}">${s}</span>`; }
-function shipText(legs){ return (Array.isArray(legs)?legs:[]).map(l=>`${l.from||'?'}→${l.to||'?'}`).join(' • '); }
 
 function render(){
   const data=getOrders().sort((a,b)=> (b.order_date||'').localeCompare(a.order_date||'') || (a.priority||'').localeCompare(b.priority||'') );
@@ -451,134 +587,106 @@ function render(){
     return blob.includes(q);
   });
 
-  if(!rows.length){ ordersBody.innerHTML=`<tr><td colspan="21" style="padding:16px;color:var(--muted);text-align:center">No orders yet.</td></tr>`; return; }
+  if(!rows.length){ ordersBody.innerHTML=`<tr><td colspan="18" style="padding:16px;color:var(--muted);text-align:center">No orders yet.</td></tr>`; return; }
 
   ordersBody.innerHTML=rows.map(r=>{
-    const age=r.order_date?dayjs(r.order_date).fromNow(true):'-';
     const files=r.files||{}; const filesTxt=[files.po?'PO':'',files.test_report?'Report':''].filter(Boolean).join(' · ');
-    const ship=r.ship_date||''; const invoice=ship||''; const due=ship?addDays(ship,TERM_DAYS[r.payment_terms]||0):'';
+    const legsTxt=shipText(r.ship_path);
+    const shipped=shippedQty(r.shipments);
+    const invDate=latestShipmentDate(r.shipments);
+    const due=invDate?addDays(invDate, (TERM_DAYS[r.payment_terms]||0)):'';
     const tests=(r.tests||[]).join(' · ');
+    const age = r.order_date ? fmtDays(r.order_date) : '-';
+
+    const F=computeFinancials(r);
+    const gpClass = F.gp>=0 ? 'gp-pos' : 'gp-neg';
+
     return `<tr>
-      <td class="mono">${shortRef(r.id)}</td>
-      <td>${r.salesperson||''}</td>
-      <td>${r.customer||''}</td>
-      <td>${r.part_number||''}</td>
-      <td>${r.quantity??''}</td>
-      <td>${badgePriority(r.priority||'Normal')}</td>
-      <td>
-        <span class="cell-edit">${badgeStatus(r.status||'New')}
-          <button class="icon-btn edit-btn" title="Edit status" data-field="status" data-id="${r.id}">✎</button>
-        </span>
-      </td>
-      <td>${r.order_date||''}</td>
+      <td><span class="cell-edit">${badgeStatus(r.status||'New')} <button class="icon-btn edit-btn" title="Edit status" data-field="status" data-id="${r.id}">✎</button></span></td>
+      <td class="sep">${r.order_date||''}</td>
       <td>${r.requested_by||''}</td>
       <td>${age}</td>
-      <td>${tests}</td>
+      <td class="sep">${r.quantity??''}</td>
+      <td>${r.sell_price!=null?('£'+Number(r.sell_price).toFixed(2)):'-'}</td>
+      <td class="${gpClass}">${F.gp>=0?'+':''}${'£'+F.gp.toFixed(2)} <span class="small">(${isFinite(F.gpPct)?F.gpPct.toFixed(0):0}%)</span></td>
+      <td class="sep">${tests}</td>
       <td>${r.vendor||''}</td>
-      <td>
-        <span class="cell-edit">${r.incoterm||''}
-          <button class="icon-btn edit-btn" title="Edit incoterm" data-field="incoterm" data-id="${r.id}">✎</button>
-        </span>
-      </td>
-      <td>
-        <span class="cell-edit">${r.payment_terms||''}
-          <button class="icon-btn edit-btn" title="Edit terms" data-field="payment_terms" data-id="${r.id}">✎</button>
-        </span>
-      </td>
-      <td>
-        <span class="cell-edit">${r.payment_method||''}
-          <button class="icon-btn edit-btn" title="Edit payment method" data-field="payment_method" data-id="${r.id}">✎</button>
-        </span>
-      </td>
-      <td>${ship}</td>
-      <td>${invoice}</td>
-      <td>${due}</td>
-      <td>${shipText(r.ship_path)}</td>
-      <td>${filesTxt}</td>
-      <td><button class="btn" data-edit="${r.id}">Edit</button></td>
+      <td><span class="cell-edit">${r.incoterm||''} <button class="icon-btn edit-btn" title="Edit incoterm" data-field="incoterm" data-id="${r.id}">✎</button></span></td>
+      <td class="sep"><span class="cell-edit">${r.payment_terms||''} <button class="icon-btn edit-btn" title="Edit terms" data-field="payment_terms" data-id="${r.id}">✎</button></span></td>
+      <td><span class="cell-edit">${r.payment_method||''} <button class="icon-btn edit-btn" title="Edit payment method" data-field="payment_method" data-id="${r.id}">✎</button></span></td>
+      <td class="sep">${(r.quantity!=null)?`${shipped} / ${r.quantity}`:shipped}</td>
+      <td>${invDate}</td>
+      <td class="sep">${due}</td>
+      <td>${legsTxt}</td>
+      <td class="sep">${filesTxt}</td>
+      <td><div style="display:flex;gap:8px"><button class="btn btn-primary" data-view="${r.id}">View</button><button class="btn" data-edit="${r.id}">Edit</button></div></td>
     </tr>`;
   }).join('');
 
-  // row edit buttons
   [...ordersBody.querySelectorAll('[data-edit]')].forEach(b=>{
     b.addEventListener('click',()=>{ const row=getOrders().find(x=>x.id===b.dataset.edit); openModal(row); });
+  });
+  [...ordersBody.querySelectorAll('[data-view]')].forEach(b=>{
+    b.addEventListener('click',()=>{ const row=getOrders().find(x=>x.id===b.dataset.view); openView(row); });
   });
 }
 
 /* ===== Inline editing ===== */
-const OPTIONS = {
-  payment_terms: ["Net 5","Net 10","Net 15","Net 20","Net 30","Net 40","Net 50","Net 60","Net 90"],
-  status: ["New","PO Raised","Ordered","Awaiting Test","At Test House","Awaiting Vendor Dispatch","In Transit","At Reshipper","With Us","Delivered to Customer","On Hold","Closed","Cancelled"],
-  incoterm: ["DAP","EXW","FCA","FOB","CFR","CIF","CPT","CIP","DPU","DDP"],
-  payment_method: ["Bank Transfer","Credit Card","PayPal","Other"]
+const OPTIONS={
+  payment_terms:["Net 5","Net 10","Net 15","Net 20","Net 30","Net 40","Net 50","Net 60","Net 90"],
+  status:["New","PO Raised","Ordered","Awaiting Test","At Test House","Awaiting Vendor Dispatch","In Transit","At Reshipper","With Us","Delivered to Customer","On Hold","Closed","Cancelled"],
+  incoterm:["DAP","EXW","FCA","FOB","CFR","CIF","CPT","CIP","DPU","DDP"],
+  payment_method:["Bank Transfer","Credit Card","PayPal","Other"]
 };
+ordersBody.addEventListener('click',(e)=>{
+  const btn=e.target.closest('.edit-btn'); if(!btn) return;
+  const field=btn.dataset.field, id=btn.dataset.id, cell=btn.closest('td');
+  openSelectEditor(cell,id,field);
+});
+function openSelectEditor(cell,id,field){
+  const orders=getOrders(); const row=orders.find(r=>r.id===id); if(!row) return;
+  const current=row[field]||''; const opts=OPTIONS[field]||[];
+  const wrapper=document.createElement('span'); wrapper.className='cell-edit';
+  const sel=document.createElement('select'); sel.className='inline-select';
+  sel.innerHTML=opts.map(o=>`<option ${o===current?'selected':''}>${o}</option>`).join('')+`<option value="__other">Other…</option>`;
+  wrapper.appendChild(sel);
+  const save=(val)=>{ if(val==='__other'){ const c=prompt('Enter custom value:', current||''); if(c===null){ render(); return; } updateField(id,field,c.trim()); } else { updateField(id,field,val); } };
+  sel.addEventListener('change',()=>save(sel.value));
+  cell.innerHTML=''; cell.appendChild(wrapper); sel.focus();
+}
+function updateField(id,field,value){
+  const orders=getOrders(); const i=orders.findIndex(r=>r.id===id); if(i<0) return;
+  orders[i][field]=value; setOrders(orders); render();
+}
 
-ordersBody.addEventListener('click', (e)=>{
-  const btn = e.target.closest('.edit-btn');
-  if(!btn) return;
-  const field = btn.dataset.field;
-  const id = btn.dataset.id;
-  const cell = btn.closest('td');
-  openSelectEditor(cell, id, field);
+/* ===== Collect & Save/Delete ===== */
+function collectPartial(){
+  return {
+    quantity:$('quantity').value,
+    sell_price:$('sell_price').value,
+    unit_cost:$('unit_cost').value,
+    test_cost:$('test_cost').value,
+    shipping_cost:$('shipping_cost').value
+  };
+}
+['quantity','sell_price','unit_cost','test_cost','shipping_cost'].forEach(id=>{
+  $(id).addEventListener('input',updateFinPreview);
 });
 
-function openSelectEditor(cell, id, field){
-  const orders=getOrders();
-  const row=orders.find(r=>r.id===id);
-  if(!row) return;
-
-  const current = row[field] || '';
-  const opts = OPTIONS[field]||[];
-  const wrapper = document.createElement('span');
-  wrapper.className='cell-edit';
-  const sel = document.createElement('select');
-  sel.className='inline-select';
-  sel.innerHTML = opts.map(o=>`<option ${o===current?'selected':''}>${o}</option>`).join('') + `<option value="__other">Other…</option>`;
-  wrapper.appendChild(sel);
-
-  const save = (val)=>{
-    if(val==='__other'){
-      const custom = prompt('Enter custom value:', current||'');
-      if(custom===null) { cell.innerHTML = ''; cell.appendChild(original); return; }
-      updateField(id, field, custom.trim()); return;
-    }
-    updateField(id, field, val);
-  };
-
-  sel.addEventListener('change', ()=> save(sel.value));
-  const original = cell.firstElementChild ? cell.firstElementChild.cloneNode(true) : document.createTextNode(cell.textContent);
-  cell.innerHTML='';
-  cell.appendChild(wrapper);
-  sel.focus();
-}
-
-function updateField(id, field, value){
-  const orders=getOrders();
-  const i=orders.findIndex(r=>r.id===id);
-  if(i<0) return;
-  orders[i][field]=value;
-
-  // if terms changed, recompute due if ship_date exists
-  if(field==='payment_terms' && orders[i].ship_date){
-    // nothing to store (due/invoice are computed on render) but we keep consistency if needed later
-  }
-  setOrders(orders);
-  render();
-}
-
-/* ===== Save/Delete from modal ===== */
 $('saveBtn').addEventListener('click',(e)=>{
   e.preventDefault();
   const cust=$('customer').value.trim(), part=$('part_number').value.trim();
   if(!cust || !part){ alert('Please fill Customer and Part Number.'); return; }
 
-  const id = $('orderId').value || uuid();
-  const qtyRaw=$('quantity').value; const qty = qtyRaw==='' ? null : Number(qtyRaw);
+  const id=$('orderId').value || uuid();
+  const qtyRaw=$('quantity').value; const qty=qtyRaw===''?null:Number(qtyRaw);
 
   const legs=[...$('shipLegs').children].map(row=>{
     const [from,to,method,ref]=row.querySelectorAll('input');
     return {from:from.value.trim(),to:to.value.trim(),method:method.value.trim(),ref:ref.value.trim()};
   }).filter(l=>l.from||l.to||l.method||l.ref);
+
+  const shipments=shipmentsToRows();
 
   const files={};
   const po=$('file_po').files[0]; if(po) files.po=safe(po.name)+' (pending upload)';
@@ -590,6 +698,10 @@ $('saveBtn').addEventListener('click',(e)=>{
     customer:cust,
     part_number:part,
     quantity:qty,
+    sell_price: $('sell_price').value===''?null:Number($('sell_price').value),
+    unit_cost: $('unit_cost').value===''?null:Number($('unit_cost').value),
+    test_cost: $('test_cost').value===''?null:Number($('test_cost').value),
+    shipping_cost: $('shipping_cost').value===''?null:Number($('shipping_cost').value),
     priority:$('priority').value,
     status:readChoice('status','status_other'),
     order_date:$('order_date').value || null,
@@ -599,8 +711,8 @@ $('saveBtn').addEventListener('click',(e)=>{
     incoterm:readChoice('incoterm','incoterm_other'),
     payment_terms:readChoice('payment_terms','payment_terms_other'),
     payment_method:readChoice('payment_method','payment_method_other'),
-    ship_date:$('ship_date').value || null,
     ship_path:legs,
+    shipments,
     files,
     notes:$('notes').value.trim() || null,
     tests:testsToArray(),
@@ -621,6 +733,69 @@ $('deleteBtn').addEventListener('click',()=>{
   setOrders(getOrders().filter(x=>x.id!==id)); closeModal(); render();
 });
 
+/* ===== View modal ===== */
+function openView(r){
+  const F=computeFinancials(r);
+  const inv=latestShipmentDate(r.shipments);
+  const due=inv?addDays(inv,(TERM_DAYS[r.payment_terms]||0)):'';
+  const shipped=shippedQty(r.shipments);
+  const shipLines=(r.shipments||[]).map(s=>`<div class="kv"><label>${s.date||'-'} — ${s.courier||''}</label><div>Qty ${s.qty??''} · ${s.tracking||''}</div></div>`).join('') || '<div class="muted">No shipments</div>';
+  const files=r.files||{}; const filesTxt=[files.po?'PO':'',files.test_report?'Report':''].filter(Boolean).join(' · ')||'-';
+  $('viewTitle').textContent=`Order ${shortRef(r.id)} — ${r.customer||''}`;
+  $('viewBody').innerHTML = `
+    <div class="section"><h4>Overview</h4>
+      <div class="kv"><label>Part</label><div>${r.part_number||''}</div></div>
+      <div class="kv"><label>Salesperson</label><div>${r.salesperson||''}</div></div>
+      <div class="kv"><label>Status</label><div>${r.status||''}</div></div>
+      <div class="kv"><label>Priority</label><div>${r.priority||''}</div></div>
+      <div class="kv"><label>Order Date</label><div>${r.order_date||'-'}</div></div>
+      <div class="kv"><label>Requested by</label><div>${r.requested_by||'-'}</div></div>
+      <div class="kv"><label>Age</label><div>${fmtDays(r.order_date)}</div></div>
+    </div>
+
+    <div class="section"><h4>Sales</h4>
+      <div class="kv"><label>Quantity</label><div>${r.quantity??'-'}</div></div>
+      <div class="kv"><label>Unit Sell Price</label><div>${r.sell_price!=null?('£'+Number(r.sell_price).toFixed(2)):'-'}</div></div>
+      <div class="kv"><label>Incoterm</label><div>${r.incoterm||''}</div></div>
+      <div class="kv"><label>Terms</label><div>${r.payment_terms||''}</div></div>
+      <div class="kv"><label>Payment Method</label><div>${r.payment_method||''}</div></div>
+      <div class="kv"><label>Tests</label><div>${(r.tests||[]).join(' · ')||'-'}</div></div>
+    </div>
+
+    <div class="section"><h4>Purchasing</h4>
+      <div class="kv"><label>Vendor</label><div>${r.vendor||'-'}</div></div>
+      <div class="kv"><label>Tracking</label><div>${r.tracking||'-'}</div></div>
+      <div class="kv"><label>Unit Cost</label><div>${r.unit_cost!=null?('£'+Number(r.unit_cost).toFixed(2)):'-'}</div></div>
+      <div class="kv"><label>Test Cost</label><div>${r.test_cost!=null?('£'+Number(r.test_cost).toFixed(2)):'-'}</div></div>
+      <div class="kv"><label>Shipping Cost</label><div>${r.shipping_cost!=null?('£'+Number(r.shipping_cost).toFixed(2)):'-'}</div></div>
+    </div>
+
+    <div class="section"><h4>Financials</h4>
+      <div class="kv"><label>Revenue</label><div>${fmtMoney(F.rev)}</div></div>
+      <div class="kv"><label>Total Cost</label><div>${fmtMoney(F.cost)}</div></div>
+      <div class="kv"><label>GP</label><div>${F.gp>=0?'+':''}${fmtMoney(F.gp)} (${isFinite(F.gpPct)?F.gpPct.toFixed(0):0}%)</div></div>
+    </div>
+
+    <div class="section"><h4>Shipments</h4>${shipLines}
+      <div class="kv"><label>Latest Invoice</label><div>${inv||'-'}</div></div>
+      <div class="kv"><label>Due</label><div>${due||'-'}</div></div>
+    </div>
+
+    <div class="section"><h4>Path & Files</h4>
+      <div class="kv"><label>Ship Path</label><div>${(Array.isArray(r.ship_path)?r.ship_path.map(l=>`${l.from||'?'}→${l.to||'?'}`).join(' • '):'-')}</div></div>
+      <div class="kv"><label>Warehouse</label><div>${r.wh_location||'-'}</div></div>
+      <div class="kv"><label>Warehouse Courier</label><div>${r.wh_courier||'-'}</div></div>
+      <div class="kv"><label>Warehouse Tracking</label><div>${r.wh_tracking||'-'}</div></div>
+      <div class="kv"><label>Files</label><div>${filesTxt}</div></div>
+    </div>
+
+    <div class="section"><h4>Notes</h4><div class="muted">${(r.notes||'').replace(/\\n/g,'<br>')||'—'}</div></div>
+  `;
+  $('viewOverlay').style.display='flex';
+}
+$('closeView').onclick=()=>$('viewOverlay').style.display='none';
+$('closeView2').onclick=()=>$('viewOverlay').style.display='none';
+
 /* ===== Sales manager ===== */
 function renderSalesMgr(){
   const list=getSalespeople(), box=$('salesList'); box.innerHTML='';
@@ -636,19 +811,21 @@ function renderSalesMgr(){
 }
 $('manageSalesBtn').onclick=()=>{ $('salesOverlay').style.display='flex'; renderSalesMgr(); };
 $('closeSales').onclick=()=>{ $('salesOverlay').style.display='none'; };
-$('addSalesNameBtn').onclick=()=>{ const v=$('newSalesName').value.trim(); if(!v) return; const l=getSalespeople(); if(!l.includes(v)) l.push(v); setSalespeople(l); $('newSalesName').value=''; renderSalesMgr(); };
 
 /* ===== Export ===== */
 $('exportBtn').onclick=()=>{
   const rows=getOrders();
-  const headers=["Ref","Salesperson","Customer","Part Number","Quantity","Priority","Status","Order Date","Requested by","Tests","Vendor","Tracking","Incoterm","Payment Terms","Payment Method","Ship Date","Invoice Date","Due Date","Ship Path","WH Warehouse","WH Courier","WH Tracking","Notes"];
+  const headers=["Ref","Salesperson","Customer","Part Number","Quantity","Sell Price","Unit Cost","Test Cost","Shipping Cost","Revenue","Cost Total","GP","GP %","Priority","Status","Order Date","Requested by","Tests","Vendor","Tracking","Incoterm","Payment Terms","Payment Method","Shipments","Last Invoice","Due","Ship Path","WH Warehouse","WH Courier","WH Tracking","Notes"];
   const csv=[headers.join(',')];
   rows.forEach(r=>{
-    const ship=r.ship_date||''; const invoice=ship||''; const due=ship?addDays(ship,TERM_DAYS[r.payment_terms]||0):'';
-    const line=[shortRef(r.id),r.salesperson,r.customer,r.part_number,r.quantity??'',r.priority,r.status,r.order_date||'',r.requested_by||'',(r.tests||[]).join(' · '),r.vendor||'',r.tracking||'',r.incoterm||'',r.payment_terms||'',r.payment_method||'',ship,invoice,due,(Array.isArray(r.ship_path)?r.ship_path.map(l=>`${l.from||'?'}→${l.to||'?'}`).join(' • '):''),r.wh_location||'',r.wh_courier||'',r.wh_tracking||'',(r.notes||'').replace(/[\n\r]+/g,' ')];
+    const inv=latestShipmentDate(r.shipments);
+    const due=inv?addDays(inv,(TERM_DAYS[r.payment_terms]||0)):'';
+    const F=computeFinancials(r);
+    const shipmentsStr=(r.shipments||[]).map(s=>`${s.date||''} ${s.qty??''} ${s.courier||''} ${s.tracking||''}`.trim()).join(' | ');
+    const line=[shortRef(r.id),r.salesperson,r.customer,r.part_number,r.quantity??'',r.sell_price??'',r.unit_cost??'',r.test_cost??'',r.shipping_cost??'',F.rev.toFixed(2),F.cost.toFixed(2),F.gp.toFixed(2),(isFinite(F.gpPct)?F.gpPct.toFixed(0):0)+'%',r.priority,r.status,r.order_date||'',r.requested_by||'',(r.tests||[]).join(' · '),r.vendor||'',r.tracking||'',r.incoterm||'',r.payment_terms||'',r.payment_method||'',shipmentsStr,inv,due,(Array.isArray(r.ship_path)?r.ship_path.map(l=>`${l.from||'?'}→${l.to||'?'}`).join(' • '):''),r.wh_location||'',r.wh_courier||'',r.wh_tracking||'',(r.notes||'').replace(/[\\n\\r]+/g,' ')];
     csv.push(line.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(','));
   });
-  const blob=new Blob([csv.join('\n')],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+  const blob=new Blob([csv.join('\\n')],{type:'text/csv'}); const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download='orders.csv'; a.click(); URL.revokeObjectURL(url);
 };
 
@@ -663,6 +840,7 @@ $('addOrderBtn').onclick=()=>openModal(null);
 $('closeModal').onclick=closeModal;
 $('cancelBtn').onclick=closeModal;
 $('addLegBtn').onclick=()=>addShipLeg();
+$('addShipmentBtn').onclick=()=>addShipmentRow();
 
 wireOther('status','status_other');
 wireOther('incoterm','incoterm_other');
@@ -671,15 +849,12 @@ wireOther('payment_method','payment_method_other');
 wireOther('wh_location','wh_location_other');
 wireOther('wh_courier','wh_courier_other');
 
-$('ship_date').addEventListener('change',()=>{ const s=$('ship_date').value; $('invoice_date').value=s||''; const t=readChoice('payment_terms','payment_terms_other'); $('due_date').value=s?addDays(s,TERM_DAYS[t]||0):''; });
-$('payment_terms').addEventListener('change',()=>{ const s=$('ship_date').value; if(s){ const t=readChoice('payment_terms','payment_terms_other'); $('due_date').value=addDays(s,TERM_DAYS[t]||0); }});
-$('payment_terms_other').querySelector('input').addEventListener('input',()=>{ const s=$('ship_date').value; if(s){ const t=readChoice('payment_terms','payment_terms_other'); $('due_date').value=addDays(s,TERM_DAYS[t]||0); }});
-
-function init(){ const list=getSalespeople(); setSalespeople(list); refreshSalesControls(); render(); wireTests(); }
+function init(){ setSalespeople(getSalespeople()); refreshSalesControls(); render(); wireTests(); }
 init();
 </script>
 </body>
 </html>
+
 
 
 
