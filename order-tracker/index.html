@@ -40,12 +40,30 @@ h1{font-size:28px;margin:0;font-weight:800}
 .btn-danger{border-color:#ffd6dc;background:#ffeff1;color:#a63a49}
 
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 30px rgba(103,58,183,.06),0 1px 0 rgba(0,0,0,.02)}
-.table-wrap{border-radius:16px}
-.table{width:100%;border-collapse:separate;border-spacing:0}
-.table thead th{background:#fbfbfe;color:#3b3f55;font-weight:700;padding:12px;border-bottom:1px solid var(--line);position:sticky;top:0;white-space:nowrap}
-.table tbody td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top;word-break:break-word}
+
+/* ---- table with horizontal scroll ---- */
+.table-wrap{
+  border-radius:16px;
+  overflow-x:auto;              /* allow horizontal scroll */
+}
+.table{
+  width:100%;
+  min-width:1700px;             /* tweak if you add/remove columns */
+  border-collapse:separate;
+  border-spacing:0;
+}
+.table thead th{
+  background:#fbfbfe;color:#3b3f55;font-weight:700;
+  padding:12px;border-bottom:1px solid var(--line);
+  position:sticky;top:0;white-space:nowrap; /* single line headers */
+}
+.table tbody td{
+  padding:12px;border-bottom:1px solid var(--line);vertical-align:top;
+  white-space:nowrap;word-break:normal;    /* single line cells */
+}
 .sep{border-right:2px solid var(--line-strong)}
 .table thead th.sep{border-right:2px solid var(--line-strong)}
+
 .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid #e8e8f5;background:#fbfbff;color:#5a46b6}
 .b-pri{background:#f2f9f5;border-color:#d8efe3;color:#0d7e5b}
 .b-warn{background:#fff7ec;border-color:#ffe3bf;color:#8a6119}
@@ -55,7 +73,6 @@ h1{font-size:28px;margin:0;font-weight:800}
 .icon-btn:hover{background:#f2f2ff}
 .inline-select{padding:6px 8px;border:1px solid var(--line);border-radius:8px;outline:none}
 .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace}
-
 .gp-pos{color:#0d7e5b;font-weight:800}
 .gp-neg{color:#a63a49;font-weight:800}
 .small{font-size:12px;color:#6b7280}
@@ -129,6 +146,27 @@ h1{font-size:28px;margin:0;font-weight:800}
   <!-- Table -->
   <div class="card table-wrap">
     <table class="table">
+      <!-- column widths -->
+      <colgroup>
+        <col style="width:170px"><!-- Status -->
+        <col style="width:120px"><!-- Order Date -->
+        <col style="width:130px"><!-- Requested -->
+        <col style="width:80px"><!-- Age -->
+        <col style="width:80px"><!-- Qty -->
+        <col style="width:110px"><!-- Sell -->
+        <col style="width:150px"><!-- GP -->
+        <col style="width:140px"><!-- Tests -->
+        <col style="width:120px"><!-- Vendor -->
+        <col style="width:110px"><!-- Incoterm -->
+        <col style="width:120px"><!-- Terms -->
+        <col style="width:140px"><!-- Pay -->
+        <col style="width:120px"><!-- Ship -->
+        <col style="width:120px"><!-- Invoice -->
+        <col style="width:120px"><!-- Due -->
+        <col style="width:220px"><!-- Ship Path -->
+        <col style="width:120px"><!-- Files -->
+        <col style="width:160px"><!-- Actions -->
+      </colgroup>
       <thead>
         <tr>
           <th>Status</th>
@@ -136,7 +174,7 @@ h1{font-size:28px;margin:0;font-weight:800}
           <th>Requested by</th>
           <th>Age</th>
           <th class="sep">Qty</th>
-          <th>Sell £</th>
+          <th>Sell</th>
           <th>GP</th>
           <th class="sep">Tests</th>
           <th>Vendor</th>
@@ -176,9 +214,16 @@ h1{font-size:28px;margin:0;font-weight:800}
           <div><label>Part Number</label><input id="part_number" class="input" required></div>
           <div><label>Quantity</label><input id="quantity" type="number" min="0" class="input"></div>
 
-          <div><label>Unit Sell Price (£)</label><input id="sell_price" type="number" step="0.01" min="0" class="input"></div>
-          <div><label>Priority</label><select id="priority" class="select"><option>Normal</option><option>High</option><option>Critical</option><option>Low</option></select></div>
+          <div><label>Currency</label>
+            <select id="currency" class="select">
+              <option value="USD" selected>$ — USD</option>
+              <option value="GBP">£ — GBP</option>
+              <option value="EUR">€ — EUR</option>
+            </select>
+          </div>
+          <div><label>Unit Sell Price</label><input id="sell_price" type="number" step="0.01" min="0" class="input"></div>
 
+          <div><label>Priority</label><select id="priority" class="select"><option>Normal</option><option>High</option><option>Critical</option><option>Low</option></select></div>
           <div>
             <label>Status</label>
             <select id="status" class="select">
@@ -252,17 +297,17 @@ h1{font-size:28px;margin:0;font-weight:800}
           <div><label>Tracking (vendor/reshipper)</label><input id="tracking" class="input"></div>
 
           <!-- Costs -->
-          <div><label>Unit Cost (£)</label><input id="unit_cost" type="number" step="0.01" min="0" class="input"></div>
-          <div><label>Test Cost (£)</label><input id="test_cost" type="number" step="0.01" min="0" class="input"></div>
-          <div><label>Shipping Cost (£)</label><input id="shipping_cost" type="number" step="0.01" min="0" class="input"></div>
+          <div><label>Unit Cost</label><input id="unit_cost" type="number" step="0.01" min="0" class="input"></div>
+          <div><label>Test Cost</label><input id="test_cost" type="number" step="0.01" min="0" class="input"></div>
+          <div><label>Shipping Cost</label><input id="shipping_cost" type="number" step="0.01" min="0" class="input"></div>
 
           <!-- Live financials preview -->
           <div class="section" style="grid-column:1/-1">
             <h4>Financials (auto)</h4>
-            <div class="kv"><label>Revenue</label><div id="fin_revenue">£0.00</div></div>
-            <div class="kv"><label>Total Cost</label><div id="fin_cost">£0.00</div></div>
-            <div class="kv"><label>Gross Profit</label><div id="fin_gp" class="gp-pos">£0.00 (0%)</div></div>
-            <div class="hint">Revenue = Qty × Unit Sell Price. Total Cost = Qty × Unit Cost + Test + Shipping.</div>
+            <div class="kv"><label>Revenue</label><div id="fin_revenue">$0.00</div></div>
+            <div class="kv"><label>Total Cost</label><div id="fin_cost">$0.00</div></div>
+            <div class="kv"><label>Gross Profit</label><div id="fin_gp" class="gp-pos">$0.00 (0%)</div></div>
+            <div class="hint">Currency applies to all prices for this order. Revenue = Qty × Unit Sell Price. Total Cost = Qty × Unit Cost + Test + Shipping.</div>
           </div>
 
           <!-- Shipments -->
@@ -370,6 +415,7 @@ h1{font-size:28px;margin:0;font-weight:800}
 const LS_ORDERS='ve.orders', LS_SALES='ve.salespeople';
 const DEFAULT_SALES=["Nick N","Dan C","Emir B","Nick K","Jake B"];
 const TERM_DAYS={ "Net 5":5,"Net 10":10,"Net 15":15,"Net 20":20,"Net 30":30,"Net 40":40,"Net 50":50,"Net 60":60,"Net 90":90 };
+const CURR_SYMBOL={ USD:'$', GBP:'£', EUR:'€' };
 
 const $=id=>document.getElementById(id);
 const uuid=()=> 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);});
@@ -494,14 +540,21 @@ function computeFinancials(o){
   const gpPct = rev>0 ? (gp/rev*100) : 0;
   return {rev,cost,gp,gpPct};
 }
-function fmtMoney(n){ return '£'+(toNum(n)).toFixed(2); }
+function money(n,curr){ const sym = CURR_SYMBOL[curr||'USD'] || '$'; return sym + (toNum(n)).toFixed(2); }
 function updateFinPreview(){
-  const rec=collectPartial(); // only values needed
+  const rec = {
+    quantity:$('quantity').value,
+    sell_price:$('sell_price').value,
+    unit_cost:$('unit_cost').value,
+    test_cost:$('test_cost').value,
+    shipping_cost:$('shipping_cost').value,
+    currency:$('currency').value
+  };
   const F=computeFinancials(rec);
-  $('fin_revenue').textContent=fmtMoney(F.rev);
-  $('fin_cost').textContent=fmtMoney(F.cost);
+  $('fin_revenue').textContent=money(F.rev,rec.currency);
+  $('fin_cost').textContent=money(F.cost,rec.currency);
   const el=$('fin_gp');
-  el.textContent=`${fmtMoney(F.gp)} (${isFinite(F.gpPct)?F.gpPct.toFixed(0):0}%)`;
+  el.textContent=`${F.gp>=0?'+':''}${money(F.gp,rec.currency)} (${isFinite(F.gpPct)?F.gpPct.toFixed(0):0}%)`;
   el.className = F.gp>=0 ? 'gp-pos' : 'gp-neg';
 }
 
@@ -521,6 +574,7 @@ function openModal(order){
   setTests([]);
   $('wh_location').value='UK Warehouse'; $('wh_courier').value='DHL'; $('wh_tracking').value='';
   $('sell_price').value=''; $('unit_cost').value=''; $('test_cost').value=''; $('shipping_cost').value='';
+  $('currency').value='USD';
 
   if(order){
     $('orderId').value=order.id;
@@ -528,6 +582,7 @@ function openModal(order){
     $('customer').value=order.customer||'';
     $('part_number').value=order.part_number||'';
     $('quantity').value=order.quantity??'';
+    $('currency').value=order.currency||'USD';
     $('sell_price').value=order.sell_price??'';
     $('unit_cost').value=order.unit_cost??'';
     $('test_cost').value=order.test_cost??'';
@@ -572,7 +627,6 @@ function shippedQty(shipments){ return (shipments||[]).reduce((a,s)=>a+(Number(s
 function shipText(legs){ return (Array.isArray(legs)?legs:[]).map(l=>`${l.from||'?'}→${l.to||'?'}`).join(' • '); }
 
 /* ===== Render table ===== */
-function badgePriority(p){ const cls=p==='Critical'?'b-bad':p==='High'?'b-warn':p==='Low'?'b-dim':'b-pri'; return `<span class="badge ${cls}">${p}</span>`; }
 function badgeStatus(s){ const done=['Closed','Delivered to Customer','Cancelled']; const warn=['On Hold','Awaiting Vendor Dispatch','Awaiting Test','At Test House']; const cls=done.includes(s)?'b-dim':warn.includes(s)?'b-warn':'b-pri'; return `<span class="badge ${cls}">${s}</span>`; }
 
 function render(){
@@ -597,9 +651,9 @@ function render(){
     const due=invDate?addDays(invDate, (TERM_DAYS[r.payment_terms]||0)):'';
     const tests=(r.tests||[]).join(' · ');
     const age = r.order_date ? fmtDays(r.order_date) : '-';
-
     const F=computeFinancials(r);
     const gpClass = F.gp>=0 ? 'gp-pos' : 'gp-neg';
+    const sym = CURR_SYMBOL[r.currency||'USD'] || '$';
 
     return `<tr>
       <td><span class="cell-edit">${badgeStatus(r.status||'New')} <button class="icon-btn edit-btn" title="Edit status" data-field="status" data-id="${r.id}">✎</button></span></td>
@@ -607,8 +661,8 @@ function render(){
       <td>${r.requested_by||''}</td>
       <td>${age}</td>
       <td class="sep">${r.quantity??''}</td>
-      <td>${r.sell_price!=null?('£'+Number(r.sell_price).toFixed(2)):'-'}</td>
-      <td class="${gpClass}">${F.gp>=0?'+':''}${'£'+F.gp.toFixed(2)} <span class="small">(${isFinite(F.gpPct)?F.gpPct.toFixed(0):0}%)</span></td>
+      <td>${r.sell_price!=null?(sym+Number(r.sell_price).toFixed(2)):'-'}</td>
+      <td class="${gpClass}">${F.gp>=0?'+':''}${sym+F.gp.toFixed(2)} <span class="small">(${isFinite(F.gpPct)?F.gpPct.toFixed(0):0}%)</span></td>
       <td class="sep">${tests}</td>
       <td>${r.vendor||''}</td>
       <td><span class="cell-edit">${r.incoterm||''} <button class="icon-btn edit-btn" title="Edit incoterm" data-field="incoterm" data-id="${r.id}">✎</button></span></td>
@@ -660,17 +714,19 @@ function updateField(id,field,value){
 }
 
 /* ===== Collect & Save/Delete ===== */
-function collectPartial(){
+function collectFinancialInputs(){
   return {
     quantity:$('quantity').value,
     sell_price:$('sell_price').value,
     unit_cost:$('unit_cost').value,
     test_cost:$('test_cost').value,
-    shipping_cost:$('shipping_cost').value
+    shipping_cost:$('shipping_cost').value,
+    currency:$('currency').value
   };
 }
-['quantity','sell_price','unit_cost','test_cost','shipping_cost'].forEach(id=>{
+['quantity','sell_price','unit_cost','test_cost','shipping_cost','currency'].forEach(id=>{
   $(id).addEventListener('input',updateFinPreview);
+  $(id).addEventListener('change',updateFinPreview);
 });
 
 $('saveBtn').addEventListener('click',(e)=>{
@@ -692,16 +748,19 @@ $('saveBtn').addEventListener('click',(e)=>{
   const po=$('file_po').files[0]; if(po) files.po=safe(po.name)+' (pending upload)';
   const tr=$('file_test').files[0]; if(tr) files.test_report=safe(tr.name)+' (pending upload)';
 
+  const fin=collectFinancialInputs();
+
   const rec={
     id,
     salesperson:$('salesperson').value,
     customer:cust,
     part_number:part,
     quantity:qty,
-    sell_price: $('sell_price').value===''?null:Number($('sell_price').value),
-    unit_cost: $('unit_cost').value===''?null:Number($('unit_cost').value),
-    test_cost: $('test_cost').value===''?null:Number($('test_cost').value),
-    shipping_cost: $('shipping_cost').value===''?null:Number($('shipping_cost').value),
+    currency:fin.currency,
+    sell_price: fin.sell_price===''?null:Number(fin.sell_price),
+    unit_cost: fin.unit_cost===''?null:Number(fin.unit_cost),
+    test_cost: fin.test_cost===''?null:Number(fin.test_cost),
+    shipping_cost: fin.shipping_cost===''?null:Number(fin.shipping_cost),
     priority:$('priority').value,
     status:readChoice('status','status_other'),
     order_date:$('order_date').value || null,
@@ -741,6 +800,8 @@ function openView(r){
   const shipped=shippedQty(r.shipments);
   const shipLines=(r.shipments||[]).map(s=>`<div class="kv"><label>${s.date||'-'} — ${s.courier||''}</label><div>Qty ${s.qty??''} · ${s.tracking||''}</div></div>`).join('') || '<div class="muted">No shipments</div>';
   const files=r.files||{}; const filesTxt=[files.po?'PO':'',files.test_report?'Report':''].filter(Boolean).join(' · ')||'-';
+  const sym = CURR_SYMBOL[r.currency||'USD'] || '$';
+
   $('viewTitle').textContent=`Order ${shortRef(r.id)} — ${r.customer||''}`;
   $('viewBody').innerHTML = `
     <div class="section"><h4>Overview</h4>
@@ -755,7 +816,8 @@ function openView(r){
 
     <div class="section"><h4>Sales</h4>
       <div class="kv"><label>Quantity</label><div>${r.quantity??'-'}</div></div>
-      <div class="kv"><label>Unit Sell Price</label><div>${r.sell_price!=null?('£'+Number(r.sell_price).toFixed(2)):'-'}</div></div>
+      <div class="kv"><label>Currency</label><div>${r.currency||'USD'}</div></div>
+      <div class="kv"><label>Unit Sell Price</label><div>${r.sell_price!=null?(sym+Number(r.sell_price).toFixed(2)):'-'}</div></div>
       <div class="kv"><label>Incoterm</label><div>${r.incoterm||''}</div></div>
       <div class="kv"><label>Terms</label><div>${r.payment_terms||''}</div></div>
       <div class="kv"><label>Payment Method</label><div>${r.payment_method||''}</div></div>
@@ -765,15 +827,15 @@ function openView(r){
     <div class="section"><h4>Purchasing</h4>
       <div class="kv"><label>Vendor</label><div>${r.vendor||'-'}</div></div>
       <div class="kv"><label>Tracking</label><div>${r.tracking||'-'}</div></div>
-      <div class="kv"><label>Unit Cost</label><div>${r.unit_cost!=null?('£'+Number(r.unit_cost).toFixed(2)):'-'}</div></div>
-      <div class="kv"><label>Test Cost</label><div>${r.test_cost!=null?('£'+Number(r.test_cost).toFixed(2)):'-'}</div></div>
-      <div class="kv"><label>Shipping Cost</label><div>${r.shipping_cost!=null?('£'+Number(r.shipping_cost).toFixed(2)):'-'}</div></div>
+      <div class="kv"><label>Unit Cost</label><div>${r.unit_cost!=null?(sym+Number(r.unit_cost).toFixed(2)):'-'}</div></div>
+      <div class="kv"><label>Test Cost</label><div>${r.test_cost!=null?(sym+Number(r.test_cost).toFixed(2)):'-'}</div></div>
+      <div class="kv"><label>Shipping Cost</label><div>${r.shipping_cost!=null?(sym+Number(r.shipping_cost).toFixed(2)):'-'}</div></div>
     </div>
 
     <div class="section"><h4>Financials</h4>
-      <div class="kv"><label>Revenue</label><div>${fmtMoney(F.rev)}</div></div>
-      <div class="kv"><label>Total Cost</label><div>${fmtMoney(F.cost)}</div></div>
-      <div class="kv"><label>GP</label><div>${F.gp>=0?'+':''}${fmtMoney(F.gp)} (${isFinite(F.gpPct)?F.gpPct.toFixed(0):0}%)</div></div>
+      <div class="kv"><label>Revenue</label><div>${money(F.rev,r.currency)}</div></div>
+      <div class="kv"><label>Total Cost</label><div>${money(F.cost,r.currency)}</div></div>
+      <div class="kv"><label>GP</label><div>${F.gp>=0?'+':''}${money(F.gp,r.currency)} (${isFinite(F.gpPct)?F.gpPct.toFixed(0):0}%)</div></div>
     </div>
 
     <div class="section"><h4>Shipments</h4>${shipLines}
@@ -789,7 +851,7 @@ function openView(r){
       <div class="kv"><label>Files</label><div>${filesTxt}</div></div>
     </div>
 
-    <div class="section"><h4>Notes</h4><div class="muted">${(r.notes||'').replace(/\\n/g,'<br>')||'—'}</div></div>
+    <div class="section"><h4>Notes</h4><div class="muted">${(r.notes||'').replace(/\n/g,'<br>')||'—'}</div></div>
   `;
   $('viewOverlay').style.display='flex';
 }
@@ -815,17 +877,17 @@ $('closeSales').onclick=()=>{ $('salesOverlay').style.display='none'; };
 /* ===== Export ===== */
 $('exportBtn').onclick=()=>{
   const rows=getOrders();
-  const headers=["Ref","Salesperson","Customer","Part Number","Quantity","Sell Price","Unit Cost","Test Cost","Shipping Cost","Revenue","Cost Total","GP","GP %","Priority","Status","Order Date","Requested by","Tests","Vendor","Tracking","Incoterm","Payment Terms","Payment Method","Shipments","Last Invoice","Due","Ship Path","WH Warehouse","WH Courier","WH Tracking","Notes"];
+  const headers=["Ref","Salesperson","Customer","Part Number","Quantity","Currency","Sell Price","Unit Cost","Test Cost","Shipping Cost","Revenue","Cost Total","GP","GP %","Priority","Status","Order Date","Requested by","Tests","Vendor","Tracking","Incoterm","Payment Terms","Payment Method","Shipments","Last Invoice","Due","Ship Path","WH Warehouse","WH Courier","WH Tracking","Notes"];
   const csv=[headers.join(',')];
   rows.forEach(r=>{
     const inv=latestShipmentDate(r.shipments);
     const due=inv?addDays(inv,(TERM_DAYS[r.payment_terms]||0)):'';
     const F=computeFinancials(r);
     const shipmentsStr=(r.shipments||[]).map(s=>`${s.date||''} ${s.qty??''} ${s.courier||''} ${s.tracking||''}`.trim()).join(' | ');
-    const line=[shortRef(r.id),r.salesperson,r.customer,r.part_number,r.quantity??'',r.sell_price??'',r.unit_cost??'',r.test_cost??'',r.shipping_cost??'',F.rev.toFixed(2),F.cost.toFixed(2),F.gp.toFixed(2),(isFinite(F.gpPct)?F.gpPct.toFixed(0):0)+'%',r.priority,r.status,r.order_date||'',r.requested_by||'',(r.tests||[]).join(' · '),r.vendor||'',r.tracking||'',r.incoterm||'',r.payment_terms||'',r.payment_method||'',shipmentsStr,inv,due,(Array.isArray(r.ship_path)?r.ship_path.map(l=>`${l.from||'?'}→${l.to||'?'}`).join(' • '):''),r.wh_location||'',r.wh_courier||'',r.wh_tracking||'',(r.notes||'').replace(/[\\n\\r]+/g,' ')];
+    const line=[shortRef(r.id),r.salesperson,r.customer,r.part_number,r.quantity??'',r.currency||'USD',r.sell_price??'',r.unit_cost??'',r.test_cost??'',r.shipping_cost??'',F.rev.toFixed(2),F.cost.toFixed(2),F.gp.toFixed(2),(isFinite(F.gpPct)?F.gpPct.toFixed(0):0)+'%',r.priority,r.status,r.order_date||'',r.requested_by||'',(r.tests||[]).join(' · '),r.vendor||'',r.tracking||'',r.incoterm||'',r.payment_terms||'',r.payment_method||'',shipmentsStr,inv,due,(Array.isArray(r.ship_path)?r.ship_path.map(l=>`${l.from||'?'}→${l.to||'?'}`).join(' • '):''),r.wh_location||'',r.wh_courier||'',r.wh_tracking||'',(r.notes||'').replace(/[\n\r]+/g,' ')];
     csv.push(line.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(','));
   });
-  const blob=new Blob([csv.join('\\n')],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+  const blob=new Blob([csv.join('\n')],{type:'text/csv'}); const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download='orders.csv'; a.click(); URL.revokeObjectURL(url);
 };
 
@@ -854,6 +916,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
