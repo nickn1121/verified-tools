@@ -23,7 +23,7 @@
     .tabs{display:flex;gap:6px;flex-wrap:wrap}
     .tab{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;user-select:none}
     .tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
-    .row{display:grid;grid-template-columns:320px 1fr;gap:16px;margin-top:16px}
+    .row{display:grid;grid-template-columns:340px 1fr;gap:16px;margin-top:16px}
     .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
     .card h3{margin:0 0 6px 0}
     .card .hd{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
@@ -65,20 +65,30 @@
     .actions{display:flex;gap:8px;flex-wrap:wrap}
     .tools{display:flex;gap:10px;align-items:center}
     .search{flex:1;min-width:220px}
-    .muted{color:var(--muted)}
 
-    dialog{border:0;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:560px;max-width:calc(100vw - 24px)}
+    dialog{border:0;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:880px;max-width:calc(100vw - 24px)}
+    dialog.side{width:820px;max-width:820px;margin:0 0 0 auto;height:100%;border-radius:0}
     dialog::backdrop{background:rgba(0,0,0,.3)}
     .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
     .toast{position:fixed;bottom:18px;right:18px;background:#111827;color:#fff;padding:12px 14px;border-radius:10px;opacity:0;transform:translateY(10px);transition:.2s all}
     .toast.show{opacity:1;transform:none}
 
-    .empty{padding:30px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);text-align:center;background:#fff}
+    .empty{padding:30px;border:1px dashed var(--line);border-radius:12px;color:#6d7486;text-align:center;background:#fff}
 
     /* coverage bar */
     .coverage{height:8px;background:#f3f4f6;border-radius:999px;overflow:hidden}
     .coverage > i{display:block;height:100%;background:linear-gradient(90deg,#a78bfa,#60a5fa);width:0%}
+
+    table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    th,td{padding:8px 10px;text-align:left}
+    thead th{font-size:12px;color:#6d7486;font-weight:600}
+    tbody tr{background:#fff;border:1px solid var(--line)}
+    tbody tr td:first-child{border-radius:10px 0 0 10px}
+    tbody tr td:last-child{border-radius:0 10px 10px 0}
+    .tbl-actions{display:flex;gap:6px;justify-content:flex-end}
+    .inline-input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
+    .hotkey{font-size:12px;color:#6d7486}
   </style>
 </head>
 <body>
@@ -102,6 +112,7 @@
           <option value="best_price">Best price</option>
           <option value="lead_time">Lead time</option>
           <option value="priority">Priority</option>
+          <option value="coverage">Coverage</option>
         </select>
       </div>
     </div>
@@ -111,12 +122,15 @@
     <div class="row">
       <!-- LEFT: New RFQ -->
       <div class="card">
-        <div class="hd"><strong>New RFQ</strong><span class="muted">Sales → Purchasing</span></div>
+        <div class="hd"><strong>New RFQ</strong><span class="hotkey">Sales → Purchasing</span></div>
         <div class="bd">
           <form id="rfqForm" class="grid">
             <div>
-              <label>Salesperson</label>
-              <input id="salesperson" placeholder="e.g., Emir" required />
+              <label>Salesperson <span class="hotkey">(manage list)</span></label>
+              <div style="display:flex;gap:8px">
+                <select id="salesperson" style="flex:1"></select>
+                <button type="button" class="ghost" id="manageSales">✚</button>
+              </div>
             </div>
             <div>
               <label>Part Number</label>
@@ -157,7 +171,7 @@
             </div>
             <div style="display:flex;gap:10px;align-items:center">
               <button type="submit">Create RFQ</button>
-              <span id="rfqHint" class="muted"></span>
+              <span id="rfqHint" class="hotkey"></span>
             </div>
           </form>
         </div>
@@ -167,9 +181,14 @@
       <div class="card">
         <div class="hd">
           <strong id="listTitle">RFQs</strong>
-          <div class="muted" id="listMeta">—</div>
+          <div class="hotkey" id="listMeta">—</div>
         </div>
         <div class="bd">
+          <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+            <span class="hotkey">View:</span>
+            <button class="ghost" id="viewList">List</button>
+            <button class="ghost" id="viewBoard">Board</button>
+          </div>
           <div id="rfqList" class="rfq-list"></div>
           <div id="emptyState" class="empty" style="display:none">No RFQs yet for this tab. Create one on the left.</div>
         </div>
@@ -177,7 +196,70 @@
     </div>
   </div>
 
-  <!-- Add Offer Modal -->
+  <!-- RFQ Detail Drawer -->
+  <dialog id="rfqDrawer" class="side">
+    <div class="hd" style="padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px">
+      <strong id="drawerTitle">RFQ</strong>
+      <span id="drawerMeta" class="hotkey"></span>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button class="ghost" id="drawerCloseBtn">Close</button>
+      </div>
+    </div>
+    <div class="bd" style="padding:16px">
+      <div id="drawerCoverage" style="display:flex;align-items:center;gap:10px;margin:0 0 12px">
+        <div style="min-width:120px" class="hotkey">Coverage</div>
+        <div class="coverage" style="flex:1"><i style="width:0%"></i></div>
+        <div id="drawerCoverageText" class="hotkey" style="width:120px;text-align:right">0/0</div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px">
+        <div><strong>Offers</strong></div>
+        <div class="hotkey">Quick‑add row — press <kbd>Enter</kbd> to save</div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Vendor</th><th>Loc</th><th>Price</th><th>Cur</th><th>Qty</th><th>MOQ</th><th>LT(d)</th><th>Conf</th><th>Comments</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="offerRows"></tbody>
+        <tfoot>
+          <tr>
+            <td><input class="inline-input" id="in_vendor" list="vendorList" placeholder="Vendor" /></td>
+            <td><input class="inline-input" id="in_location" placeholder="Loc" /></td>
+            <td><input class="inline-input" id="in_price" type="number" step="0.0001" placeholder="0.00" /></td>
+            <td>
+              <select class="inline-input" id="in_currency"><option>USD</option><option>GBP</option><option>EUR</option></select>
+            </td>
+            <td><input class="inline-input" id="in_qty" type="number" step="1" placeholder="0" /></td>
+            <td><input class="inline-input" id="in_moq" type="number" step="1" placeholder="0" /></td>
+            <td><input class="inline-input" id="in_lt" type="number" step="1" placeholder="0" /></td>
+            <td>
+              <select class="inline-input" id="in_conf">
+                <option value="5">5</option><option value="4">4</option><option value="3" selected>3</option><option value="2">2</option><option value="1">1</option>
+              </select>
+            </td>
+            <td><input class="inline-input" id="in_comments" placeholder="Comments" /></td>
+            <td class="tbl-actions"><button class="ghost" id="quickAdd">Add</button></td>
+          </tr>
+        </tfoot>
+      </table>
+      <datalist id="vendorList"></datalist>
+
+      <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+        <button class="ghost" id="pasteToggle">Paste offers</button>
+        <span class="hotkey">CSV: vendor,location,price,currency,qty,moq,lead,confidence,comments</span>
+      </div>
+      <div id="pasteBox" style="display:none;margin-top:8px">
+        <textarea id="pasteArea" placeholder="Acme,Shenzhen,1.23,USD,500,100,7,4,In stock
+…"></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="ghost" id="pasteImport">Import</button></div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Add Offer Modal (still available) -->
   <dialog id="offerModal">
     <form method="dialog" id="offerForm">
       <div class="hd" style="padding:14px 16px;border-bottom:1px solid var(--line)"><strong>Add Offer</strong></div>
@@ -248,95 +330,60 @@
   <div id="toast" class="toast"></div>
 
   <script type="module">
-    // ===============================
-    // MODE: Supabase or Local Storage
-    // ===============================
-    const SUPABASE_URL = "https://YOUR-SUPABASE-PROJECT.supabase.co"; // replace when ready
-    const SUPABASE_ANON_KEY = "YOUR-SUPABASE-ANON-KEY"; // replace when ready
+    const SUPABASE_URL = "https://YOUR-SUPABASE-PROJECT.supabase.co";
+    const SUPABASE_ANON_KEY = "YOUR-SUPABASE-ANON-KEY";
     const HAS_SUPABASE = SUPABASE_URL && !/YOUR-SUPABASE-PROJECT/.test(SUPABASE_URL) && SUPABASE_ANON_KEY && !/YOUR-/.test(SUPABASE_ANON_KEY);
 
-    // Preload known salespeople for tabs; grows automatically as RFQs come in
-    const DEFAULT_SALESPEOPLE = ["Emir","Nick K","Dan","Jake","Alan","Howell","Maddy"]; // edit as needed
+    const DEFAULT_SALESPEOPLE = JSON.parse(localStorage.getItem('ve_salespeople')||'null') || ["Emir","Nick K","Dan","Jake","Alan","Howell","Maddy"];
 
-    let store; // data access abstraction
+    let store;
 
-    // ===== Local Store (runs offline) =====
     const localStore = (()=>{
-      const kRFQ = 've_rfqs_v2';
-      const kOFF = 've_offers_v2';
+      const kRFQ = 've_rfqs_v3';
+      const kOFF = 've_offers_v3';
+      const kVEND = 've_vendors_v1';
       const read = k => JSON.parse(localStorage.getItem(k)||'[]');
       const write = (k,v) => localStorage.setItem(k, JSON.stringify(v));
       const nid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
-
       async function listRFQs(){ return read(kRFQ).sort((a,b)=> new Date(b.created_at)-new Date(a.created_at)); }
-      async function listOffersFor(rfqIds){
+      async function listOffersFor(ids){
         const all = read(kOFF);
-        const map = new Map(rfqIds.map(id=>[id,[]]));
+        const map = new Map(ids.map(id=>[id,[]]));
         all.forEach(o=>{ if(map.has(o.rfq_id)) map.get(o.rfq_id).push(o); });
+        for(const id of map.keys()){ map.get(id).sort((a,b)=> (a.price - b.price) || (b.confidence - a.confidence)); }
         return map;
       }
       async function createRFQ(payload){
-        const rfqs = read(kRFQ);
-        const id = nid();
+        const rfqs = read(kRFQ); const id = nid();
         rfqs.push({ id, created_at: new Date().toISOString(), status:'open', selected_offer_id:null, ...payload });
-        write(kRFQ, rfqs);
-        return rfqs.find(r=>r.id===id);
+        write(kRFQ, rfqs); return rfqs.find(r=>r.id===id);
       }
-      async function updateRFQ(id, patch){
-        const rfqs = read(kRFQ);
-        const i = rfqs.findIndex(r=>r.id===id); if(i<0) throw new Error('RFQ not found');
-        rfqs[i] = { ...rfqs[i], ...patch };
-        write(kRFQ, rfqs);
-      }
-      async function addOffer(payload){
-        const offers = read(kOFF);
-        const id = nid();
-        offers.push({ id, created_at:new Date().toISOString(), ...payload });
-        write(kOFF, offers);
-      }
-      return { listRFQs, listOffersFor, createRFQ, updateRFQ, addOffer, isLocal:true };
+      async function updateRFQ(id, patch){ const rfqs = read(kRFQ); const i = rfqs.findIndex(r=>r.id===id); if(i<0) throw new Error('RFQ not found'); rfqs[i] = { ...rfqs[i], ...patch }; write(kRFQ, rfqs); }
+      async function addOffer(payload){ const offers = read(kOFF); const id = nid(); offers.push({ id, created_at:new Date().toISOString(), ...payload }); write(kOFF, offers); const vendors = new Set(read(kVEND)); vendors.add(payload.vendor); write(kVEND, [...vendors]); }
+      async function vendors(){ return read(kVEND); }
+      return { listRFQs, listOffersFor, createRFQ, updateRFQ, addOffer, vendors, isLocal:true };
     })();
 
-    // ===== Supabase Store (live DB) =====
     let supabase; let supabaseStore;
     if(HAS_SUPABASE){
       const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
       supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       supabaseStore = {
-        async listRFQs(){
-          const { data, error } = await supabase.from('rfqs').select('*').order('created_at',{ascending:false}).limit(5000);
-          if(error) throw error; return data || [];
-        },
-        async listOffersFor(ids){
-          const map = new Map(ids.map(id=>[id,[]]));
-          if(ids.length===0) return map;
-          const { data, error } = await supabase.from('offers').select('*').in('rfq_id', ids).order('price',{ascending:true});
-          if(error) throw error;
-          (data||[]).forEach(o=>{ if(map.has(o.rfq_id)) map.get(o.rfq_id).push(o); });
-          return map;
-        },
-        async createRFQ(payload){
-          const { data, error } = await supabase.from('rfqs').insert(payload).select().single();
-          if(error) throw error; return data;
-        },
-        async updateRFQ(id, patch){
-          const { error } = await supabase.from('rfqs').update(patch).eq('id', id); if(error) throw error;
-        },
-        async addOffer(payload){
-          const { error } = await supabase.from('offers').insert(payload); if(error) throw error;
-        },
+        async listRFQs(){ const { data, error } = await supabase.from('rfqs').select('*').order('created_at',{ascending:false}).limit(2000); if(error) throw error; return data||[]; },
+        async listOffersFor(ids){ const map = new Map(ids.map(id=>[id,[]])); if(ids.length===0) return map; const { data, error } = await supabase.from('offers').select('*').in('rfq_id', ids).order('price',{ascending:true}); if(error) throw error; (data||[]).forEach(o=>{ if(map.has(o.rfq_id)) map.get(o.rfq_id).push(o); }); return map; },
+        async createRFQ(payload){ const { data, error } = await supabase.from('rfqs').insert(payload).select().single(); if(error) throw error; return data; },
+        async updateRFQ(id, patch){ const { error } = await supabase.from('rfqs').update(patch).eq('id', id); if(error) throw error; },
+        async addOffer(payload){ const { error } = await supabase.from('offers').insert(payload); if(error) throw error; },
+        async vendors(){ return []; },
         isLocal:false
       };
     }
 
     store = HAS_SUPABASE ? supabaseStore : localStore;
 
-    // === State ===
-    let allRFQs = []; // full list from store
-    let offersByRFQ = new Map(); // rfq_id -> Offer[]
-    let activeSalesTab = 'All';
+    let salespeople = [...DEFAULT_SALESPEOPLE];
+    let allRFQs = []; let offersByRFQ = new Map(); let activeSalesTab = 'All'; let activeRFQ = null;
 
-    // === Elements ===
     const tabsEl = document.getElementById('salesTabs');
     const rfqListEl = document.getElementById('rfqList');
     const emptyStateEl = document.getElementById('emptyState');
@@ -352,6 +399,7 @@
     const rfqHint = document.getElementById('rfqHint');
     const priorityEl = document.getElementById('priority');
     const currencyEl = document.getElementById('currency');
+    const manageSalesBtn = document.getElementById('manageSales');
 
     const searchEl = document.getElementById('search');
     const statusFilterEl = document.getElementById('statusFilter');
@@ -361,98 +409,29 @@
     const offerModal = document.getElementById('offerModal');
     const offerForm = document.getElementById('offerForm');
 
-    function toast(msg){
-      const t = document.getElementById('toast');
-      t.textContent = msg; t.classList.add('show');
-      setTimeout(()=>t.classList.remove('show'), 2200);
-    }
+    const rfqDrawer = document.getElementById('rfqDrawer');
+    const drawerTitle = document.getElementById('drawerTitle');
+    const drawerMeta = document.getElementById('drawerMeta');
+    const drawerCoverage = document.querySelector('#rfqDrawer .coverage i');
+    const drawerCoverageText = document.getElementById('drawerCoverageText');
+    const offerRows = document.getElementById('offerRows');
+    const drawerCloseBtn = document.getElementById('drawerCloseBtn');
+    const vendorList = document.getElementById('vendorList');
 
-    // === UI Builders ===
-    function buildTabs(){
-      tabsEl.innerHTML = '';
-      const names = new Set(["All", ...DEFAULT_SALESPEOPLE]);
-      allRFQs.forEach(r => names.add(r.salesperson));
-      // Sales filter dropdown options
-      salesFilterEl.innerHTML = '<option value="All">All salespeople</option>' + [...names].filter(n=>n!=='All').map(n=>`<option value="${n}">${n}</option>`).join('');
-      [...names].forEach(name => {
-        const el = document.createElement('div');
-        el.className = 'tab' + (name === activeSalesTab ? ' active' : '');
-        el.textContent = name;
-        el.onclick = ()=>{ activeSalesTab = name; renderList(); };
-        tabsEl.appendChild(el);
-      });
-    }
+    function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2200); }
 
-    function bestOffer(offers){
-      if(!offers || offers.length===0) return null;
-      // Pick by lowest price; tie-breaker highest confidence
-      return offers.slice().sort((a,b)=> (a.price - b.price) || (b.confidence - a.confidence))[0];
-    }
+    function buildSalesDropdowns(){ const opts = salespeople.map(n=>`<option value="${n}">${n}</option>`).join(''); salespersonEl.innerHTML = opts; salesFilterEl.innerHTML = '<option value="All">All salespeople</option>' + opts; }
 
-    function coverage(offers, need){
-      const sum = (offers||[]).reduce((t,o)=> t + (o.qty_offer||0), 0);
-      const pct = Math.max(0, Math.min(100, Math.round((sum/Math.max(need,1))*100)));
-      return { sum, pct };
-    }
+    function buildTabs(){ tabsEl.innerHTML = ''; const names = new Set(["All", ...salespeople]); allRFQs.forEach(r => names.add(r.salesperson)); const counts = {}; allRFQs.forEach(r=>{ counts[r.salesperson]=(counts[r.salesperson]||0)+1; }); [...names].forEach(name => { const el = document.createElement('div'); el.className = 'tab' + (name === activeSalesTab ? ' active' : ''); const count = name==='All' ? allRFQs.length : (counts[name]||0); el.textContent = name + (count?` (${count})`:''); el.onclick = ()=>{ activeSalesTab = name; renderList(); }; tabsEl.appendChild(el); }); }
 
-    function renderList(){
-      buildTabs();
-      let rfqs = allRFQs.slice();
-      // filter by tab
-      if(activeSalesTab !== 'All') rfqs = rfqs.filter(r => r.salesperson === activeSalesTab);
+    function bestOffer(offers){ if(!offers || offers.length===0) return null; return offers.slice().sort((a,b)=> (a.price - b.price) || (b.confidence - a.confidence))[0]; }
+    function coverage(offers, need){ const sum = (offers||[]).reduce((t,o)=> t + (o.qty_offer||0), 0); const pct = Math.max(0, Math.min(100, Math.round((sum/Math.max(need,1))*100))); return { sum, pct }; }
 
-      // Salesperson dropdown filter (works with tabs)
-      if(salesFilterEl.value && salesFilterEl.value !== 'All') rfqs = rfqs.filter(r => r.salesperson === salesFilterEl.value);
-
-      // search
-      const q = (searchEl.value||'').trim().toLowerCase();
-      if(q) rfqs = rfqs.filter(r => r.part_number.toLowerCase().includes(q));
-
-      // status filter
-      const sf = statusFilterEl.value;
-      if(sf !== 'all') rfqs = rfqs.filter(r => r.status === sf);
-
-      // map offers
-      rfqs = rfqs.map(r => ({...r, offers: offersByRFQ.get(r.id)||[]}));
-
-      // sort
-      const sortBy = sortByEl.value;
-      if(sortBy === 'created_desc') rfqs.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
-      if(sortBy === 'created_asc') rfqs.sort((a,b)=> new Date(a.created_at) - new Date(b.created_at));
-      if(sortBy === 'best_price') rfqs.sort((a,b)=>{
-        const A = bestOffer(a.offers), B = bestOffer(b.offers);
-        const ap = A?A.price:Infinity, bp = B?B.price:Infinity;
-        return ap - bp;
-      });
-      if(sortBy === 'lead_time') rfqs.sort((a,b)=>{
-        const A = bestOffer(a.offers), B = bestOffer(b.offers);
-        const al = A&&A.lead_time!=null?A.lead_time:Infinity, bl = B&&B.lead_time!=null?B.lead_time:Infinity;
-        return al - bl;
-      });
-      if(sortBy === 'priority') rfqs.sort((a,b)=> prScore(b.priority) - prScore(a.priority));
-
-      // render
-      rfqListEl.innerHTML = '';
-      if(rfqs.length === 0){
-        emptyStateEl.style.display = 'block';
-        listTitleEl.textContent = activeSalesTab === 'All' ? 'RFQs — All' : `RFQs — ${activeSalesTab}`;
-        listMetaEl.textContent = '0 items';
-        return;
-      }
-      emptyStateEl.style.display = 'none';
-      listTitleEl.textContent = activeSalesTab === 'All' ? 'RFQs — All' : `RFQs — ${activeSalesTab}`;
-      listMetaEl.textContent = `${rfqs.length} item(s)`;
-
-      rfqs.forEach(r => {
-        const offers = r.offers;
-        const bo = bestOffer(offers);
-        const cov = coverage(offers, r.quantity);
-        const card = document.createElement('div');
-        card.className = 'rfq';
-        card.innerHTML = `
+    function renderList(){ buildTabs(); buildSalesDropdowns(); let rfqs = allRFQs.slice(); if(activeSalesTab !== 'All') rfqs = rfqs.filter(r => r.salesperson === activeSalesTab); if(salesFilterEl.value && salesFilterEl.value !== 'All') rfqs = rfqs.filter(r => r.salesperson === salesFilterEl.value); const q = (searchEl.value||'').trim().toLowerCase(); if(q) rfqs = rfqs.filter(r => r.part_number.toLowerCase().includes(q)); const sf = statusFilterEl.value; if(sf !== 'all') rfqs = rfqs.filter(r => r.status === sf); rfqs = rfqs.map(r => ({...r, offers: offersByRFQ.get(r.id)||[]})); const sortBy = sortByEl.value; if(sortBy === 'created_desc') rfqs.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at)); if(sortBy === 'created_asc') rfqs.sort((a,b)=> new Date(a.created_at) - new Date(b.created_at)); if(sortBy === 'best_price') rfqs.sort((a,b)=>{ const A = bestOffer(a.offers), B = bestOffer(b.offers); const ap = A?A.price:Infinity, bp = B?B.price:Infinity; return ap - bp; }); if(sortBy === 'lead_time') rfqs.sort((a,b)=>{ const A = bestOffer(a.offers), B = bestOffer(b.offers); const al = A&&A.lead_time!=null?A.lead_time:Infinity, bl = B&&B.lead_time!=null?B.lead_time:Infinity; return al - bl; }); if(sortBy === 'priority') rfqs.sort((a,b)=> prScore(b.priority) - prScore(a.priority)); if(sortBy === 'coverage') rfqs.sort((a,b)=> coverage(b.offers,b.quantity).pct - coverage(a.offers,a.quantity).pct);
+      rfqListEl.innerHTML = ''; if(rfqs.length === 0){ emptyStateEl.style.display = 'block'; listTitleEl.textContent = activeSalesTab === 'All' ? 'RFQs — All' : `RFQs — ${activeSalesTab}`; listMetaEl.textContent = '0 items'; return; } emptyStateEl.style.display = 'none'; listTitleEl.textContent = activeSalesTab === 'All' ? 'RFQs — All' : `RFQs — ${activeSalesTab}`; listMetaEl.textContent = `${rfqs.length} item(s)`; rfqs.forEach(r => { const offers = r.offers; const bo = bestOffer(offers); const cov = coverage(offers, r.quantity); const card = document.createElement('div'); card.className = 'rfq'; card.innerHTML = `
           <div class="rfq-hd">
             <div>
-              <div class="rfq-title">${r.part_number} <span class="muted">× ${r.quantity.toLocaleString()}</span></div>
+              <div class="rfq-title">${r.part_number} <span class="hotkey">× ${r.quantity.toLocaleString()}</span></div>
               <div class="meta">
                 <span class="badge">Sales: ${r.salesperson}</span>
                 <span class="badge">Created: ${new Date(r.created_at).toLocaleString()}</span>
@@ -462,6 +441,7 @@
               </div>
             </div>
             <div class="actions">
+              <button class="ghost" data-act="view">View</button>
               <button class="ghost" data-act="add-offer">Add Offer</button>
               <button class="ghost" data-act="mark-ordered">Mark Ordered</button>
               <button class="ghost" data-act="close">Close</button>
@@ -469,25 +449,17 @@
           </div>
           <div class="offer-list">
             <div style="display:flex;align-items:center;gap:10px;margin:6px 0 10px">
-              <div style="min-width:120px" class="muted">Coverage</div>
+              <div style="min-width:120px" class="hotkey">Coverage</div>
               <div class="coverage" style="flex:1"><i style="width:${cov.pct}%"></i></div>
-              <div class="muted" style="width:120px;text-align:right">${cov.sum}/${r.quantity}</div>
+              <div class="hotkey" style="width:120px;text-align:right">${cov.sum}/${r.quantity}</div>
             </div>
-            ${bo? `<div class="offer-best"><strong>Best:</strong> ${bo.vendor} — ${fmtMoney(bo.price, bo.currency)} / ${bo.qty_offer||'—'} pcs <span class="chip conf" data-level="${bo.confidence}">Conf ${bo.confidence}</span> ${bo.lead_time!=null?`<span class="chip">${bo.lead_time}d</span>`:''}</div>` : `<div class="muted">No offers yet.</div>`}
-            ${offers.map(o=>offerRow(o)).join('')}
+            ${bo? `<div class="offer-best"><strong>Best:</strong> ${bo.vendor} — ${fmtMoney(bo.price, bo.currency)} / ${bo.qty_offer||'—'} pcs <span class="chip conf" data-level="${bo.confidence}">Conf ${bo.confidence}</span> ${bo.lead_time!=null?`<span class="chip">${bo.lead_time}d</span>`:''}</div>` : `<div class="hotkey">No offers yet.</div>`}
+            ${offers.slice(0,2).map(o=>offerRow(o)).join('')}
+            ${offers.length>2?`<div class="hotkey">+${offers.length-2} more…</div>`:''}
           </div>
-        `;
+        `; card.querySelector('[data-act="view"]').onclick = ()=> openRFQDrawer(r); card.querySelector('[data-act="add-offer"]').onclick = ()=> openOfferModal(r.id); card.querySelector('[data-act="mark-ordered"]').onclick = ()=> updateRFQStatus(r.id, 'ordered'); card.querySelector('[data-act="close"]').onclick = ()=> updateRFQStatus(r.id, 'closed'); rfqListEl.appendChild(card); }); }
 
-        // wire actions
-        card.querySelector('[data-act="add-offer"]').onclick = ()=> openOfferModal(r.id);
-        card.querySelector('[data-act="mark-ordered"]').onclick = ()=> updateRFQStatus(r.id, 'ordered');
-        card.querySelector('[data-act="close"]').onclick = ()=> updateRFQStatus(r.id, 'closed');
-        rfqListEl.appendChild(card);
-      });
-    }
-
-    function offerRow(o){
-      return `
+    function offerRow(o){ return `
         <div class="offer">
           <div class="left">
             <strong>${o.vendor}</strong>
@@ -497,141 +469,72 @@
             ${o.moq!=null?`<span class="chip">MOQ ${o.moq}</span>`:''}
             ${o.lead_time!=null?`<span class="chip">${o.lead_time}d</span>`:''}
             <span class="chip conf" data-level="${o.confidence}">Conf ${o.confidence}</span>
-            ${o.comments?`<span class="muted">${escapeHTML(o.comments)}</span>`:''}
+            ${o.comments?`<span class="hotkey">${escapeHTML(o.comments)}</span>`:''}
           </div>
           <div class="actions">
             <button class="ghost" data-offer-id="${o.id}" data-act="select-offer">Select</button>
           </div>
-        </div>`
-    }
+        </div>` }
 
     function prScore(p){ return {low:1, normal:2, high:3, urgent:4}[p]||0; }
     function cap(s){ return (s||'').charAt(0).toUpperCase()+s.slice(1); }
+    function fmtMoney(v, cur){ try{ return new Intl.NumberFormat(undefined,{style:'currency',currency:cur||'USD'}).format(v); } catch(e){ return `${cur||'USD'} ${Number(v).toFixed(2)}` } }
+    function escapeHTML(s){ return (s||'').replace(/[&<>\"]/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-    function fmtMoney(v, cur){
-      try{ return new Intl.NumberFormat(undefined,{style:'currency',currency:cur||'USD'}).format(v); }
-      catch(e){ return `${cur||'USD'} ${Number(v).toFixed(2)}` }
-    }
+    async function loadRFQs(){ try{ allRFQs = await store.listRFQs(); offersByRFQ = await store.listOffersFor(allRFQs.map(r=>r.id)); renderList(); } catch(e){ console.error(e); toast('Load failed'); } }
+    async function updateRFQStatus(id, status){ try{ await store.updateRFQ(id, { status }); toast(`RFQ ${status}`); loadRFQs(); } catch(e){ console.error(e); toast('Update failed'); } }
 
-    function escapeHTML(s){
-      return s.replace(/[&<>\"]/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-    }
+    rfqForm.addEventListener('submit', async (e)=>{ e.preventDefault(); const salesperson = salespersonEl.value; const part_number = partNumberEl.value.trim(); const quantity = parseInt(quantityEl.value,10); const target_price = targetPriceEl.value ? parseFloat(targetPriceEl.value) : null; const priority = (priorityEl.value||'normal'); const currency = currencyEl.value||'USD'; if(!salesperson || !part_number || !quantity){ toast('Please fill required fields'); return; } rfqHint.textContent = 'Saving…'; try{ const rfq = await store.createRFQ({ salesperson, part_number, quantity, target_price, priority, notes: rfqNotesEl.value || null, status:'open', currency }); rfqHint.textContent = ''; toast('RFQ created'); rfqForm.reset(); activeSalesTab = rfq.salesperson; await loadRFQs(); }catch(e){ console.error(e); rfqHint.textContent = ''; toast('Create failed'); } });
 
-    // === Data IO ===
-    async function loadRFQs(){
-      try{
-        allRFQs = await store.listRFQs();
-        offersByRFQ = await store.listOffersFor(allRFQs.map(r=>r.id));
-        renderList();
-      }catch(e){ console.error(e); toast('Load failed'); }
-    }
+    searchEl.addEventListener('input', renderList); statusFilterEl.addEventListener('change', renderList); sortByEl.addEventListener('change', renderList); salesFilterEl.addEventListener('change', renderList);
 
-    async function updateRFQStatus(id, status){
-      try{ await store.updateRFQ(id, { status }); toast(`RFQ ${status}`); loadRFQs(); }
-      catch(e){ console.error(e); toast('Update failed'); }
-    }
+    manageSalesBtn.addEventListener('click', ()=>{ const val = prompt('Add salesperson name (or edit the list, comma-separated):', salespeople.join(', ')); if(val==null) return; salespeople = val.split(',').map(s=>s.trim()).filter(Boolean); localStorage.setItem('ve_salespeople', JSON.stringify(salespeople)); buildSalesDropdowns(); buildTabs(); });
 
-    // === Events ===
-    rfqForm.addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      const salesperson = salespersonEl.value.trim();
-      const part_number = partNumberEl.value.trim();
-      const quantity = parseInt(quantityEl.value,10);
-      const target_price = targetPriceEl.value ? parseFloat(targetPriceEl.value) : null;
-      const priority = (priorityEl.value||'normal');
-      const currency = currencyEl.value||'USD';
-      if(!salesperson || !part_number || !quantity){ toast('Please fill required fields'); return; }
-      rfqHint.textContent = 'Saving…';
-      try{
-        const rfq = await store.createRFQ({ salesperson, part_number, quantity, target_price, priority, notes: rfqNotesEl.value || null, status:'open', currency });
-        rfqHint.textContent = '';
-        toast('RFQ created');
-        rfqForm.reset();
-        // Switch to salesperson tab so they immediately see it
-        activeSalesTab = rfq.salesperson;
-        await loadRFQs();
-      }catch(e){ console.error(e); rfqHint.textContent = ''; toast('Create failed'); }
-    });
+    function openOfferModal(rfq_id){ document.getElementById('offer_rfq_id').value = rfq_id; offerForm.reset(); offerModal.showModal(); }
+    offerForm.addEventListener('close', ()=>{ if(offerForm.returnValue === 'submit') saveOffer(); });
 
-    searchEl.addEventListener('input', renderList);
-    statusFilterEl.addEventListener('change', renderList);
-    sortByEl.addEventListener('change', renderList);
-    salesFilterEl.addEventListener('change', renderList);
-
-    // Offers modal
-    function openOfferModal(rfq_id){
-      document.getElementById('offer_rfq_id').value = rfq_id;
-      offerForm.reset();
-      offerModal.showModal();
-    }
-
-    offerForm.addEventListener('close', ()=>{
-      if(offerForm.returnValue === 'submit') saveOffer();
-    });
-
-    async function saveOffer(){
-      const rfq_id = document.getElementById('offer_rfq_id').value;
-      const payload = {
-        rfq_id,
-        vendor: document.getElementById('vendor').value.trim(),
-        location: document.getElementById('location').value.trim() || null,
-        price: parseFloat(document.getElementById('price').value),
-        currency: document.getElementById('offer_currency').value,
-        qty_offer: valInt(document.getElementById('qty_offer').value),
-        moq: valInt(document.getElementById('moq').value),
-        lead_time: valInt(document.getElementById('lead_time').value),
-        confidence: parseInt(document.getElementById('confidence').value,10),
-        comments: document.getElementById('offerNotes').value || null,
-      };
-      if(!payload.vendor || isNaN(payload.price)){ toast('Vendor and Price required'); return; }
-      try{ await store.addOffer(payload); toast('Offer saved'); await loadRFQs(); }
-      catch(e){ console.error(e); toast('Save offer failed'); }
-    }
+    async function saveOffer(){ const rfq_id = document.getElementById('offer_rfq_id').value; const payload = { rfq_id, vendor: document.getElementById('vendor').value.trim(), location: document.getElementById('location').value.trim() || null, price: parseFloat(document.getElementById('price').value), currency: document.getElementById('offer_currency').value, qty_offer: valInt(document.getElementById('qty_offer').value), moq: valInt(document.getElementById('moq').value), lead_time: valInt(document.getElementById('lead_time').value), confidence: parseInt(document.getElementById('confidence').value,10), comments: document.getElementById('offerNotes').value || null, }; if(!payload.vendor || isNaN(payload.price)){ toast('Vendor and Price required'); return; } try{ await store.addOffer(payload); toast('Offer saved'); await loadRFQs(); if(activeRFQ && activeRFQ.id===rfq_id) openRFQDrawer(getRFQById(rfq_id), true); } catch(e){ console.error(e); toast('Save offer failed'); } }
 
     function valInt(v){ const n = parseInt(v,10); return isNaN(n) ? null : n; }
+    function getRFQById(id){ return allRFQs.find(r=> String(r.id)===String(id)); }
 
-    // Delegated click for selecting offer
-    rfqListEl.addEventListener('click', async (e)=>{
-      const btn = e.target.closest('[data-act="select-offer"]');
-      if(!btn) return;
-      const offerId = btn.getAttribute('data-offer-id');
-      const offer = findOffer(offerId);
-      if(!offer){ toast('Offer not found'); return; }
-      try{
-        await store.updateRFQ(offer.rfq_id, { status:'ordered', selected_offer_id: offer.id });
-        toast('Offer selected & RFQ ordered');
-        loadRFQs();
-      }catch(err){ console.error(err); toast('Select offer failed'); }
-    });
+    rfqListEl.addEventListener('click', async (e)=>{ const btn = e.target.closest('[data-act="select-offer"]'); if(!btn) return; const offerId = btn.getAttribute('data-offer-id'); const offer = findOffer(offerId); if(!offer){ toast('Offer not found'); return; } try{ await store.updateRFQ(offer.rfq_id, { status:'ordered', selected_offer_id: offer.id }); toast('Offer selected & RFQ ordered'); loadRFQs(); }catch(err){ console.error(err); toast('Select offer failed'); } });
 
-    function findOffer(id){
-      for(const [rfqId, arr] of offersByRFQ.entries()){
-        const f = (arr||[]).find(o=> String(o.id) === String(id));
-        if(f) return f;
-      }
-      return null;
-    }
+    function findOffer(id){ for(const [rfqId, arr] of offersByRFQ.entries()){ const f = (arr||[]).find(o=> String(o.id) === String(id)); if(f) return f; } return null; }
 
-    // Realtime updates (Supabase only)
-    if(!store.isLocal){
-      supabase.channel('rfqs-ch').on('postgres_changes', {event:'*', schema:'public', table:'rfqs'}, loadRFQs).subscribe();
-      supabase.channel('offers-ch').on('postgres_changes', {event:'*', schema:'public', table:'offers'}, loadRFQs).subscribe();
-    }
+    async function openRFQDrawer(r, keepOpen){ activeRFQ = r; const offers = offersByRFQ.get(r.id)||[]; const cov = coverage(offers, r.quantity); drawerTitle.textContent = `${r.part_number} × ${r.quantity}`; drawerMeta.textContent = `Sales: ${r.salesperson} • Priority: ${cap(r.priority)} • ${new Date(r.created_at).toLocaleString()}`; drawerCoverage.style.width = `${cov.pct}%`; drawerCoverageText.textContent = `${cov.sum}/${r.quantity}`; const vend = await store.vendors(); vendorList.innerHTML = (vend||[]).map(v=>`<option value="${v}">`).join(''); renderOfferRows(offers); if(!keepOpen) rfqDrawer.showModal(); }
 
-    // Bootstrap
-    (async function init(){
-      await loadRFQs();
-    })();
+    function renderOfferRows(offers){ offerRows.innerHTML = ''; offers.forEach(o=>{ const tr = document.createElement('tr'); tr.innerHTML = `
+          <td>${escapeHTML(o.vendor)}</td>
+          <td>${escapeHTML(o.location||'')}</td>
+          <td>${fmtMoney(o.price, o.currency)}</td>
+          <td>${o.currency}</td>
+          <td>${o.qty_offer||''}</td>
+          <td>${o.moq||''}</td>
+          <td>${o.lead_time||''}</td>
+          <td><span class="chip conf" data-level="${o.confidence}"> ${o.confidence}</span></td>
+          <td>${escapeHTML(o.comments||'')}</td>
+          <td class="tbl-actions"><button class="ghost" data-oid="${o.id}" data-act="pick">Select</button></td>
+        `; offerRows.appendChild(tr); }); }
+
+    document.getElementById('quickAdd').addEventListener('click', addFromInline);
+    ['in_vendor','in_location','in_price','in_currency','in_qty','in_moq','in_lt','in_conf','in_comments'].forEach(id=> document.getElementById(id).addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); addFromInline(); } }));
+
+    async function addFromInline(){ if(!activeRFQ) return; const payload = { rfq_id: activeRFQ.id, vendor: getVal('in_vendor'), location: getVal('in_location')||null, price: parseFloat(getVal('in_price')), currency: getVal('in_currency')||'USD', qty_offer: valInt(getVal('in_qty')), moq: valInt(getVal('in_moq')), lead_time: valInt(getVal('in_lt')), confidence: parseInt(getVal('in_conf')||'3',10), comments: getVal('in_comments')||null, }; if(!payload.vendor || isNaN(payload.price)){ toast('Vendor & price required'); return; } try{ await store.addOffer(payload); toast('Offer added'); await loadRFQs(); openRFQDrawer(getRFQById(activeRFQ.id), true); ['in_vendor','in_location','in_price','in_qty','in_moq','in_lt','in_comments'].forEach(id=> setVal(id,'')); }catch(e){ console.error(e); toast('Add failed'); } }
+
+    function getVal(id){ return document.getElementById(id).value.trim(); }
+    function setVal(id,v){ document.getElementById(id).value = v; }
+
+    document.getElementById('pasteToggle').addEventListener('click', ()=>{ const box = document.getElementById('pasteBox'); box.style.display = box.style.display==='none' ? 'block' : 'none'; });
+    document.getElementById('pasteImport').addEventListener('click', async ()=>{ if(!activeRFQ) return; const raw = document.getElementById('pasteArea').value.trim(); if(!raw) return; const rows = raw.split(/\n+/).map(l=> l.split(/\s*,\s*/)); for(const r of rows){ const [vendor,location,price,currency,qty,moq,lead,conf,comments] = r; if(!vendor || !price) continue; await store.addOffer({ rfq_id: activeRFQ.id, vendor, location: location||null, price: parseFloat(price), currency: (currency||'USD').toUpperCase(), qty_offer: valInt(qty), moq: valInt(moq), lead_time: valInt(lead), confidence: parseInt(conf||'3',10), comments: comments||null }); } toast('Offers imported'); await loadRFQs(); openRFQDrawer(getRFQById(activeRFQ.id), true); });
+
+    drawerCloseBtn.addEventListener('click', ()=> rfqDrawer.close());
+
+    (async function init(){ buildSalesDropdowns(); await loadRFQs(); })();
   </script>
 
   <!--
-  ==========================
-  SUPABASE — SCHEMA (SQL)
-  ==========================
-
-  Run this in Supabase SQL editor when you want to go live.
-
-  -- RFQs created by Sales
+  SQL for Supabase (optional)
   create table if not exists public.rfqs (
     id bigint generated by default as identity primary key,
     created_at timestamptz not null default now(),
@@ -646,7 +549,6 @@
     selected_offer_id bigint
   );
 
-  -- Offers added by Purchasing, linked to RFQ
   create table if not exists public.offers (
     id bigint generated by default as identity primary key,
     created_at timestamptz not null default now(),
@@ -655,19 +557,14 @@
     location text,
     price numeric(18,6) not null check (price >= 0),
     currency text not null default 'USD',
-    qty_offer integer, -- partials allowed
+    qty_offer integer,
     moq integer,
-    lead_time integer, -- days
+    lead_time integer,
     confidence integer not null default 3 check (confidence between 1 and 5),
     comments text
   );
-
-  create index if not exists rfqs_salesperson_idx on public.rfqs (salesperson);
-  create index if not exists rfqs_part_idx on public.rfqs (part_number);
-  create index if not exists offers_rfq_idx on public.offers (rfq_id);
-  create index if not exists offers_price_idx on public.offers (price);
-
   -->
 </body>
 </html>
+
 
