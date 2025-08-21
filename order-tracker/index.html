@@ -9,12 +9,13 @@
   :root{
     --brand:#6f57e9; --ink:#1e2330; --muted:#6d7486;
     --bg:#f6f7fb; --card:#fff; --line:#e9e9ef;
-    --green:#12a274; --purple:#3b2eca; --red:#c0392b;
+    --green:#12a274; --purple:#3b2eca;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
   body{margin:0;font:15px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
-  .wrap{max-width:1180px;margin:22px auto;padding:0 16px}
+  .wrap{max-width:1600px;margin:22px auto;padding:0 16px}
+
   header{
     display:flex;align-items:center;gap:16px;padding:16px 18px;border:1px solid var(--line);
     border-radius:16px;background:radial-gradient(1100px 220px at 160px -60px, rgba(111,87,233,.15), transparent 60%), #fff;
@@ -24,10 +25,14 @@
   h1{font-size:26px;margin:0;font-weight:800}
   .sub{color:var(--muted);margin-top:2px}
 
-  .toolbar{display:grid;grid-template-columns:1fr 180px 160px 160px auto auto;gap:10px;margin:16px 0}
-  .input,.select,.btn{height:38px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:0 12px;font:inherit}
+  .toolbar{display:grid;grid-template-columns:1fr 190px 170px 170px auto auto;gap:10px;margin:16px 0}
+  .input,.select,.btn{height:36px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:0 12px;font:inherit}
   .input{width:100%}
-  .select{appearance:none;padding-right:28px;background-image:linear-gradient(45deg, transparent 50%, #869 50%), linear-gradient(135deg, #869 50%, transparent 50%);background-position:calc(100% - 16px) calc(50% - 2px), calc(100% - 10px) calc(50% - 2px);background-size:6px 6px, 6px 6px;background-repeat:no-repeat}
+  .select{appearance:none;padding-right:28px;background-image:
+    linear-gradient(45deg, transparent 50%, #869 50%),
+    linear-gradient(135deg, #869 50%, transparent 50%);
+    background-position:calc(100% - 16px) calc(50% - 2px), calc(100% - 10px) calc(50% - 2px);
+    background-size:6px 6px, 6px 6px;background-repeat:no-repeat}
   .btn{background:#f7f5ff;color:var(--purple);border-color:#ece8ff;font-weight:700;cursor:pointer}
   .btn:hover{background:#eee8ff}
   .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
@@ -36,73 +41,68 @@
 
   .table-card{border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden}
   .table-wrap{overflow:auto}
-  table{width:100%;border-collapse:collapse;min-width:1260px}
-  thead th{position:sticky;top:0;background:#fafaff;border-bottom:1px solid var(--line);text-align:left;font-size:13px;color:#4a4f64;padding:12px}
-  tbody td{border-bottom:1px solid var(--line);padding:12px;vertical-align:top}
+  table{width:100%;border-collapse:collapse;min-width:1200px}
+  thead th{position:sticky;top:0;background:#fafaff;border-bottom:1px solid var(--line);
+    text-align:left;font-size:13px;color:#4a4f64;padding:10px}
+  tbody td{border-bottom:1px solid var(--line);padding:10px;vertical-align:top}
   tbody tr:hover{background:#fcfbff}
   .mono{font-variant-numeric:tabular-nums}
   .muted{color:var(--muted)}
-  .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #e6f2ec;padding:3px 8px;border-radius:999px;background:#f0fbf7;color:var(--green);font-weight:700}
+  .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #e6f2ec;padding:2px 8px;border-radius:999px;background:#f0fbf7;color:var(--green);font-weight:700}
   .chip{display:inline-block;border-radius:999px;padding:2px 8px;border:1px solid #eee;background:#fafafa;font-size:12px;color:#5d6480}
   .actions{display:flex;gap:8px;flex-wrap:wrap}
   .link{color:#362dc7;text-decoration:none}
   .link:hover{text-decoration:underline}
 
   /* inline edit */
-  .editwrap{display:inline-flex;align-items:center;gap:6px}
-  .iconbtn{border:0;background:transparent;color:#6d6fe5;cursor:pointer;padding:2px 4px;border-radius:6px}
-  .iconbtn:hover{background:#f0efff}
-  .inline-select{display:none;margin-left:6px}
-  .inline-select .select{height:30px;padding:0 10px}
-  .inline-visible{display:inline-flex}
+  .ie{display:inline-flex;align-items:center;gap:6px}
+  .ie button{border:0;background:transparent;color:#6d6fe5;cursor:pointer;padding:0 4px;border-radius:6px}
+  .ie button:hover{background:#f0efff}
+  .ie select{display:none;height:28px;border-radius:8px}
+  .ie.editing select{display:inline-block}
+  .ie.editing .chip{display:none}
 
-  dialog{border:0;padding:0;margin:0 auto;max-width:1200px;width:96vw}
+  dialog{border:0;padding:0;margin:0 auto;max-width:1400px;width:98vw}
   dialog::backdrop{background:rgba(17,17,33,.35)}
-  .modal{display:flex;flex-direction:column;max-height:90vh;border-radius:18px;overflow:hidden;background:#fff}
+  .modal{display:flex;flex-direction:column;max-height:92vh;border-radius:18px;overflow:hidden;background:#fff}
   .modal header{position:sticky;top:0;z-index:2;border-bottom:1px solid var(--line);border-radius:18px 18px 0 0;background:#fff}
-  .modal .head{padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
-  .content{padding:16px;overflow:auto;overflow-x:auto;max-height:calc(90vh - 58px);overscroll-behavior:contain}
+  .modal .head{padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
+  .content{padding:14px;overflow:auto;max-height:calc(92vh - 48px);overscroll-behavior:contain}
 
-  .grid2,.grid3{gap:12px}
+  .grid2,.grid3{gap:10px}
   .grid2{display:grid;grid-template-columns:1fr 1fr}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr}
-  .section{margin:16px 0 8px;font-weight:800;color:#262b3a}
+  .section{margin:14px 0 6px;font-weight:800;color:#262b3a}
+  .note{font-size:12px;color:var(--muted);margin-bottom:4px}
+  .mini{height:32px}
   .row{display:flex;gap:8px;align-items:center}
+
   .tbl{width:100%;border-collapse:collapse;table-layout:fixed}
   .tbl th,.tbl td{border:1px solid #ececf3;padding:8px;text-align:left;white-space:nowrap}
   .tbl th{background:#fafaff}
-  .mini{height:34px}
-  .right{display:flex;justify-content:flex-end;gap:8px;margin:12px 0 4px}
-  .note{font-size:12px;color:var(--muted)}
-  input,select,textarea{min-width:0}
-
   .hscroll{overflow:auto;border:1px solid #ececf3;border-radius:12px;background:#fff}
   .hscroll table{min-width:1100px}
-  .content{padding-bottom:80px}
+  .right{display:flex;justify-content:flex-end;gap:8px;margin:10px 0 2px}
 
-  /* View dialog (summary) */
-  .summary{padding:16px}
-  .sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .sum-card{border:1px solid var(--line);border-radius:12px;background:#fff}
-  .sum-card h3{margin:0;padding:10px 12px;border-bottom:1px solid var(--line);background:#fafaff;font-size:15px}
-  .sum-card .pad{padding:12px}
-
-  @media (max-width:960px){
-    .toolbar{grid-template-columns:1fr 1fr 1fr auto auto;gap:8px}
-    .grid2,.grid3,.sum-grid{grid-template-columns:1fr}
-    table{min-width:1000px}
-  }
+  /* View summary */
+  .summary{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+  .card{border:1px solid var(--line);border-radius:12px;background:#fff}
+  .card h3{margin:0;padding:8px 10px;border-bottom:1px solid var(--line);background:#fafaff;font-size:15px}
+  .card .pad{padding:10px}
+  .kv{display:grid;grid-template-columns:170px 1fr;gap:6px 10px}
+  @media (max-width:1200px){.summary{grid-template-columns:1fr}}
+  @media (max-width:900px){.grid3{grid-template-columns:1fr 1fr}}
+  @media (max-width:680px){.grid2,.grid3{grid-template-columns:1fr}}
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  /* Supabase client */
   const SUPABASE_URL = 'https://ijzroisggstqkfhpjndq.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  /* SAFETY SHIM: add apikey headers to any legacy fetch hitting your Supabase REST */
-  (function injectApiKeyForLegacyRestCalls(){
+  /* add apikey/authorization to any direct fetch to Supabase REST */
+  (function(){
     const realFetch = window.fetch.bind(window);
     window.fetch = (input, init = {}) => {
       const url = typeof input === 'string' ? input : input?.url || '';
@@ -141,6 +141,7 @@
         <table id="tbl">
           <thead>
             <tr>
+              <th>View</th>
               <th>Customer</th>
               <th>Part(s)</th>
               <th>Sales</th>
@@ -148,6 +149,7 @@
               <th>Avg Unit $</th>
               <th>Sell</th>
               <th>GP</th>
+              <th>Priority</th>
               <th>Status</th>
               <th>Order Date</th>
               <th>Requested by</th>
@@ -156,6 +158,8 @@
               <th>Vendor</th>
               <th>Incoterm</th>
               <th>Terms</th>
+              <th>Shipped</th>
+              <th>Invoiced</th>
               <th>Files</th>
               <th>Actions</th>
             </tr>
@@ -166,14 +170,167 @@
     </div>
   </div>
 
-  <!-- Edit / New Modal (unchanged core, still full-power form) -->
-  <dialog id="dlg"> … <!-- (THE WHOLE SAME EDIT MODAL FROM YOUR MESSAGE GOES HERE UNCHANGED) --> </dialog>
+  <!-- EDIT / NEW MODAL -->
+  <dialog id="dlg">
+    <div class="modal">
+      <header><div class="head"><strong id="dlgTitle">New Order</strong><button id="btnClose" class="btn ghost mini" type="button">✕</button></div></header>
+      <div class="content">
+        <input type="hidden" id="orderId"/>
 
-  <!-- View SUMMARY Modal -->
+        <div class="section">SALES — what Sales enters</div>
+        <div class="grid3">
+          <div><div class="note">Salesperson</div><select id="salesperson" class="select mini"></select></div>
+          <div><div class="note">Customer</div><input id="customer" class="input mini"/></div>
+          <div><div class="note">Priority</div><select id="priority" class="select mini"><option>High</option><option selected>Normal</option><option>Low</option></select></div>
+
+          <div><div class="note">Status</div><select id="status" class="select mini"><option>New</option><option>Open</option><option>Closed</option></select></div>
+          <div><div class="note">Order Date</div><input id="order_date" type="date" class="input mini"/></div>
+          <div><div class="note">Requested by</div><input id="requested_by" type="date" class="input mini"/></div>
+
+          <div>
+            <div class="note">Payment Terms</div>
+            <div class="row">
+              <select id="payment_terms" class="select mini" style="flex:1">
+                <option>Net 5</option><option>Net 10</option><option>Net 15</option><option>Net 20</option>
+                <option>Net 30</option><option>Net 40</option><option>Net 50</option><option>Net 60</option><option>Net 90</option>
+                <option value="Other">Other…</option>
+              </select>
+              <input id="payment_terms_other" class="input mini" placeholder="If Other…" style="flex:1;display:none"/>
+            </div>
+          </div>
+          <div>
+            <div class="note">Payment Method</div>
+            <div class="row">
+              <select id="payment_method" class="select mini" style="flex:1">
+                <option>Bank Transfer</option><option>Credit Card</option><option>PayPal</option>
+                <option value="Other">Other…</option>
+              </select>
+              <input id="payment_method_other" class="input mini" placeholder="If Other…" style="flex:1;display:none"/>
+            </div>
+          </div>
+          <div>
+            <div class="note">Incoterm</div>
+            <div class="row">
+              <select id="incoterm" class="select mini" style="flex:1">
+                <option>DAP</option><option>DDP</option><option>EXW</option><option>CIP</option><option>FOB</option>
+                <option value="Other">Other…</option>
+              </select>
+              <input id="incoterm_other" class="input mini" placeholder="If Other…" style="flex:1;display:none"/>
+            </div>
+          </div>
+
+          <div><div class="note">Invoice Date</div><input id="invoice_date" type="date" class="input mini"/></div>
+          <div><div class="note">Due Date</div><input id="due_date" type="date" class="input mini"/></div>
+          <div>
+            <div class="note">Currency</div>
+            <select id="currency" class="select mini">
+              <option value="USD" selected>USD ($)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="EUR">EUR (€)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="section">Testing — requirements & center</div>
+        <div class="row" id="testsLine" style="flex-wrap:wrap;gap:14px">
+          <label><input type="checkbox" value="No test" id="tNone"> No test</label>
+          <label><input type="checkbox" value="EVI"> EVI</label>
+          <label><input type="checkbox" value="Solderability"> Solderability</label>
+          <label><input type="checkbox" value="Electrical"> Electrical</label>
+          <label><input type="checkbox" value="Other" id="tOther"> Other</label>
+          <input id="tests_other" class="input mini" placeholder="Describe other test…" style="max-width:340px"/>
+          <div style="flex:1"></div>
+          <div style="min-width:240px">
+            <div class="note">Test Center</div>
+            <select id="test_center" class="select mini" style="min-width:240px">
+              <option>GETs HK</option><option>GETs Shenzhen</option><option>GETs US</option>
+              <option>White Horse US</option><option>White Horse China</option><option>White Horse EU</option>
+              <option value="Other">Other…</option>
+            </select>
+          </div>
+          <div style="min-width:280px">
+            <div class="note">Customer PO (file)</div>
+            <input id="file_po" type="file" class="input mini" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"/>
+          </div>
+        </div>
+
+        <div class="section">Line Items — parts, date codes & pricing</div>
+        <div class="hscroll">
+          <table class="tbl" id="itemsTbl">
+            <thead><tr>
+              <th style="width:26%">Part Number</th>
+              <th style="width:18%">Date Codes</th>
+              <th style="width:10%">Qty</th>
+              <th style="width:16%">Unit Sell</th>
+              <th style="width:16%">Unit Cost</th>
+              <th style="width:8%"></th>
+            </tr></thead>
+            <tbody id="itemsBody"></tbody>
+          </table>
+        </div>
+        <div class="right"><button id="addItem" class="btn mini" type="button">+ Add item</button></div>
+
+        <div class="section">PURCHASING — what Purchasing updates</div>
+        <div class="grid3">
+          <div>
+            <div class="note">Vendor</div>
+            <input id="vendor" class="input mini"/>
+          </div>
+          <div>
+            <div class="note">Test Report (file)</div>
+            <input id="file_test" type="file" class="input mini" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"/>
+          </div>
+        </div>
+
+        <div class="section">Shipments — legs & partials (unified)</div>
+        <div class="hscroll">
+          <table class="tbl" id="shipTbl">
+            <thead><tr>
+              <th style="width:10%">Kind</th>
+              <th style="width:12%">Date</th>
+              <th style="width:10%">Qty</th>
+              <th style="width:15%">From</th>
+              <th style="width:15%">To</th>
+              <th style="width:12%">Method</th>
+              <th style="width:10%">Ref</th>
+              <th style="width:12%">Courier</th>
+              <th style="width:16%">Tracking</th>
+              <th style="width:10%">Cost</th>
+              <th style="width:6%"></th>
+            </tr></thead>
+            <tbody id="shipBody"></tbody>
+          </table>
+        </div>
+        <div class="right"><button id="addShip" class="btn mini" type="button">+ Add shipment/leg</button></div>
+
+        <div class="grid3" style="margin-top:12px">
+          <div>
+            <div class="note">Extra shipping cost</div>
+            <input id="shipping_cost_extra" type="number" step="0.01" class="input mini mono" placeholder="0.00"/>
+          </div>
+          <div>
+            <div class="note">Test cost</div>
+            <input id="test_cost" type="number" step="0.01" class="input mini mono" placeholder="0.00"/>
+          </div>
+          <div>
+            <div class="note">Notes</div>
+            <input id="notes" class="input mini"/>
+          </div>
+        </div>
+
+        <div class="right">
+          <button id="btnDelete" class="btn ghost" type="button">Delete</button>
+          <button id="btnSave" class="btn primary" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- VIEW SUMMARY MODAL -->
   <dialog id="viewDlg">
     <div class="modal">
       <header><div class="head"><strong>Order Summary</strong><button class="btn ghost mini" type="button" onclick="$('viewDlg').close()">✕</button></div></header>
-      <div class="summary" id="viewBody"></div>
+      <div class="content"><div id="viewBody" class="summary"></div></div>
     </div>
   </dialog>
 
@@ -222,19 +379,103 @@ const supa = {
       if(files.test_report){const {data:s}=await supabase.storage.from('order-files').createSignedUrl(files.test_report,3600);testUrl=s?.signedUrl||null;}
       window._sessionFiles ||= {}; window._sessionFiles[r.id]={poUrl,testUrl};
 
-      return { ...r, items, shipments, files };
+      return {
+        id:r.id, created_at:r.created_at,
+        salesperson:r.salesperson, customer:r.customer, priority:r.priority, status:r.status,
+        order_date:r.order_date, requested_by:r.requested_by,
+        payment_terms:r.payment_terms, payment_method:r.payment_method,
+        invoice_date:r.invoice_date, due_date:r.due_date,
+        currency:r.currency||'USD',
+        tests:r.tests||'', test_center:r.test_center||'',
+        vendor:r.vendor, incoterm:r.incoterm, notes:r.notes,
+        is_shipped:r.is_shipped ?? null, is_invoiced:r.is_invoiced ?? null,
+        shipping_cost_extra:r.shipping_cost_extra||0, test_cost:r.test_cost||0,
+        items, shipments, files
+      };
     }));
   },
 
-  async saveOrder(rec, uploads){ /* unchanged body from your working file */ },
+  async saveOrder(rec, uploads){
+    const header = {
+      id:rec.id, salesperson:rec.salesperson, customer:rec.customer,
+      priority:rec.priority, status:rec.status,
+      order_date:rec.order_date, requested_by:rec.requested_by,
+      payment_terms:rec.payment_terms, payment_method:rec.payment_method,
+      invoice_date:rec.invoice_date, due_date:rec.due_date,
+      currency:rec.currency,
+      tests:rec.tests, test_center:rec.test_center,
+      vendor:rec.vendor, incoterm:rec.incoterm,
+      shipping_cost_extra:rec.shipping_cost_extra, test_cost:rec.test_cost,
+      notes:rec.notes
+      // do NOT include shipped/invoiced here to avoid errors on DBs without these columns
+    };
+    const {data:up, error:e1} = await supabase.from('orders').upsert(header).select().single();
+    if(e1) throw e1;
+    const order_id=up.id;
 
-  async uploadFile(orderId, kind, file){ /* unchanged body from your working file */ },
+    // replace children
+    await supabase.from('order_items').delete().eq('order_id',order_id);
+    await supabase.from('ship_legs').delete().eq('order_id',order_id);
+    await supabase.from('shipments_inbound').delete().eq('order_id',order_id);
+    await supabase.from('shipments_outbound').delete().eq('order_id',order_id);
+
+    if(rec.items?.length){
+      await supabase.from('order_items').insert(rec.items.map(i=>({
+        order_id, part_number:i.part_number, date_codes:i.date_codes, qty:i.qty, unit_sell:i.unit_sell, unit_cost:i.unit_cost
+      })));
+    }
+    const legs = rec.shipments?.filter(s=>s.kind==='Leg')||[];
+    const inbound = rec.shipments?.filter(s=>s.kind==='Inbound')||[];
+    const outbound = rec.shipments?.filter(s=>s.kind==='Outbound')||[];
+    if(legs.length){
+      await supabase.from('ship_legs').insert(legs.map(l=>({
+        order_id, from_loc:l.from, to_loc:l.to, method:l.method, ref:l.ref, cost:Number(l.cost||0)
+      })));
+    }
+    if(inbound.length){
+      await supabase.from('shipments_inbound').insert(inbound.map(s=>({
+        order_id, ship_date:s.date||null, qty:Number(s.qty||0), courier:s.courier||null, tracking:s.tracking||null
+      })));
+    }
+    if(outbound.length){
+      await supabase.from('shipments_outbound').insert(outbound.map(s=>({
+        order_id, ship_date:s.date||null, qty:Number(s.qty||0), courier:s.courier||null, tracking:s.tracking||null
+      })));
+    }
+
+    // Optional: if these columns exist, persist them (ignore if not)
+    await this.quickUpdate(order_id, 'is_shipped', rec.is_shipped, true);
+    await this.quickUpdate(order_id, 'is_invoiced', rec.is_invoiced, true);
+
+    if(uploads?.po) await this.uploadFile(order_id,'po',uploads.po);
+    if(uploads?.test_report) await this.uploadFile(order_id,'test_report',uploads.test_report);
+  },
+
+  async uploadFile(orderId, kind, file){
+    const safe=file.name.replace(/[^a-z0-9._-]+/gi,'_');
+    const path=`orders/${orderId}/${kind}/${Date.now()}_${safe}`;
+    const {error} = await supabase.storage.from('order-files').upload(path,file,{upsert:true});
+    if(error) throw error;
+    await supabase.from('order_files').insert({order_id:orderId,kind,path});
+    const {data:s} = await supabase.storage.from('order-files').createSignedUrl(path,3600);
+    window._sessionFiles ||= {}; window._sessionFiles[orderId] ||= {};
+    if(kind==='po') window._sessionFiles[orderId].poUrl=s?.signedUrl||null;
+    if(kind==='test_report') window._sessionFiles[orderId].testUrl=s?.signedUrl||null;
+  },
 
   async deleteOrder(id){ await supabase.from('orders').delete().eq('id',id); },
 
-  async quickUpdate(id, field, value){
-    const { error } = await supabase.from('orders').update({ [field]: value }).eq('id', id);
-    if(error) throw error;
+  async quickUpdate(id, field, value, silentIfMissing=false){
+    try{
+      const { error } = await supabase.from('orders').update({ [field]: value }).eq('id', id);
+      if(error) throw error;
+    }catch(e){
+      // Unknown column -> ignore if requested
+      if(silentIfMissing && String(e?.message||'').toLowerCase().includes('column')){
+        return;
+      }
+      throw e;
+    }
   },
 
   subscribeRealtime(){
@@ -248,8 +489,62 @@ const supa = {
   }
 };
 
-/* ---------- UI helpers ---------- */
+/* ---------- modal item helpers ---------- */
 function button(txt,cls,click){const b=document.createElement('button');b.textContent=txt;b.className='btn mini '+(cls||'');b.type='button';b.onclick=click;return b;}
+
+function addItemRow(v={part_number:'',date_codes:'',qty:'',unit_sell:'',unit_cost:''}){
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td><input class="input mini" value="${v.part_number||''}"/></td>
+    <td><input class="input mini" value="${v.date_codes||''}"/></td>
+    <td><input type="number" step="1" class="input mini mono" value="${v.qty||''}"/></td>
+    <td><input type="number" step="0.01" class="input mini mono" value="${v.unit_sell||''}"/></td>
+    <td><input type="number" step="0.01" class="input mini mono" value="${v.unit_cost||''}"/></td>
+    <td class="right"></td>`;
+  tr.lastElementChild.appendChild(button('−','ghost',()=>tr.remove()));
+  $('itemsBody').appendChild(tr);
+}
+function itemsFromDOM(){
+  return [...$('itemsBody').querySelectorAll('tr')].map(tr=>{
+    const [pn,dc,qty,us,uc]=[...tr.querySelectorAll('input')].map(x=>x.value.trim());
+    if(!pn) return null;
+    return {part_number:pn,date_codes:dc,qty:Number(qty||0),unit_sell:Number(us||0),unit_cost:Number(uc||0)};
+  }).filter(Boolean);
+}
+
+function addShipRow(v={kind:'Leg',date:'',qty:'',from:'',to:'',method:'',ref:'',courier:'',tracking:'',cost:''}){
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td>
+      <select class="select mini">
+        <option ${v.kind==='Leg'?'selected':''}>Leg</option>
+        <option ${v.kind==='Inbound'?'selected':''}>Inbound</option>
+        <option ${v.kind==='Outbound'?'selected':''}>Outbound</option>
+      </select>
+    </td>
+    <td><input type="date" class="input mini" value="${v.date||''}"/></td>
+    <td><input type="number" step="1" class="input mini mono" value="${v.qty||''}"/></td>
+    <td><input class="input mini" value="${v.from||''}"/></td>
+    <td><input class="input mini" value="${v.to||''}"/></td>
+    <td><input class="input mini" value="${v.method||''}"/></td>
+    <td><input class="input mini" value="${v.ref||''}"/></td>
+    <td><input class="input mini" value="${v.courier||''}"/></td>
+    <td><input class="input mini" value="${v.tracking||''}"/></td>
+    <td><input type="number" step="0.01" class="input mini mono" value="${v.cost||''}"/></td>
+    <td class="right"></td>`;
+  tr.lastElementChild.appendChild(button('−','ghost',()=>tr.remove()));
+  $('shipBody').appendChild(tr);
+}
+function shipsFromDOM(){
+  return [...$('shipBody').querySelectorAll('tr')].map(tr=>{
+    const [kindSel,date,qty,from,to,method,ref,courier,tracking,cost] = [
+      tr.querySelector('select').value,
+      ...[...tr.querySelectorAll('input')].map(x=>x.value.trim())
+    ];
+    if(!kindSel && !date && !qty && !from && !to && !method && !ref && !courier && !tracking && !cost) return null;
+    return {kind:kindSel,date,qty:Number(qty||0),from,to,method,ref,courier,tracking,cost:Number(cost||0)};
+  }).filter(Boolean);
+}
 
 function ageDays(d){
   if(!d) return '-';
@@ -267,157 +562,31 @@ function totals(o){
   const cost = itemCost + shipCost + testCost;
   const gp = revenue - cost;
   const gpPct = revenue ? (gp/revenue)*100 : 0;
-  return {revenue,qty,cost,gp,gpPct};
+  const avgUnit = qty ? (revenue/qty) : 0;
+  return {revenue,cost,gp,gpPct,qty,avgUnit};
 }
 
-/* ---------- inline edit widgets ---------- */
-function inlineTerms(cell, order){
-  const wrap = document.createElement('span');
-  wrap.className='editwrap';
-  const label=document.createElement('span'); label.textContent=order.payment_terms||'-';
-  const icon=document.createElement('button'); icon.className='iconbtn'; icon.title='Quick edit terms'; icon.textContent='✎';
+/* ---------- render list ---------- */
+function makeInlineSelectCell(order, field, options){
+  const wrap = document.createElement('div'); wrap.className='ie';
+  const chip = document.createElement('span'); chip.className='chip'; chip.textContent = order[field] || '-';
+  const btn = document.createElement('button'); btn.title='Edit'; btn.textContent='✎';
+  const sel = document.createElement('select'); options.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o)});
+  sel.value = options.includes(order[field]) ? order[field] : options[0];
 
-  const dropdown=document.createElement('span'); dropdown.className='inline-select';
-  dropdown.innerHTML = `
-    <select class="select" id="selTerms_${order.id}">
-      ${[5,10,15,20,30,40,50,60,90].map(n=>`<option ${order.payment_terms===`Net ${n}`?'selected':''}>Net ${n}</option>`).join('')}
-      <option value="Other">Other…</option>
-    </select>`;
-  const select = dropdown.querySelector('select');
-
-  const show=()=>{ dropdown.classList.add('inline-visible'); select.focus(); };
-  const hide=()=>{ dropdown.classList.remove('inline-visible'); };
-
-  icon.onclick=show;
-  select.onchange=async()=>{
-    let val=select.value;
-    if(val==='Other'){
-      const entry = prompt('Enter payment terms (free text):', order.payment_terms||'');
-      if(entry===null){ hide(); return; }
-      val = entry.trim()||null;
-    }
+  btn.onclick=()=>{ wrap.classList.add('editing'); sel.focus(); };
+  sel.onchange=async()=>{
     try{
-      await supa.quickUpdate(order.id, 'payment_terms', val);
-      label.textContent = val||'-';
-    }catch(e){ console.error(e); alert('Failed to update terms'); }
-    hide();
+      await supa.quickUpdate(order.id, field, sel.value);
+      await supa.loadOrders(); render();
+    }catch(e){ alert('Update failed'); console.error(e); }
   };
-  select.onblur=()=>setTimeout(hide,150);
+  sel.onblur=()=>wrap.classList.remove('editing');
 
-  wrap.append(label, icon, dropdown);
-  cell.appendChild(wrap);
+  wrap.append(chip, btn, sel);
+  return wrap;
 }
 
-function inlineStatus(cell, order){
-  const wrap=document.createElement('span'); wrap.className='editwrap';
-  const chip=document.createElement('span'); chip.className='chip'; chip.textContent=order.status||'-';
-  const icon=document.createElement('button'); icon.className='iconbtn'; icon.title='Quick edit status'; icon.textContent='✎';
-
-  const dropdown=document.createElement('span'); dropdown.className='inline-select';
-  dropdown.innerHTML=`<select class="select" id="selStat_${order.id}">
-      ${['New','Open','Closed'].map(s=>`<option ${s===(order.status||'')?'selected':''}>${s}</option>`).join('')}
-    </select>`;
-  const select=dropdown.querySelector('select');
-
-  const show=()=>{ dropdown.classList.add('inline-visible'); select.focus(); };
-  const hide=()=>{ dropdown.classList.remove('inline-visible'); };
-
-  icon.onclick=show;
-  select.onchange=async()=>{
-    try{
-      await supa.quickUpdate(order.id,'status',select.value);
-      chip.textContent=select.value;
-    }catch(e){ console.error(e); alert('Failed to update status'); }
-    hide();
-  };
-  select.onblur=()=>setTimeout(hide,150);
-
-  wrap.append(chip, icon, dropdown);
-  cell.appendChild(wrap);
-}
-
-/* ---------- View summary ---------- */
-function openSummary(o){
-  const {revenue,qty,cost,gp,gpPct} = totals(o);
-  const sym = curSym(o.currency);
-  const poUrl = window._sessionFiles?.[o.id]?.poUrl || null;
-  const testUrl = window._sessionFiles?.[o.id]?.testUrl || null;
-
-  $('viewBody').innerHTML = `
-    <div class="sum-grid">
-      <div class="sum-card">
-        <h3>Header</h3>
-        <div class="pad">
-          <div><strong>Customer:</strong> ${o.customer||'-'}</div>
-          <div><strong>Salesperson:</strong> ${o.salesperson||'-'}</div>
-          <div><strong>Status:</strong> ${o.status||'-'} · <strong>Priority:</strong> ${o.priority||'-'}</div>
-          <div><strong>Order date:</strong> ${o.order_date||'-'} · <strong>Requested by:</strong> ${o.requested_by||'-'}</div>
-          <div><strong>Terms:</strong> ${o.payment_terms||'-'} · <strong>Method:</strong> ${o.payment_method||'-'}</div>
-          <div><strong>Invoice:</strong> ${o.invoice_date||'-'} · <strong>Due:</strong> ${o.due_date||'-'}</div>
-          <div><strong>Incoterm:</strong> ${o.incoterm||'-'} · <strong>Vendor:</strong> ${o.vendor||'-'}</div>
-          <div><strong>Tests:</strong> ${o.tests||'-'} · <strong>Center:</strong> ${o.test_center||'-'}</div>
-          <div><strong>Files:</strong> ${
-              [poUrl?`<a class="link" target="_blank" href="${poUrl}">PO</a>`:'', testUrl?`<a class="link" target="_blank" href="${testUrl}">Test</a>`:'']
-              .filter(Boolean).join(' · ') || '-'
-          }</div>
-        </div>
-      </div>
-
-      <div class="sum-card">
-        <h3>Financials</h3>
-        <div class="pad mono">
-          <div><strong>Qty:</strong> ${fmtInt(qty)}</div>
-          <div><strong>Revenue (sell):</strong> ${sym}${fmt(revenue)}</div>
-          <div><strong>Total cost:</strong> ${sym}${fmt(cost)}</div>
-          <div><strong>GP:</strong> <span class="pill">${sym}${fmt(gp)}</span> <span class="muted">(${fmt(gpPct)}%)</span></div>
-        </div>
-      </div>
-
-      <div class="sum-card" style="grid-column:1 / -1">
-        <h3>Line Items</h3>
-        <div class="pad">
-          <table class="tbl" style="table-layout:auto;min-width:800px">
-            <thead><tr><th>Part</th><th>Date Codes</th><th class="mono">Qty</th><th class="mono">Unit Sell</th><th class="mono">Unit Cost</th></tr></thead>
-            <tbody>
-              ${(o.items||[]).map(i=>`
-                <tr>
-                  <td>${i.part_number||''}</td>
-                  <td>${i.date_codes||''}</td>
-                  <td class="mono">${fmtInt(i.qty)}</td>
-                  <td class="mono">${sym}${fmt(i.unit_sell)}</td>
-                  <td class="mono">${sym}${fmt(i.unit_cost)}</td>
-                </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="sum-card" style="grid-column:1 / -1">
-        <h3>Shipments / Legs</h3>
-        <div class="pad">
-          <table class="tbl" style="table-layout:auto;min-width:900px">
-            <thead><tr><th>Kind</th><th>Date</th><th class="mono">Qty</th><th>From</th><th>To</th><th>Method</th><th>Ref</th><th>Courier</th><th>Tracking</th><th class="mono">Cost</th></tr></thead>
-            <tbody>
-              ${(o.shipments||[]).map(s=>`
-                <tr>
-                  <td>${s.kind}</td><td>${s.date||''}</td><td class="mono">${fmtInt(s.qty)}</td>
-                  <td>${s.from||''}</td><td>${s.to||''}</td><td>${s.method||''}</td><td>${s.ref||''}</td>
-                  <td>${s.courier||''}</td><td>${s.tracking||''}</td><td class="mono">${sym}${fmt(s.cost)}</td>
-                </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    <div class="right">
-      <button class="btn ghost" onclick="$('viewDlg').close()">Close</button>
-      <button class="btn primary" onclick="$('viewDlg').close(); openModal(window._ordersById['${o.id}']);">Edit</button>
-    </div>
-  `;
-  $('viewDlg').showModal();
-}
-
-/* ---------- Render list ---------- */
 function render(){
   const q=$('q').value.toLowerCase(), sSales=$('fltSales').value, sStat=$('fltStatus').value, sPri=$('fltPriority').value;
   const rows=supa.getOrders().filter(o=>{
@@ -429,20 +598,20 @@ function render(){
     return true;
   });
 
-  // quick map for view->edit handoff
-  window._ordersById = Object.fromEntries(rows.map(r=>[r.id,r]));
-
   const tb=$('tbody'); tb.innerHTML='';
   rows.forEach(o=>{
-    const {revenue,qty,gp,gpPct} = totals(o);
-    const avgUnit = qty ? revenue/qty : 0;
+    const {revenue,gp,gpPct,qty,avgUnit} = totals(o);
     const parts = (o.items?.length? o.items[0].part_number+(o.items.length>1? ` +${o.items.length-1} more`: '') : '-');
     const poUrl = window._sessionFiles?.[o.id]?.poUrl || null;
     const testUrl = window._sessionFiles?.[o.id]?.testUrl || null;
     const sym = curSym(o.currency);
 
     const tr=document.createElement('tr');
-    tr.innerHTML=`
+
+    // View
+    const tdView=document.createElement('td'); const viewBtn=button('View','ghost',()=>openView(o)); tdView.appendChild(viewBtn); tr.appendChild(tdView);
+
+    tr.innerHTML += `
       <td>${o.customer||'-'}</td>
       <td>${parts}</td>
       <td>${o.salesperson||'-'}</td>
@@ -450,46 +619,284 @@ function render(){
       <td class="mono">${sym}${fmt(avgUnit)}</td>
       <td class="mono">${sym}${fmt(revenue)}</td>
       <td><span class="pill">${sym}${fmt(gp)}</span> <span class="muted mono">(${fmt(gpPct)}%)</span></td>
-      <td class="cell-status"></td>
+      <td><span class="chip">${o.priority||'-'}</span></td>
+    `;
+
+    // Inline Status
+    const tdStatus=document.createElement('td');
+    tdStatus.appendChild(makeInlineSelectCell(o,'status',['New','Open','Closed']));
+    tr.appendChild(tdStatus);
+
+    tr.innerHTML += `
       <td class="mono">${o.order_date||'-'}</td>
       <td class="mono">${o.requested_by||'-'}</td>
       <td class="mono">${ageDays(o.order_date)}</td>
       <td>${o.tests||'-'}</td>
       <td>${o.vendor||'-'}</td>
       <td>${o.incoterm||'-'}</td>
-      <td class="cell-terms"></td>
-      <td>${[poUrl?`<a class="link" target="_blank" href="${poUrl}">PO</a>`:'', testUrl?`<a class="link" target="_blank" href="${testUrl}">Test</a>`:''].filter(Boolean).join(' · ')||''}</td>
-      <td class="actions"></td>`;
+    `;
 
-    inlineStatus(tr.querySelector('.cell-status'), o);
-    inlineTerms(tr.querySelector('.cell-terms'), o);
+    // Inline Terms
+    const tdTerms=document.createElement('td');
+    tdTerms.appendChild(makeInlineSelectCell(o,'payment_terms',
+      ['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90']));
+    tr.appendChild(tdTerms);
 
-    const act=tr.lastElementChild;
+    // Shipped / Invoiced (silent if columns missing)
+    const chk = (name,val)=>{ const c=document.createElement('input'); c.type='checkbox'; c.checked=!!val;
+      c.onchange=async()=>{ try{ await supa.quickUpdate(o.id,name,c.checked,true);}catch(e){ console.warn(e);} };
+      return c;
+    };
+    const tdShip=document.createElement('td'); tdShip.appendChild(chk('is_shipped',o.is_shipped)); tr.appendChild(tdShip);
+    const tdInv=document.createElement('td'); tdInv.appendChild(chk('is_invoiced',o.is_invoiced)); tr.appendChild(tdInv);
+
+    // Files
+    const tdFiles=document.createElement('td');
+    tdFiles.innerHTML = [poUrl?`<a class="link" target="_blank" href="${poUrl}">PO</a>`:'', testUrl?`<a class="link" target="_blank" href="${testUrl}">Test</a>`:'']
+      .filter(Boolean).join(' · ')||'';
+    tr.appendChild(tdFiles);
+
+    // Actions
+    const act=document.createElement('td'); act.className='actions';
     act.append(
-      button('View','ghost',()=>openSummary(o)),
       button('Edit','ghost',()=>openModal(o)),
       button('Delete','ghost',async()=>{ if(!confirm('Delete this order?'))return; await supa.deleteOrder(o.id); await supa.loadOrders(); render(); })
     );
+    tr.appendChild(act);
+
     tb.appendChild(tr);
   });
 }
 
-/* ---------- The full Edit modal code (unchanged core) ---------- */
-/* KEEP your existing modal block from the working file. For brevity here, 
-   paste the entire <dialog id="dlg">…</dialog> section and the related functions:
-   - addItemRow / itemsFromDOM
-   - addShipRow / shipsFromDOM
-   - openModal / collectRecord / autoDue
-   - event bindings for Save / Delete / filters / CSV
-   The only two new functions we added are inline editors and openSummary().
-*/
+/* ---------- modal open/collect/save ---------- */
+let _snapshot = null;
+function snapshotRecord(rec){ const {id, ...rest}=rec||{}; return JSON.stringify(rest); }
 
-/* ---------- init ---------- */
+function openModal(o){
+  $('dlgTitle').textContent = o?'Edit Order':'New Order';
+  $('orderId').value = o?.id || '';
+  $('salesperson').value = o?.salesperson || SALESTEAM[0];
+  $('customer').value = o?.customer || '';
+  $('priority').value = o?.priority || 'Normal';
+  $('status').value = o?.status || 'New';
+  $('order_date').value = o?.order_date || todayStr();
+  $('requested_by').value = o?.requested_by || '';
+
+  $('payment_terms').value = (['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90'].includes(o?.payment_terms)) ? o.payment_terms : 'Other';
+  $('payment_terms_other').style.display = $('payment_terms').value==='Other' ? '' : 'none';
+  $('payment_terms_other').value = $('payment_terms').value==='Other' ? (o?.payment_terms||'') : '';
+
+  $('payment_method').value = (['Bank Transfer','Credit Card','PayPal'].includes(o?.payment_method)) ? o.payment_method : 'Other';
+  $('payment_method_other').style.display = $('payment_method').value==='Other' ? '' : 'none';
+  $('payment_method_other').value = $('payment_method').value==='Other' ? (o?.payment_method||'') : '';
+
+  $('incoterm').value = (['DAP','DDP','EXW','CIP','FOB'].includes(o?.incoterm)) ? o.incoterm : 'Other';
+  $('incoterm_other').style.display = $('incoterm').value==='Other' ? '' : 'none';
+  $('incoterm_other').value = $('incoterm').value==='Other' ? (o?.incoterm||'') : '';
+
+  $('invoice_date').value = o?.invoice_date || '';
+  $('due_date').value = o?.due_date || '';
+
+  $('currency').value = o?.currency || 'USD';
+
+  [...$('testsLine').querySelectorAll('input[type="checkbox"]')].forEach(cb=>cb.checked=false);
+  $('tests_other').value='';
+  if(o?.tests){
+    const set=new Set(o.tests.split(',').map(s=>s.trim()).filter(Boolean));
+    [...$('testsLine').querySelectorAll('input[type="checkbox"]')].forEach(cb=>cb.checked=set.has(cb.value));
+    if(set.has('Other')) $('tests_other').value = (o.tests.match(/\(Other:(.*?)\)$/)?.[1] || '');
+  }
+  $('test_center').value = (['GETs HK','GETs Shenzhen','GETs US','White Horse US','White Horse China','White Horse EU'].includes(o?.test_center)) ? o.test_center : 'Other';
+
+  $('vendor').value = o?.vendor || '';
+
+  $('itemsBody').innerHTML=''; (o?.items?.length?o.items:[{}]).forEach(addItemRow);
+  $('shipBody').innerHTML=''; (o?.shipments||[]).forEach(addShipRow);
+
+  $('shipping_cost_extra').value = o?.shipping_cost_extra ?? '';
+  $('test_cost').value = o?.test_cost ?? '';
+  $('notes').value = o?.notes || '';
+
+  $('file_po').value=''; $('file_test').value='';
+  $('btnDelete').style.display = o?.id ? '' : 'none';
+
+  // After prefill, take a snapshot for dirty-checking (exclude id)
+  _snapshot = snapshotRecord(collectRecord(/*preview*/true));
+  $('dlg').showModal();
+}
+
+function collectRecord(preview=false){
+  // For "new" we keep id blank in preview snapshot to avoid churn
+  const id = $('orderId').value || (preview ? '' : crypto.randomUUID());
+
+  const checks=[...$('testsLine').querySelectorAll('input[type="checkbox"]')];
+  const none = $('tNone').checked;
+  checks.forEach(cb=>{ if(none && cb.value!=='No test') cb.checked=false; });
+  const selected = checks.filter(cb=>cb.checked).map(cb=>cb.value);
+  if($('tOther').checked){
+    const extra = $('tests_other').value.trim();
+    if(extra) selected[selected.indexOf('Other')] = 'Other';
+  }
+  let testsStr = selected.join(', ');
+  if(selected.includes('Other')){
+    const t = $('tests_other').value.trim();
+    if(t) testsStr = testsStr.replace('Other', `Other (Other:${t})`);
+  }
+
+  const terms = $('payment_terms').value==='Other' ? $('payment_terms_other').value.trim() : $('payment_terms').value;
+  const method = $('payment_method').value==='Other' ? $('payment_method_other').value.trim() : $('payment_method').value;
+  const incot = $('incoterm').value==='Other' ? $('incoterm_other').value.trim() : $('incoterm').value;
+
+  return {
+    id,
+    salesperson:$('salesperson').value,
+    customer:$('customer').value.trim(),
+    priority:$('priority').value, status:$('status').value,
+    order_date:$('order_date').value||null,
+    requested_by:$('requested_by').value||null,
+    payment_terms:terms||null, payment_method:method||null,
+    invoice_date:$('invoice_date').value||null, due_date:$('due_date').value||null,
+    currency:$('currency').value||'USD',
+    tests:testsStr||null, test_center:$('test_center').value,
+    vendor:$('vendor').value.trim()||null, incoterm:incot||null,
+    items:itemsFromDOM(),
+    shipments:shipsFromDOM(),
+    shipping_cost_extra:Number($('shipping_cost_extra').value||0),
+    test_cost:Number($('test_cost').value||0),
+    notes:$('notes').value.trim()||null,
+    // optional flags (saved only if DB supports)
+    is_shipped:false,
+    is_invoiced:false
+  };
+}
+
+/* auto-due from invoice + terms */
+function autoDue(){
+  const inv=$('invoice_date').value, t=$('payment_terms').value, tother=$('payment_terms_other').value.trim();
+  const src = t==='Other'? tother : t;
+  const m = src.match(/Net\s+(\d+)/i);
+  if(inv && m){ const add=Number(m[1]||0); const d=new Date(inv); d.setDate(d.getDate()+add); $('due_date').value=d.toISOString().slice(0,10); }
+}
+$('payment_terms').addEventListener('change',()=>{ $('payment_terms_other').style.display = $('payment_terms').value==='Other' ? '' : 'none'; autoDue(); });
+$('payment_terms_other').addEventListener('input',autoDue);
+$('invoice_date').addEventListener('change',autoDue);
+$('payment_method').addEventListener('change',()=>{ $('payment_method_other').style.display = $('payment_method').value==='Other' ? '' : 'none'; });
+$('incoterm').addEventListener('change',()=>{ $('incoterm_other').style.display = $('incoterm').value==='Other' ? '' : 'none'; });
+
+/* guard against accidental close if dirty */
+function maybeCloseDialog(){
+  const nowSnap = snapshotRecord(collectRecord(true));
+  if(nowSnap!==_snapshot){
+    if(!confirm('Discard changes?')) return false;
+  }
+  $('dlg').close(); return true;
+}
+$('btnClose').onclick=()=>maybeCloseDialog();
+$('dlg').addEventListener('cancel', (e)=>{ // Esc
+  const ok = maybeCloseDialog();
+  if(!ok) e.preventDefault();
+});
+
+/* add rows */
+$('addItem').onclick=()=>addItemRow({});
+$('addShip').onclick=()=>addShipRow({});
+
+/* save / delete */
+$('btnSave').onclick=async()=>{
+  const rec=collectRecord();
+  if(!rec.customer){alert('Customer is required');return;}
+  if(!rec.items?.length){alert('Add at least one line item');return;}
+  const uploads={};
+  if($('file_po').files[0]) uploads.po = $('file_po').files[0];
+  if($('file_test').files[0]) uploads.test_report = $('file_test').files[0];
+  try{
+    await supa.saveOrder(rec,uploads);
+    await supa.loadOrders(); render(); $('dlg').close();
+  }catch(e){console.error(e); alert('Save failed. See console.');}
+};
+$('btnDelete').onclick=async()=>{
+  const id=$('orderId').value; if(!id) return;
+  if(!confirm('Delete this order?'))return;
+  await supa.deleteOrder(id); await supa.loadOrders(); render(); $('dlg').close();
+};
+
+/* filters & CSV */
+['q','fltSales','fltStatus','fltPriority'].forEach(id=>$(id).addEventListener('input',render));
+$('btnCsv').onclick=()=>{
+  const head=[...document.querySelectorAll('#tbl thead th')].map(th=>th.innerText);
+  const rows=[...document.querySelectorAll('#tbody tr')].map(tr=>[...tr.children].map(td=>td.innerText.replace(/\s+/g,' ').trim()));
+  const csv=[head,...rows].map(r=>r.map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='orders.csv'; a.click();
+};
+
+/* view summary */
+function openView(o){
+  const {revenue,gp,gpPct,qty,avgUnit} = totals(o);
+  const sym = curSym(o.currency);
+  const files = window._sessionFiles?.[o.id]||{};
+  const partsRows = (o.items||[]).map(i=>`
+    <tr><td>${i.part_number||''}</td><td>${i.date_codes||''}</td><td class="mono">${fmtInt(i.qty)}</td>
+    <td class="mono">${sym}${fmt(i.unit_sell)}</td><td class="mono">${sym}${fmt(i.unit_cost)}</td></tr>`).join('')||'';
+  const shipRows = (o.shipments||[]).map(s=>`
+    <tr><td>${s.kind}</td><td class="mono">${s.date||''}</td><td class="mono">${fmtInt(s.qty||'')}</td>
+    <td>${s.from||''}</td><td>${s.to||''}</td><td>${s.method||''}</td><td>${s.ref||''}</td>
+    <td>${s.courier||''}</td><td>${s.tracking||''}</td><td class="mono">${s.cost? sym+fmt(s.cost):''}</td></tr>`).join('')||'';
+
+  $('viewBody').innerHTML = `
+    <div class="card"><h3>Header</h3><div class="pad"><div class="kv">
+      <div>Customer</div><div>${o.customer||'-'}</div>
+      <div>Salesperson</div><div>${o.salesperson||'-'}</div>
+      <div>Priority</div><div>${o.priority||'-'}</div>
+      <div>Status</div><div>${o.status||'-'}</div>
+      <div>Order Date</div><div>${o.order_date||'-'}</div>
+      <div>Requested by</div><div>${o.requested_by||'-'}</div>
+      <div>Incoterm</div><div>${o.incoterm||'-'}</div>
+      <div>Terms</div><div>${o.payment_terms||'-'}</div>
+      <div>Currency</div><div>${o.currency||'-'}</div>
+      <div>Vendor</div><div>${o.vendor||'-'}</div>
+      <div>Test Center</div><div>${o.test_center||'-'}</div>
+      <div>Tests</div><div>${o.tests||'-'}</div>
+      <div>Notes</div><div>${o.notes||'-'}</div>
+    </div></div></div>
+
+    <div class="card"><h3>Totals</h3><div class="pad"><div class="kv">
+      <div>Total Qty</div><div class="mono">${fmtInt(qty)}</div>
+      <div>Avg Unit</div><div class="mono">${sym}${fmt(avgUnit)}</div>
+      <div>Sell</div><div class="mono">${sym}${fmt(revenue)}</div>
+      <div>GP</div><div><span class="pill">${sym}${fmt(gp)}</span> <span class="muted mono">(${fmt(gpPct)}%)</span></div>
+      <div>Extra Shipping</div><div class="mono">${o.shipping_cost_extra? sym+fmt(o.shipping_cost_extra):'-'}</div>
+      <div>Test Cost</div><div class="mono">${o.test_cost? sym+fmt(o.test_cost):'-'}</div>
+      <div>Files</div><div>
+        ${files.poUrl?`<a class="link" target="_blank" href="${files.poUrl}">PO</a>`:''}
+        ${files.testUrl?` · <a class="link" target="_blank" href="${files.testUrl}">Test</a>`:''}
+      </div>
+    </div></div></div>
+
+    <div class="card" style="grid-column:1 / -1"><h3>Line Items</h3>
+      <div class="pad">
+        <div class="hscroll"><table class="tbl" style="min-width:900px">
+          <thead><tr><th>Part</th><th>Date Codes</th><th>Qty</th><th>Unit Sell</th><th>Unit Cost</th></tr></thead>
+          <tbody>${partsRows||'<tr><td colspan="5" class="muted">No items</td></tr>'}</tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <div class="card" style="grid-column:1 / -1"><h3>Shipments</h3>
+      <div class="pad">
+        <div class="hscroll"><table class="tbl" style="min-width:1100px">
+          <thead><tr><th>Kind</th><th>Date</th><th>Qty</th><th>From</th><th>To</th><th>Method</th><th>Ref</th><th>Courier</th><th>Tracking</th><th>Cost</th></tr></thead>
+          <tbody>${shipRows||'<tr><td colspan="10" class="muted">No shipments</td></tr>'}</tbody>
+        </table></div>
+      </div>
+    </div>
+  `;
+  $('viewDlg').showModal();
+}
+
+/* init */
 document.addEventListener('DOMContentLoaded', ()=>{
-  $('salesperson')?.remove; // (modal code will set this in your pasted block)
+  $('salesperson').innerHTML = SALESTEAM.map(n=>`<option>${n}</option>`).join('');
   $('fltSales').innerHTML = `<option value="">All salespeople</option>` + SALESTEAM.map(n=>`<option>${n}</option>`).join('');
-  $('btnNew').addEventListener('click', ()=> openModal(null));
-  ['q','fltSales','fltStatus','fltPriority'].forEach(id=>$(id).addEventListener('input',render));
 });
 
 async function init(){
@@ -499,6 +906,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
