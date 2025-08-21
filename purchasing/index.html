@@ -7,32 +7,31 @@
 <style>
 :root{--brand:#6f57e9;--ink:#1e2330;--muted:#6d7486;--bg:#f6f7fb;--card:#fff;--line:#e9e9ef;--chip:#f1f2f7}
 *{box-sizing:border-box}html,body{height:100%}
-body{margin:0;font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial;background:var(--bg);color:var(--ink)}
-.wrap{max-width:1280px;margin:0 auto;padding:20px}
+body{margin:0;font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial;background:var(--bg);color:var(--ink)}
+.wrap{max-width:1280px;margin:0 auto;padding:18px}
 .brand{display:flex;gap:10px;align-items:center;font-weight:800}.dot{width:10px;height:10px;border-radius:50%;background:var(--brand)}
-.top{display:flex;gap:12px;align-items:center}
-.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 0}
-.tab{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
+.tab{padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
 .tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
 /* 3 columns: New RFQ | RFQs | Filters  */
-.row{display:grid;grid-template-columns:360px 1fr 260px;gap:16px;margin-top:16px}
-@media(max-width:1200px){.row{grid-template-columns:360px 1fr}}
+.row{display:grid;grid-template-columns:340px 1fr 250px;gap:14px;margin-top:12px}
+@media(max-width:1180px){.row{grid-template-columns:340px 1fr}}
 @media(max-width:860px){.row{grid-template-columns:1fr}}
-.card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
-.hd{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
-.bd{padding:16px}
-label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
-input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit}
-textarea{min-height:80px;resize:vertical}
-button{appearance:none;border:0;border-radius:10px;padding:10px 14px;background:var(--brand);color:#fff;font-weight:600;cursor:pointer}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.03)}
+.hd{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.bd{padding:12px 14px}
+label{display:block;font-size:12px;color:var(--muted);margin:6px 0 3px}
+input,select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;font:inherit}
+textarea{min-height:70px;resize:vertical}
+button{appearance:none;border:0;border-radius:9px;padding:9px 12px;background:var(--brand);color:#fff;font-weight:600;cursor:pointer}
 button.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
 .muted{color:var(--muted)}
-/* RFQ list cards with verified purple border */
-.rfq-list{display:grid;gap:12px}
-.rfq{border:2px solid rgba(111,87,233,.35);border-radius:14px;background:#fff}
-.rfq-hd{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:12px 14px;border-bottom:1px solid var(--line)}
+/* RFQ list cards with verified purple border (compact) */
+.rfq-list{display:grid;gap:10px}
+.rfq{border:2px solid rgba(111,87,233,.35);border-radius:12px;background:#fff}
+.rfq-hd{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:10px 12px;border-bottom:1px solid var(--line)}
 .rfq-title{font-weight:800}
-.meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+.meta{display:flex;gap:6px;flex-wrap:wrap;color:var(--muted);font-size:12px}
 .badge{padding:2px 8px;border-radius:999px;background:var(--chip);border:1px solid var(--line)}
 .status{padding:2px 8px;border-radius:999px;border:1px solid var(--line);font-size:12px}
 .status.open{background:#eef2ff;color:#3b2eca;border-color:#c7d2fe}
@@ -43,39 +42,39 @@ button.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
 .priority.normal{background:#eef2ff;color:#3b2eca;border-color:#c7d2fe}
 .priority.high{background:#fff7ed;color:#9a3412;border-color:#fed7aa}
 .priority.urgent{background:#fee2e2;color:#b91c1c;border-color:#fecaca}
-.offer-list{padding:10px 12px}
-.chip{padding:4px 8px;border-radius:999px;border:1px solid var(--line);font-size:12px;background:#fff}
+.offer-list{padding:8px 12px}
+.chip{padding:3px 7px;border-radius:999px;border:1px solid var(--line);font-size:12px;background:#fff}
 .conf[data-level="1"],.conf[data-level="2"]{background:#fee2e2;border-color:#fecaca;color:#b91c1c}
 .conf[data-level="3"]{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
 .conf[data-level="4"]{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
 .conf[data-level="5"]{background:#e0f2fe;border-color:#bae6fd;color:#075985}
-.coverage{height:8px;background:#f3f4f6;border-radius:999px;overflow:hidden}
+.coverage{height:6px;background:#f3f4f6;border-radius:999px;overflow:hidden}
 .coverage>i{display:block;height:100%;background:linear-gradient(90deg,#a78bfa,#60a5fa);width:0%}
-.actions{display:flex;gap:8px;flex-wrap:wrap}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.actions .ghost{padding:6px 8px;font-weight:600}
 /* Board */
-.board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.board{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .col{background:#fff;border:1px solid var(--line);border-radius:12px}
-.col-hd{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);font-weight:700}
-.col-bd{padding:10px}.mini{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px}.mini .meta{font-size:12px;color:#6d7486}
+.col-hd{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);font-weight:700}
+.col-bd{padding:8px}.mini{border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:8px}.mini .meta{font-size:12px;color:#6d7486}
 /* Drawer (read-only) */
-dialog{border:0;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:920px;max-width:calc(100vw - 24px)}
-dialog.side{width:920px;max-width:920px;margin:0 0 0 auto;height:100%;border-radius:0}
+dialog{border:0;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:900px;max-width:calc(100vw - 24px)}
+dialog.side{width:900px;max-width:900px;margin:0 0 0 auto;height:100%;border-radius:0}
 dialog::backdrop{background:rgba(0,0,0,.3)}
 table{width:100%;border-collapse:separate;border-spacing:0 8px}
-th,td{padding:8px 10px;text-align:left} thead th{font-size:12px;color:#6d7486}
+th,td{padding:7px 9px;text-align:left} thead th{font-size:12px;color:#6d7486}
 tbody tr{background:#fff;border:1px solid var(--line)} tbody tr td:first-child{border-radius:10px 0 0 10px} tbody tr td:last-child{border-radius:0 10px 10px 0}
-.inline-input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
-.toast{position:fixed;bottom:18px;right:18px;background:#111827;color:#fff;padding:12px 14px;border-radius:10px;opacity:0;transform:translateY(10px);transition:.2s}
+.toast{position:fixed;bottom:18px;right:18px;background:#111827;color:#fff;padding:10px 12px;border-radius:9px;opacity:0;transform:translateY(10px);transition:.2s}
 .toast.show{opacity:1;transform:none}
-.empty{padding:30px;border:1px dashed var(--line);border-radius:12px;color:#6d7486;text-align:center;background:#fff}
+.empty{padding:24px;border:1px dashed var(--line);border-radius:12px;color:#6d7486;text-align:center;background:#fff}
 /* Filters sidebar */
-.filters{position:sticky;top:20px}
+.filters{position:sticky;top:18px}
 .filters .bd{display:grid;gap:10px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="top brand"><span class="dot"></span> Verified — Purchasing Board</div>
+  <div class="brand"><span class="dot"></span> Verified — Purchasing Board</div>
 
   <div id="salesTabs" class="tabs"></div>
 
@@ -90,12 +89,15 @@ tbody tr{background:#fff;border:1px solid var(--line)} tbody tr td:first-child{b
             <select id="salesperson" style="flex:1"></select>
             <button type="button" class="ghost" id="manageSales">✚</button>
           </div>
-          <label>Part Number</label><input id="partNumber" placeholder="e.g., IPF015N10N5ATMA1" required>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <label>Customer</label>
+          <input id="customer" placeholder="e.g., Acme Corp" required>
+          <label>Part Number</label>
+          <input id="partNumber" placeholder="e.g., IPF015N10N5ATMA1" required>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div><label>Quantity</label><input id="quantity" type="number" min="1" step="1" placeholder="e.g., 500" required></div>
             <div><label>Target Price (optional)</label><input id="targetPrice" type="number" min="0" step="0.01" placeholder="e.g., 1.25"></div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div><label>Priority</label><select id="priority">
               <option>normal</option><option>low</option><option>high</option><option>urgent</option></select></div>
             <div><label>Currency</label><select id="currency"><option>USD</option><option>GBP</option><option>EUR</option></select></div>
@@ -110,7 +112,7 @@ tbody tr{background:#fff;border:1px solid var(--line)} tbody tr td:first-child{b
     <div class="card">
       <div class="hd"><strong id="listTitle">RFQs</strong><div class="muted" id="listMeta">—</div></div>
       <div class="bd">
-        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+        <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center">
           <span class="muted">View:</span>
           <button class="ghost" id="viewList" aria-pressed="true">List</button>
           <button class="ghost" id="viewBoard" aria-pressed="false">Board</button>
@@ -127,15 +129,15 @@ tbody tr{background:#fff;border:1px solid var(--line)} tbody tr td:first-child{b
       <div class="bd">
         <div>
           <label>Search</label>
-          <input id="search" placeholder="Search part…" />
+          <input id="filterSearch" placeholder="Part or customer…"/>
         </div>
         <div>
           <label>Salesperson</label>
-          <select id="fSales"><option>All</option></select>
+          <select id="filterSales"><option>All</option></select>
         </div>
         <div>
           <label>Status</label>
-          <select id="fStatus">
+          <select id="filterStatus">
             <option value="all">All statuses</option>
             <option value="open">Open</option>
             <option value="ordered">Sent to Orders</option>
@@ -144,7 +146,7 @@ tbody tr{background:#fff;border:1px solid var(--line)} tbody tr td:first-child{b
         </div>
         <div>
           <label>Sort</label>
-          <select id="fSort">
+          <select id="filterSort">
             <option value="created_desc">Newest</option>
             <option value="created_asc">Oldest</option>
             <option value="best_price">Best price</option>
@@ -167,13 +169,13 @@ tbody tr{background:#fff;border:1px solid var(--line)} tbody tr td:first-child{b
     </div>
   </div>
   <div class="bd">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-      <div style="min-width:120px" class="muted">Coverage</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div style="min-width:110px" class="muted">Coverage</div>
       <div class="coverage" style="flex:1"><i style="width:0%"></i></div>
-      <div id="drawerCoverageText" class="muted" style="width:120px;text-align:right">0/0</div>
+      <div id="drawerCoverageText" class="muted" style="width:110px;text-align:right">0/0</div>
     </div>
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:12px 0 6px">
       <div><strong>Offers</strong></div>
       <div class="muted">Best price highlighted</div>
     </div>
@@ -183,11 +185,11 @@ tbody tr{background:#fff;border:1px solid var(--line)} tbody tr td:first-child{b
       <tbody id="offerRows"></tbody>
     </table>
 
-    <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
+    <hr style="border:none;border-top:1px solid var(--line);margin:12px 0">
     <div style="display:flex;justify-content:space-between;align-items:center"><strong>Comments</strong><span class="muted" id="cCount"></span></div>
-    <div id="comments" style="display:grid;gap:10px;margin-top:8px"></div>
+    <div id="comments" style="display:grid;gap:8px;margin-top:6px"></div>
     <div style="display:flex;gap:8px;margin-top:8px">
-      <input id="cAuthor" placeholder="Your name" style="flex:0 0 160px">
+      <input id="cAuthor" placeholder="Your name" style="flex:0 0 150px">
       <input id="cText" placeholder="Write a comment…" style="flex:1">
       <button class="ghost" id="cAdd">Add</button>
     </div>
@@ -199,19 +201,19 @@ tbody tr{background:#fff;border:1px solid var(--line)} tbody tr td:first-child{b
   <div class="hd"><strong>Add Offer</strong></div>
   <div class="bd">
     <input type="hidden" id="offer_rfq_id">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div><label>Vendor</label><input id="vendor" required></div>
       <div><label>Location</label><input id="location"></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div><label>Price</label><input id="price" type="number" min="0" step="0.0001" required></div>
       <div><label>Currency</label><select id="offer_currency"><option>USD</option><option>GBP</option><option>EUR</option></select></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div><label>Qty Offered</label><input id="qty_offer" type="number" min="0" step="1"></div>
       <div><label>MOQ</label><input id="moq" type="number" min="0" step="1"></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div><label>Lead Time (days)</label><input id="lead_time" type="number" min="0" step="1"></div>
       <div><label>Confidence</label><select id="confidence"><option>5</option><option>4</option><option selected>3</option><option>2</option><option>1</option></select></div>
     </div>
@@ -226,19 +228,20 @@ tbody tr{background:#fff;border:1px solid var(--line)} tbody tr td:first-child{b
 <div id="toast" class="toast"></div>
 
 <script>
-/* ==== Local store (v7) ==== */
-const K_RFQ='ve_rfqs_v7', K_OFF='ve_offers_v7', K_CMT='ve_comments_v1';
+/* ==== Local store (v8 — adds customer) ==== */
+const K_RFQ='ve_rfqs_v8', K_OFF='ve_offers_v8', K_CMT='ve_comments_v1';
 const DEFAULT_SALES = JSON.parse(localStorage.getItem('ve_salespeople')||'null') || ["Emir","Nick K","Dan","Jake","Alan","Howell","Maddy"];
 const state={salespeople:[...DEFAULT_SALES], allRFQs:[], offersByRFQ:new Map(), tab:'All', view:'list', active:null};
 
-/* DOM grabs */
+/* DOM */
 const $=s=>document.querySelector(s);
 const tabsEl=$("#salesTabs"), rfqListEl=$("#rfqList"), boardEl=$("#board"), emptyEl=$("#emptyState");
 const listTitle=$("#listTitle"), listMeta=$("#listMeta");
-const searchEl=$("#search"), fSales=$("#fSales"), fStatus=$("#fStatus"), fSort=$("#fSort");
+const fSearch=$("#filterSearch"), fSales=$("#filterSales"), fStatus=$("#filterStatus"), fSort=$("#filterSort");
 const viewListBtn=$("#viewList"), viewBoardBtn=$("#viewBoard");
 const rfqForm=$("#rfqForm"), salespersonEl=$("#salesperson"), manageSalesBtn=$("#manageSales");
-const partEl=$("#partNumber"), qtyEl=$("#quantity"), targetEl=$("#targetPrice"), notesEl=$("#rfqNotes"), priorityEl=$("#priority"), currencyEl=$("#currency"), rfqHint=$("#rfqHint");
+const customerEl=$("#customer"), partEl=$("#partNumber"), qtyEl=$("#quantity"), targetEl=$("#targetPrice"),
+      notesEl=$("#rfqNotes"), priorityEl=$("#priority"), currencyEl=$("#currency"), rfqHint=$("#rfqHint");
 const offerModal=$("#offerModal"), offerForm=$("#offerForm"), offerCancel=$("#offerCancel");
 const rfqDrawer=$("#rfqDrawer"), drawerTitle=$("#drawerTitle"), drawerMeta=$("#drawerMeta"), drawerSendBtn=$("#drawerSend"), drawerCloseBtn=$("#drawerCloseBtn");
 const covBar=$("#rfqDrawer .coverage i"), covTxt=$("#drawerCoverageText"), offerRows=$("#offerRows");
@@ -248,10 +251,10 @@ const commentsEl=$("#comments"), cAuthorEl=$("#cAuthor"), cTextEl=$("#cText"), c
 const read=k=>JSON.parse(localStorage.getItem(k)||'[]'), write=(k,v)=>localStorage.setItem(k,JSON.stringify(v)), nid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
 const money=(v,cur)=>{try{return new Intl.NumberFormat(undefined,{style:'currency',currency:cur||'USD'}).format(Number(v))}catch(e){return (cur||'USD')+' '+Number(v).toFixed(2)}};
 const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
-const best=arr=>arr && arr.length?arr.slice().sort((a,b)=>(a.price-b.price)||(b.confidence-a.confidence))[0]:null;
-const coverage=(arr,need)=>{const sum=(arr||[]).reduce((t,o)=>t+(Number(o.qty_offer)||0),0);return{sum,pct:Math.max(0,Math.min(100,Math.round((sum/Math.max(need||0,1))*100)))}};
-function toast(m){const t=$("#toast");t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+const best=os=>os && os.length?os[0]:null;
+const coverage=(os,need)=>{const sum=(os||[]).reduce((t,o)=>t+(Number(o.qty_offer)||0),0);return{sum,pct:Math.max(0,Math.min(100,Math.round((sum/Math.max(need||0,1))*100)))}};
 function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function onlyDate(iso){return new Date(iso).toLocaleDateString()}
 
 /* load */
 function loadAll(){
@@ -282,8 +285,12 @@ function render(){
   let rfqs=[...state.allRFQs];
   if(state.tab!=='All') rfqs=rfqs.filter(r=>r.salesperson===state.tab);
   if(fSales.value!=='All') rfqs=rfqs.filter(r=>r.salesperson===fSales.value);
-  const q=(searchEl.value||'').toLowerCase().trim(); if(q) rfqs=rfqs.filter(r=>r.part_number.toLowerCase().includes(q));
+
+  const q=(fSearch.value||'').toLowerCase().trim();
+  if(q) rfqs=rfqs.filter(r=>r.part_number.toLowerCase().includes(q) || (r.customer||'').toLowerCase().includes(q));
+
   const st=fStatus.value; if(st!=='all') rfqs=rfqs.filter(r=>r.status===st);
+
   rfqs=rfqs.map(r=>({...r,offers:state.offersByRFQ.get(r.id)||[]}));
 
   const srt=fSort.value;
@@ -304,27 +311,34 @@ function renderList(rfqs){
     const os=r.offers, bo=best(os), cov=coverage(os,r.quantity);
     const el=document.createElement('div'); el.className='rfq';
     el.innerHTML=`<div class="rfq-hd">
-      <div><div class="rfq-title">${r.part_number} <span class="muted">× ${r.quantity.toLocaleString()}</span></div>
-      <div class="meta"><span class="badge">Sales: ${r.salesperson}</span><span class="badge">Created: ${new Date(r.created_at).toLocaleString()}</span>
-      ${r.target_price?`<span class="badge">Target: ${money(r.target_price,r.currency||'USD')}</span>`:''}
-      <span class="status ${r.status}">${r.status==='ordered'?'sent to orders':r.status}</span>
-      <span class="priority ${r.priority}">Priority: ${cap(r.priority)}</span><span class="badge">Offers: ${os.length}</span>
-      ${bo?`<span class="badge">Best: ${money(bo.price,bo.currency)}</span>`:''}
-      </div></div>
+      <div>
+        <div class="rfq-title">${r.part_number} <span class="muted">× ${r.quantity.toLocaleString()}</span></div>
+        <div class="meta">
+          <span class="badge">Customer: ${esc(r.customer||'—')}</span>
+          <span class="badge">Sales: ${r.salesperson}</span>
+          <span class="badge">Date: ${onlyDate(r.created_at)}</span>
+          ${r.target_price?`<span class="badge">Target: ${money(r.target_price,r.currency||'USD')}</span>`:''}
+          <span class="status ${r.status}">${r.status==='ordered'?'sent to orders':r.status}</span>
+          <span class="priority ${r.priority}">Priority: ${cap(r.priority)}</span>
+          <span class="badge">Offers: ${os.length}</span>
+          ${bo?`<span class="badge">Best: ${money(bo.price,bo.currency)}</span>`:''}
+        </div>
+      </div>
       <div class="actions">
         <button class="ghost" data-act="view">View Offers</button>
         <button class="ghost" data-act="add">Add Offer</button>
         <button class="ghost" data-act="send">Send to Orders</button>
         <button class="ghost" data-act="close">Close</button>
-      </div></div>
-      <div class="offer-list">
-        <div style="display:flex;align-items:center;gap:10px;margin:6px 0 10px">
-          <div style="min-width:120px" class="muted">Coverage</div>
-          <div class="coverage" style="flex:1"><i style="width:${cov.pct}%"></i></div>
-          <div class="muted" style="width:120px;text-align:right">${cov.sum}/${r.quantity}</div>
-        </div>
-        ${bo?`<div class="chip"><strong>${bo.vendor}</strong> • ${bo.location||'—'} • ${money(bo.price,bo.currency)} • ${bo.qty_offer||'—'} pcs • ${bo.lead_time||'—'}d <span class="chip conf" data-level="${bo.confidence}">Conf ${bo.confidence}</span></div>`:`<div class="muted">No offers yet.</div>`}
-      </div>`;
+      </div>
+    </div>
+    <div class="offer-list">
+      <div style="display:flex;align-items:center;gap:8px;margin:4px 0 8px">
+        <div style="min-width:110px" class="muted">Coverage</div>
+        <div class="coverage" style="flex:1"><i style="width:${cov.pct}%"></i></div>
+        <div class="muted" style="width:110px;text-align:right">${cov.sum}/${r.quantity}</div>
+      </div>
+      ${bo?`<div class="chip"><strong>${esc(bo.vendor)}</strong> • ${esc(bo.location||'—')} • ${money(bo.price,bo.currency)} • ${bo.qty_offer||'—'} pcs • ${bo.lead_time||'—'}d <span class="chip conf" data-level="${bo.confidence}">Conf ${bo.confidence}</span></div>`:`<div class="muted">No offers yet.</div>`}
+    </div>`;
     el.querySelector('[data-act="view"]').onclick=()=>openDrawer(r);
     el.querySelector('[data-act="add"]').onclick=()=>openOfferModal(r.id);
     el.querySelector('[data-act="send"]').onclick=()=>updateRFQ(r.id,{status:'ordered',sent_to_orders_at:new Date().toISOString()});
@@ -342,32 +356,34 @@ function renderBoard(rfqs){
     col.innerHTML=`<div class="col-hd">${label}<span class="muted">${g[k].length}</span></div><div class="col-bd"></div>`;
     const bd=col.querySelector('.col-bd');
     g[k].forEach(r=>{const bo=best(r.offers), c=coverage(r.offers,r.quantity); const m=document.createElement('div'); m.className='mini';
-      m.innerHTML=`<div style="font-weight:700">${r.part_number}</div><div class="meta">Qty ${r.quantity} • ${r.offers.length} offers${bo?` • Best ${money(bo.price,bo.currency)}`:''} • ${c.sum}/${r.quantity}</div><div style="display:flex;gap:8px;margin-top:8px"><button class="ghost" data-a="view">View</button><button class="ghost" data-a="add">Add</button></div>`;
+      m.innerHTML=`<div style="font-weight:700">${r.part_number}</div><div class="meta">${esc(r.customer||'—')} • Qty ${r.quantity} • ${r.offers.length} offers${bo?` • Best ${money(bo.price,bo.currency)}`:''} • ${c.sum}/${r.quantity}</div><div style="display:flex;gap:6px;margin-top:6px"><button class="ghost" data-a="view">View</button><button class="ghost" data-a="add">Add</button></div>`;
       m.querySelector('[data-a="view"]').onclick=()=>openDrawer(r); m.querySelector('[data-a="add"]').onclick=()=>openOfferModal(r.id); bd.appendChild(m);
     });
     boardEl.appendChild(col);
   });
 }
 
-/* CRUD */
-function updateRFQ(id,patch){const arr=read(K_RFQ); const i=arr.findIndex(r=>r.id===id); if(i<0){toast('RFQ not found');return} arr[i]={...arr[i],...patch}; write(K_RFQ,arr); toast('Updated'); loadAll();}
+/* CRUD + events */
+function updateRFQ(id,patch){const arr=read(K_RFQ); const i=arr.findIndex(r=>r.id===id); if(i<0){alert('RFQ not found');return} arr[i]={...arr[i],...patch}; write(K_RFQ,arr); toast('Updated'); loadAll();}
 
 rfqForm.addEventListener('submit',e=>{
   e.preventDefault();
   const rfq={ id:nid(), created_at:new Date().toISOString(), salesperson:salespersonEl.value,
-    part_number:partEl.value.trim(), quantity:Number(qtyEl.value), target_price:targetEl.value?Number(targetEl.value):null,
-    priority:priorityEl.value||'normal', currency:currencyEl.value||'USD', notes:notesEl.value||null, status:'open'
+    customer:customerEl.value.trim(), part_number:partEl.value.trim(), quantity:Number(qtyEl.value),
+    target_price:targetEl.value?Number(targetEl.value):null, priority:priorityEl.value||'normal',
+    currency:currencyEl.value||'USD', notes:notesEl.value||null, status:'open'
   };
-  if(!rfq.salesperson||!rfq.part_number||!rfq.quantity){toast('Please fill required fields');return}
+  if(!rfq.salesperson||!rfq.customer||!rfq.part_number||!rfq.quantity){toast('Please fill required fields');return}
   rfqHint.textContent='Saving…'; const arr=read(K_RFQ); arr.push(rfq); write(K_RFQ,arr); rfqHint.textContent=''; toast('RFQ created'); rfqForm.reset(); state.tab=rfq.salesperson; loadAll();
 });
-
 manageSalesBtn.addEventListener('click',()=>{
   const val=prompt('Add salesperson (or edit list CSV):',state.salespeople.join(', ')); if(val==null)return;
   state.salespeople=val.split(',').map(s=>s.trim()).filter(Boolean); localStorage.setItem('ve_salespeople',JSON.stringify(state.salespeople)); buildSales(); buildTabs();
 });
 
-["input","change"].forEach(ev=>{searchEl.addEventListener(ev,render); fSales.addEventListener(ev,render); fStatus.addEventListener(ev,render); fSort.addEventListener(ev,render);});
+['input','change'].forEach(ev=>{
+  fSearch.addEventListener(ev,render); fSales.addEventListener(ev,render); fStatus.addEventListener(ev,render); fSort.addEventListener(ev,render);
+});
 viewListBtn.addEventListener('click',()=>{state.view='list';render()}); viewBoardBtn.addEventListener('click',()=>{state.view='board';render()});
 
 /* Offer modal (Purchasing) */
@@ -392,7 +408,7 @@ const getRFQ=id=>state.allRFQs.find(r=>String(r.id)===String(id));
 /* Drawer (read-only except comments) */
 function openDrawer(r,keep){
   state.active=r; const os=state.offersByRFQ.get(r.id)||[]; const cov=coverage(os,r.quantity);
-  drawerTitle.textContent=`${r.part_number} × ${r.quantity}`; drawerMeta.textContent=`Sales: ${r.salesperson} • Priority: ${cap(r.priority)} • ${new Date(r.created_at).toLocaleString()}`;
+  drawerTitle.textContent=`${r.part_number} × ${r.quantity}`; drawerMeta.textContent=`Customer: ${esc(r.customer||'—')} • Sales: ${r.salesperson} • Priority: ${cap(r.priority)} • Date: ${onlyDate(r.created_at)}`;
   covBar.style.width=cov.pct+'%'; covTxt.textContent=`${cov.sum}/${r.quantity}`;
   renderOfferRows(os); renderComments(r.id); if(!keep) rfqDrawer.showModal();
 }
@@ -412,8 +428,8 @@ drawerSendBtn.addEventListener('click',()=>{ if(!state.active)return; updateRFQ(
 function renderComments(rid){
   commentsEl.innerHTML=''; const arr=read(K_CMT).filter(c=>c.rfq_id===rid).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
   cCountEl.textContent=arr.length;
-  arr.forEach(c=>{const row=document.createElement('div');row.style.cssText='border:1px solid var(--line);border-radius:10px;padding:8px 10px';
-    row.innerHTML=`<div style="display:flex;justify-content:space-between"><strong>${esc(c.author||'Anon')}</strong><span class="muted">${new Date(c.created_at).toLocaleString()}</span></div><div>${esc(c.text||'')}</div>`;commentsEl.appendChild(row)});
+  arr.forEach(c=>{const row=document.createElement('div');row.style.cssText='border:1px solid var(--line);border-radius:10px;padding:7px 9px';
+    row.innerHTML=`<div style="display:flex;justify-content:space-between"><strong>${esc(c.author||'Anon')}</strong><span class="muted">${onlyDate(c.created_at)}</span></div><div>${esc(c.text||'')}</div>`;commentsEl.appendChild(row)});
 }
 cAddBtn.addEventListener('click',()=>{
   if(!state.active) return; const text=cTextEl.value.trim(); if(!text) return;
@@ -425,5 +441,6 @@ cAddBtn.addEventListener('click',()=>{
 </script>
 </body>
 </html>
+
 
 
