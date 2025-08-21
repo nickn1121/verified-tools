@@ -11,7 +11,7 @@ body{margin:0;font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Canta
 .wrap{max-width:1280px;margin:0 auto;padding:18px}
 .brand{display:flex;gap:10px;align-items:center;font-weight:800}.dot{width:10px;height:10px;border-radius:50%;background:var(--brand)}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
-.tab{padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
+.tab{padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:#6d7486;cursor:pointer}
 .tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
 /* 3 columns: New RFQ | RFQs | Filters  */
 .row{display:grid;grid-template-columns:340px 1fr 250px;gap:14px;margin-top:12px}
@@ -20,18 +20,20 @@ body{margin:0;font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Canta
 .card{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.03)}
 .hd{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
 .bd{padding:12px 14px}
-label{display:block;font-size:12px;color:var(--muted);margin:6px 0 3px}
+label{display:block;font-size:12px;color:#6d7486;margin:6px 0 3px}
 input,select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;font:inherit}
 textarea{min-height:70px;resize:vertical}
 button{appearance:none;border:0;border-radius:9px;padding:9px 12px;background:var(--brand);color:#fff;font-weight:600;cursor:pointer}
 button.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
-.muted{color:var(--muted)}
+button.danger{background:#fff;color:#b91c1c;border:1px solid #fca5a5}
+button.icon{padding:6px 8px}
+.muted{color:#6d7486}
 /* RFQ list cards with verified purple border (compact) */
 .rfq-list{display:grid;gap:10px}
 .rfq{border:2px solid rgba(111,87,233,.35);border-radius:12px;background:#fff}
 .rfq-hd{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:10px 12px;border-bottom:1px solid var(--line)}
 .rfq-title{font-weight:800}
-.meta{display:flex;gap:6px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+.meta{display:flex;gap:6px;flex-wrap:wrap;color:#6d7486;font-size:12px}
 .badge{padding:2px 8px;border-radius:999px;background:var(--chip);border:1px solid var(--line)}
 .status{padding:2px 8px;border-radius:999px;border:1px solid var(--line);font-size:12px}
 .status.open{background:#eef2ff;color:#3b2eca;border-color:#c7d2fe}
@@ -51,7 +53,7 @@ button.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
 .coverage{height:6px;background:#f3f4f6;border-radius:999px;overflow:hidden}
 .coverage>i{display:block;height:100%;background:linear-gradient(90deg,#a78bfa,#60a5fa);width:0%}
 .actions{display:flex;gap:6px;flex-wrap:wrap}
-.actions .ghost{padding:6px 8px;font-weight:600}
+.actions .ghost,.actions .danger{padding:6px 8px;font-weight:600}
 /* Board */
 .board{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .col{background:#fff;border:1px solid var(--line);border-radius:12px}
@@ -181,7 +183,12 @@ tbody tr{background:#fff;border:1px solid var(--line)} tbody tr td:first-child{b
     </div>
 
     <table>
-      <thead><tr><th>Vendor</th><th>Loc</th><th>Price</th><th>Cur</th><th>Qty</th><th>MOQ</th><th>LT(d)</th><th>Conf</th><th>Comments</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Vendor</th><th>Loc</th><th>Price</th><th>Cur</th>
+          <th>Qty</th><th>MOQ</th><th>LT(d)</th><th>Conf</th><th>Comments</th><th></th>
+        </tr>
+      </thead>
       <tbody id="offerRows"></tbody>
     </table>
 
@@ -225,11 +232,12 @@ tbody tr{background:#fff;border:1px solid var(--line)} tbody tr td:first-child{b
   </div>
 </form></dialog>
 
+<!-- toast element -->
 <div id="toast" class="toast"></div>
 
 <script>
-/* ==== Local store (v8 — adds customer) ==== */
-const K_RFQ='ve_rfqs_v8', K_OFF='ve_offers_v8', K_CMT='ve_comments_v1';
+/* ==== Local store (v9 — adds confirms + delete) ==== */
+const K_RFQ='ve_rfqs_v9', K_OFF='ve_offers_v9', K_CMT='ve_comments_v1';
 const DEFAULT_SALES = JSON.parse(localStorage.getItem('ve_salespeople')||'null') || ["Emir","Nick K","Dan","Jake","Alan","Howell","Maddy"];
 const state={salespeople:[...DEFAULT_SALES], allRFQs:[], offersByRFQ:new Map(), tab:'All', view:'list', active:null};
 
@@ -255,6 +263,11 @@ const best=os=>os && os.length?os[0]:null;
 const coverage=(os,need)=>{const sum=(os||[]).reduce((t,o)=>t+(Number(o.qty_offer)||0),0);return{sum,pct:Math.max(0,Math.min(100,Math.round((sum/Math.max(need||0,1))*100)))}};
 function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function onlyDate(iso){return new Date(iso).toLocaleDateString()}
+function toast(msg){
+  let t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';t.className='toast';document.body.appendChild(t);}
+  t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800);
+}
 
 /* load */
 function loadAll(){
@@ -290,7 +303,6 @@ function render(){
   if(q) rfqs=rfqs.filter(r=>r.part_number.toLowerCase().includes(q) || (r.customer||'').toLowerCase().includes(q));
 
   const st=fStatus.value; if(st!=='all') rfqs=rfqs.filter(r=>r.status===st);
-
   rfqs=rfqs.map(r=>({...r,offers:state.offersByRFQ.get(r.id)||[]}));
 
   const srt=fSort.value;
@@ -309,7 +321,7 @@ function renderList(rfqs){
   rfqListEl.innerHTML=''; if(!rfqs.length){emptyEl.style.display='block'; return} emptyEl.style.display='none';
   rfqs.forEach(r=>{
     const os=r.offers, bo=best(os), cov=coverage(os,r.quantity);
-    const el=document.createElement('div'); el.className='rfq';
+    const el=document.createElement('div'); el.className='rfq'; el.dataset.id=r.id;
     el.innerHTML=`<div class="rfq-hd">
       <div>
         <div class="rfq-title">${r.part_number} <span class="muted">× ${r.quantity.toLocaleString()}</span></div>
@@ -325,10 +337,11 @@ function renderList(rfqs){
         </div>
       </div>
       <div class="actions">
-        <button class="ghost" data-act="view">View Offers</button>
-        <button class="ghost" data-act="add">Add Offer</button>
-        <button class="ghost" data-act="send">Send to Orders</button>
-        <button class="ghost" data-act="close">Close</button>
+        <button class="ghost icon" data-act="view">View Offers</button>
+        <button class="ghost icon" data-act="add">Add Offer</button>
+        <button class="ghost icon" data-act="send">Send to Orders</button>
+        <button class="ghost icon" data-act="close">Close</button>
+        <button class="danger icon" data-act="delete">Delete</button>
       </div>
     </div>
     <div class="offer-list">
@@ -339,14 +352,11 @@ function renderList(rfqs){
       </div>
       ${bo?`<div class="chip"><strong>${esc(bo.vendor)}</strong> • ${esc(bo.location||'—')} • ${money(bo.price,bo.currency)} • ${bo.qty_offer||'—'} pcs • ${bo.lead_time||'—'}d <span class="chip conf" data-level="${bo.confidence}">Conf ${bo.confidence}</span></div>`:`<div class="muted">No offers yet.</div>`}
     </div>`;
-    el.querySelector('[data-act="view"]').onclick=()=>openDrawer(r);
-    el.querySelector('[data-act="add"]').onclick=()=>openOfferModal(r.id);
-    el.querySelector('[data-act="send"]').onclick=()=>updateRFQ(r.id,{status:'ordered',sent_to_orders_at:new Date().toISOString()});
-    el.querySelector('[data-act="close"]').onclick=()=>updateRFQ(r.id,{status:'closed'});
     rfqListEl.appendChild(el);
   });
 }
 
+/* Board view */
 function renderBoard(rfqs){
   boardEl.innerHTML='';
   const g={need:[],partial:[],full:[],sent:[]};
@@ -355,17 +365,36 @@ function renderBoard(rfqs){
     const col=document.createElement('div'); col.className='col';
     col.innerHTML=`<div class="col-hd">${label}<span class="muted">${g[k].length}</span></div><div class="col-bd"></div>`;
     const bd=col.querySelector('.col-bd');
-    g[k].forEach(r=>{const bo=best(r.offers), c=coverage(r.offers,r.quantity); const m=document.createElement('div'); m.className='mini';
-      m.innerHTML=`<div style="font-weight:700">${r.part_number}</div><div class="meta">${esc(r.customer||'—')} • Qty ${r.quantity} • ${r.offers.length} offers${bo?` • Best ${money(bo.price,bo.currency)}`:''} • ${c.sum}/${r.quantity}</div><div style="display:flex;gap:6px;margin-top:6px"><button class="ghost" data-a="view">View</button><button class="ghost" data-a="add">Add</button></div>`;
-      m.querySelector('[data-a="view"]').onclick=()=>openDrawer(r); m.querySelector('[data-a="add"]').onclick=()=>openOfferModal(r.id); bd.appendChild(m);
+    g[k].forEach(r=>{const bo=best(r.offers), c=coverage(r.offers,r.quantity); const m=document.createElement('div'); m.className='mini'; m.dataset.id=r.id;
+      m.innerHTML=`<div style="font-weight:700">${r.part_number}</div><div class="meta">${esc(r.customer||'—')} • Qty ${r.quantity} • ${r.offers.length} offers${bo?` • Best ${money(bo.price,bo.currency)}`:''} • ${c.sum}/${r.quantity}</div><div style="display:flex;gap:6px;margin-top:6px"><button class="ghost icon" data-a="view">View</button><button class="ghost icon" data-a="add">Add</button><button class="ghost icon" data-a="send">Send</button><button class="ghost icon" data-a="close">Close</button><button class="danger icon" data-a="delete">Delete</button></div>`;
+      bd.appendChild(m);
     });
     boardEl.appendChild(col);
   });
 }
 
-/* CRUD + events */
-function updateRFQ(id,patch){const arr=read(K_RFQ); const i=arr.findIndex(r=>r.id===id); if(i<0){alert('RFQ not found');return} arr[i]={...arr[i],...patch}; write(K_RFQ,arr); toast('Updated'); loadAll();}
+/* Helpers */
+const getRFQ=id=>state.allRFQs.find(r=>String(r.id)===String(id));
+function updateRFQ(id,patch){const arr=read(K_RFQ); const i=arr.findIndex(r=>r.id===id); if(i<0){alert('RFQ not found');return} arr[i]={...arr[i],...patch}; write(K_RFQ,arr); loadAll();}
 
+/* Deletion */
+function deleteRFQ(id){
+  // remove rfq
+  const rfqs=read(K_RFQ).filter(r=>r.id!==id); write(K_RFQ,rfqs);
+  // cascade offers/comments
+  const off=read(K_OFF).filter(o=>o.rfq_id!==id); write(K_OFF,off);
+  const com=read(K_CMT).filter(c=>c.rfq_id!==id); write(K_CMT,com);
+  if(state.active && state.active.id===id){ try{ rfqDrawer.close(); }catch(e){} state.active=null; }
+  toast('RFQ deleted'); loadAll();
+}
+function deleteOffer(offerId){
+  const off=read(K_OFF).filter(o=>o.id!==offerId); write(K_OFF,off);
+  toast('Offer deleted');
+  loadAll();
+  if(state.active){ const r=getRFQ(state.active.id); if(r) openDrawer(r,true); }
+}
+
+/* Form submit */
 rfqForm.addEventListener('submit',e=>{
   e.preventDefault();
   const rfq={ id:nid(), created_at:new Date().toISOString(), salesperson:salespersonEl.value,
@@ -376,15 +405,69 @@ rfqForm.addEventListener('submit',e=>{
   if(!rfq.salesperson||!rfq.customer||!rfq.part_number||!rfq.quantity){toast('Please fill required fields');return}
   rfqHint.textContent='Saving…'; const arr=read(K_RFQ); arr.push(rfq); write(K_RFQ,arr); rfqHint.textContent=''; toast('RFQ created'); rfqForm.reset(); state.tab=rfq.salesperson; loadAll();
 });
+
 manageSalesBtn.addEventListener('click',()=>{
   const val=prompt('Add salesperson (or edit list CSV):',state.salespeople.join(', ')); if(val==null)return;
   state.salespeople=val.split(',').map(s=>s.trim()).filter(Boolean); localStorage.setItem('ve_salespeople',JSON.stringify(state.salespeople)); buildSales(); buildTabs();
 });
 
+/* Filters & view */
 ['input','change'].forEach(ev=>{
   fSearch.addEventListener(ev,render); fSales.addEventListener(ev,render); fStatus.addEventListener(ev,render); fSort.addEventListener(ev,render);
 });
-viewListBtn.addEventListener('click',()=>{state.view='list';render()}); viewBoardBtn.addEventListener('click',()=>{state.view='board';render()});
+viewListBtn.addEventListener('click',()=>{state.view='list';render()});
+viewBoardBtn.addEventListener('click',()=>{state.view='board';render()});
+
+/* Event delegation: list actions */
+rfqListEl.addEventListener('click',e=>{
+  const btn=e.target.closest('button'); if(!btn) return;
+  const card=e.target.closest('.rfq'); if(!card) return;
+  const id=card.dataset.id; const rfq=getRFQ(id); if(!rfq) return;
+  const act=btn.dataset.act;
+  if(act==='view') openDrawer(rfq);
+  if(act==='add') openOfferModal(id);
+  if(act==='send'){ if(confirm('Send this RFQ to Orders?')){ updateRFQ(id,{status:'ordered',sent_to_orders_at:new Date().toISOString()}); toast('Sent to Orders'); } }
+  if(act==='close'){ if(confirm('Close this RFQ?')){ updateRFQ(id,{status:'closed'}); toast('RFQ closed'); } }
+  if(act==='delete'){ if(confirm('Delete this RFQ (and all its offers/comments)?')) deleteRFQ(id); }
+});
+
+/* Event delegation: board actions */
+boardEl.addEventListener('click',e=>{
+  const btn=e.target.closest('button'); if(!btn) return;
+  const card=e.target.closest('.mini'); if(!card) return;
+  const id=card.dataset.id; const rfq=getRFQ(id); if(!rfq) return;
+  const a=btn.dataset.a;
+  if(a==='view') openDrawer(rfq);
+  if(a==='add') openOfferModal(id);
+  if(a==='send'){ if(confirm('Send this RFQ to Orders?')){ updateRFQ(id,{status:'ordered',sent_to_orders_at:new Date().toISOString()}); toast('Sent to Orders'); } }
+  if(a==='close'){ if(confirm('Close this RFQ?')){ updateRFQ(id,{status:'closed'}); toast('RFQ closed'); } }
+  if(a==='delete'){ if(confirm('Delete this RFQ (and all its offers/comments)?')) deleteRFQ(id); }
+});
+
+/* Drawer */
+function openDrawer(r,keep){
+  state.active=r; const os=state.offersByRFQ.get(r.id)||[]; const cov=coverage(os,r.quantity);
+  drawerTitle.textContent=`${r.part_number} × ${r.quantity}`; drawerMeta.textContent=`Customer: ${esc(r.customer||'—')} • Sales: ${r.salesperson} • Priority: ${cap(r.priority)} • Date: ${onlyDate(r.created_at)}`;
+  covBar.style.width=cov.pct+'%'; covTxt.textContent=`${cov.sum}/${r.quantity}`;
+  renderOfferRows(os); renderComments(r.id); if(!keep) rfqDrawer.showModal();
+}
+drawerSendBtn.addEventListener('click',()=>{ if(!state.active) return; if(confirm('Send this RFQ to Orders?')){ updateRFQ(state.active.id,{status:'ordered',sent_to_orders_at:new Date().toISOString()}); toast('Sent to Orders'); }});
+drawerCloseBtn.addEventListener('click',()=>rfqDrawer.close());
+
+function renderOfferRows(os){
+  offerRows.innerHTML=''; const bestO=best(os);
+  os.forEach(o=>{
+    const tr=document.createElement('tr');
+    if(bestO && bestO.id===o.id) tr.style.outline='2px solid rgba(111,87,233,.35)';
+    tr.innerHTML=`<td>${esc(o.vendor)}</td><td>${esc(o.location||'')}</td><td>${money(o.price,o.currency)}</td><td>${o.currency}</td><td>${o.qty_offer||''}</td><td>${o.moq||''}</td><td>${o.lead_time||''}</td><td><span class="chip conf" data-level="${o.confidence}">${o.confidence}</span></td><td>${esc(o.comments||'')}</td><td style="text-align:right"><button class="danger icon" data-offer-id="${o.id}">Delete</button></td>`;
+    offerRows.appendChild(tr);
+  });
+}
+offerRows.addEventListener('click',e=>{
+  const btn=e.target.closest('button[data-offer-id]'); if(!btn) return;
+  const id=btn.getAttribute('data-offer-id');
+  if(confirm('Delete this offer?')) deleteOffer(id);
+});
 
 /* Offer modal (Purchasing) */
 function openOfferModal(rfq_id){ $("#offer_rfq_id").value=rfq_id; offerForm.reset(); offerModal.showModal(); }
@@ -403,26 +486,6 @@ offerForm.addEventListener('submit',e=>{
   if(!p.vendor||isNaN(p.price)){toast('Vendor + price required');return}
   const arr=read(K_OFF); arr.push(p); write(K_OFF,arr); toast('Offer saved'); offerModal.close(); loadAll(); if(state.active&&state.active.id===p.rfq_id) openDrawer(getRFQ(p.rfq_id),true);
 });
-const getRFQ=id=>state.allRFQs.find(r=>String(r.id)===String(id));
-
-/* Drawer (read-only except comments) */
-function openDrawer(r,keep){
-  state.active=r; const os=state.offersByRFQ.get(r.id)||[]; const cov=coverage(os,r.quantity);
-  drawerTitle.textContent=`${r.part_number} × ${r.quantity}`; drawerMeta.textContent=`Customer: ${esc(r.customer||'—')} • Sales: ${r.salesperson} • Priority: ${cap(r.priority)} • Date: ${onlyDate(r.created_at)}`;
-  covBar.style.width=cov.pct+'%'; covTxt.textContent=`${cov.sum}/${r.quantity}`;
-  renderOfferRows(os); renderComments(r.id); if(!keep) rfqDrawer.showModal();
-}
-function renderOfferRows(os){
-  offerRows.innerHTML=''; const bestO=best(os);
-  os.forEach(o=>{
-    const tr=document.createElement('tr');
-    if(bestO && bestO.id===o.id) tr.style.outline='2px solid rgba(111,87,233,.35)';
-    tr.innerHTML=`<td>${esc(o.vendor)}</td><td>${esc(o.location||'')}</td><td>${money(o.price,o.currency)}</td><td>${o.currency}</td><td>${o.qty_offer||''}</td><td>${o.moq||''}</td><td>${o.lead_time||''}</td><td><span class="chip conf" data-level="${o.confidence}">${o.confidence}</span></td><td>${esc(o.comments||'')}</td>`;
-    offerRows.appendChild(tr);
-  });
-}
-drawerCloseBtn.addEventListener('click',()=>rfqDrawer.close());
-drawerSendBtn.addEventListener('click',()=>{ if(!state.active)return; updateRFQ(state.active.id,{status:'ordered',sent_to_orders_at:new Date().toISOString()}) });
 
 /* Comments */
 function renderComments(rid){
