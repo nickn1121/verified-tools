@@ -48,7 +48,6 @@
   .link{color:#362dc7;text-decoration:none}
   .link:hover{text-decoration:underline}
 
-  /* ---------- Modal ---------- */
   dialog{border:0;padding:0;margin:0 auto;max-width:1200px;width:96vw}
   dialog::backdrop{background:rgba(17,17,33,.35)}
   .modal{display:flex;flex-direction:column;max-height:90vh;border-radius:18px;overflow:hidden;background:#fff}
@@ -80,15 +79,10 @@
   }
 </style>
 
-<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // ✅ Correct project URL (no typo)
   const SUPABASE_URL = 'https://ijzroisggstqkfhpjndq.supabase.co';
-
-  // ✅ Your anon key
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
-
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 </script>
 </head>
@@ -107,7 +101,8 @@
       <select id="fltSales" class="select"><option value="">All salespeople</option></select>
       <select id="fltStatus" class="select"><option value="">All status</option><option>New</option><option>Open</option><option>Closed</option></select>
       <select id="fltPriority" class="select"><option value="">All priorities</option><option>High</option><option>Normal</option><option>Low</option></select>
-      <button id="btnNew" class="btn" type="button">+ New Order</button>
+      <!-- inline onclick as a safety net -->
+      <button id="btnNew" class="btn" type="button" onclick="openModal(null)">+ New Order</button>
       <button id="btnCsv" class="btn ghost" type="button">Export CSV</button>
     </div>
 
@@ -140,14 +135,12 @@
     </div>
   </div>
 
-  <!-- Modal -->
   <dialog id="dlg">
     <div class="modal">
       <header><div class="head"><strong id="dlgTitle">New Order</strong><button id="btnClose" class="btn ghost mini" type="button">✕</button></div></header>
       <div class="content">
         <input type="hidden" id="orderId"/>
 
-        <!-- SALES -->
         <div class="section">SALES — what Sales enters</div>
         <div class="grid2">
           <div><div class="note">Salesperson</div><select id="salesperson" class="select mini"></select></div>
@@ -235,7 +228,6 @@
         </div>
         <div class="right"><button id="addItem" class="btn mini" type="button">+ Add item</button></div>
 
-        <!-- PURCHASING -->
         <div class="section">PURCHASING — what Purchasing updates</div>
         <div class="grid3">
           <div>
@@ -303,15 +295,13 @@
   </dialog>
 
 <script>
-/* ---------- helpers ---------- */
 const $ = id => document.getElementById(id);
 const SALESTEAM = ['Nick N','Dan C','Emir B','Nick K','Jake B'];
 const todayStr = () => new Date().toISOString().slice(0,10);
-const curSym = (c) => ({USD:'$',GBP:'£',EUR:'€'})[c||'USD'] || '$';
+const curSym = c => ({USD:'$',GBP:'£',EUR:'€'})[c||'USD'] || '$';
 const fmt = n => (n==null||isNaN(n))?'-':Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtInt = n => (n==null||isNaN(n))?'-':Number(n).toLocaleString();
 
-/* ---------- supabase adapter ---------- */
 const supa = {
   state:{orders:[]},
   getOrders(){return this.state.orders;},
@@ -329,7 +319,7 @@ const supa = {
 
     this.state.orders = await Promise.all((data||[]).map(async r=>{
       const items=(r.order_items||[]).map(i=>({part_number:i.part_number,date_codes:i.date_codes,qty:i.qty,unit_sell:i.unit_sell,unit_cost:i.unit_cost}));
-      const legs=(r.ship_legs||[]).map(l=>({kind:'Leg',date:'',qty:'',from:l.from_loc,to:l.to_loc,method:l.method,ref:l.ref,courier:'',tracking:'',cost:l.cost}));
+      const legs=(r.ship_legs||[]).map(l=>({kind:'Leg',date:'',qty:'',from:l.from_loc,to:l.to_loc,method:l.method,ref:l.ref,cost:l.cost}));
       const inbound=(r.shipments_inbound||[]).map(s=>({kind:'Inbound',date:s.ship_date,qty:s.qty,from:'',to:'',method:'',ref:'',courier:s.courier,tracking:s.tracking,cost:''}));
       const outbound=(r.shipments_outbound||[]).map(s=>({kind:'Outbound',date:s.ship_date,qty:s.qty,from:'',to:'',method:'',ref:'',courier:s.courier,tracking:s.tracking,cost:''}));
       const shipments=[...legs,...inbound,...outbound];
@@ -387,7 +377,7 @@ const supa = {
     const outbound = rec.shipments?.filter(s=>s.kind==='Outbound')||[];
     if(legs.length){
       await supabase.from('ship_legs').insert(legs.map(l=>({
-        order_id, from_loc:l.from, to_loc:l.to, method:l.method, ref:l.ref, cost(Number(l.cost||0))
+        order_id, from_loc:l.from, to_loc:l.to, method:l.method, ref:l.ref, cost: Number(l.cost || 0)   /* ✅ fixed */
       })));
     }
     if(inbound.length){
@@ -430,7 +420,6 @@ const supa = {
   }
 };
 
-/* ---------- UI render ---------- */
 function button(txt,cls,click){const b=document.createElement('button');b.textContent=txt;b.className='btn mini '+(cls||'');b.type='button';b.onclick=click;return b;}
 
 function addItemRow(v={part_number:'',date_codes:'',qty:'',unit_sell:'',unit_cost:''}){
@@ -550,7 +539,6 @@ function render(){
   });
 }
 
-/* ---------- modal open/collect ---------- */
 function openModal(o){
   $('dlgTitle').textContent = o?'Edit Order':'New Order';
   $('orderId').value = o?.id || '';
@@ -640,7 +628,6 @@ function collectRecord(){
   };
 }
 
-/* ---------- events ---------- */
 function autoDue(){
   const inv=$('invoice_date').value, t=$('payment_terms').value, tother=$('payment_terms_other').value.trim();
   const src = t==='Other'? tother : t;
@@ -662,7 +649,9 @@ $('incoterm').addEventListener('change',()=>{
 });
 
 document.addEventListener('DOMContentLoaded', ()=>{
-  $('btnNew').addEventListener('click', ()=> openModal(null));
+  $('salesperson').innerHTML = SALESTEAM.map(n=>`<option>${n}</option>`).join('');
+  $('fltSales').innerHTML = `<option value="">All salespeople</option>` + SALESTEAM.map(n=>`<option>${n}</option>`).join('');
+  $('btnNew').addEventListener('click', ()=> openModal(null)); // (inline onclick is also present)
 });
 
 $('addItem').onclick=()=>addItemRow({});
@@ -696,15 +685,13 @@ $('btnCsv').onclick=()=>{
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='orders.csv'; a.click();
 };
 
-/* ---------- init ---------- */
 async function init(){
-  $('salesperson').innerHTML = SALESTEAM.map(n=>`<option>${n}</option>`).join('');
-  $('fltSales').innerHTML = `<option value="">All salespeople</option>` + SALESTEAM.map(n=>`<option>${n}</option>`).join('');
   await supa.loadOrders(); supa.subscribeRealtime(); render();
 }
 init();
 </script>
 </body>
 </html>
+
 
 
