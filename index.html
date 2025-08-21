@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -7,310 +7,206 @@
   <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
   <style>
     :root{
-      --brand:#673ab7; --ink:#1e1e1e; --muted:#677085;
-      --bg:#f6f7fb; --card:#fff; --line:#e9e9ef;
+      --brand:#6f57e9; --brand2:#3b2eca; --ink:#191b22; --muted:#6d7486;
+      --bg:#0f1117; --card:#11131a; --line:#222533; --shadow:0 10px 30px rgba(0,0,0,.35);
+      --ok:#12a274; --warn:#f59e0b; --bad:#ef4444; --chip:#2b2f40;
+    }
+    @media (prefers-color-scheme: light){
+      :root{ --bg:#f6f7fb; --card:#fff; --ink:#1e2330; --line:#e9e9ef; --shadow:0 10px 30px rgba(5,10,30,.08); --chip:#f1f2f7; }
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0;font:15px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
-    .wrap{max-width:1160px;margin:24px auto;padding:0 16px}
-    header{
-      display:flex;align-items:center;gap:14px;
-      background:radial-gradient(1200px 260px at 160px -60px, rgba(103,58,183,.18), transparent 60%),
-                 linear-gradient(180deg,#fff, #fafaff);
-      border-bottom:1px solid var(--line);
-      padding:22px 18px;
-      border-radius:18px;
-      box-shadow:0 4px 24px rgba(0,0,0,.04);
-    }
-    header img{height:40px}
-    h1{font-size:28px;margin:0;font-weight:800;letter-spacing:.2px}
-    .sub{color:var(--muted);margin-top:2px}
-    .section-title{margin:22px 6px 8px;font-weight:800;color:#262b3a}
-    .grid{
-      display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:12px
-    }
-    @media (max-width:960px){ .grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
-    @media (max-width:640px){ .grid{grid-template-columns:1fr} }
+    body{margin:0;font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,"Apple Color Emoji","Segoe UI Emoji";background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(111,87,233,.16), transparent 40%),
+      radial-gradient(900px 500px at 110% 10%, rgba(59,46,202,.15), transparent 40%),
+      var(--bg);color:var(--ink)}
 
-    .card{
-      background:var(--card);border:1px solid var(--line);border-radius:16px;
-      box-shadow:0 8px 30px rgba(103,58,183,.06), 0 1px 0 rgba(0,0,0,.02);
-      padding:18px; display:flex; flex-direction:column; gap:10px; min-height:160px
-    }
+    .wrap{max-width:1200px;margin:0 auto;padding:24px}
+
+    /* Topbar */
     .top{display:flex;align-items:center;gap:12px}
-    .logo-badge{
-      width:44px;height:44px;border-radius:12px;background:#efeafd;display:grid;place-items:center;
-      box-shadow:inset 0 0 0 1px #e3ddfb;
-    }
-    .logo-badge img{max-width:28px;max-height:28px;object-fit:contain}
-    .title{font-size:18px;font-weight:800;margin:0}
-    .desc{color:var(--muted);font-size:14px}
-    .row{display:flex;align-items:center;gap:10px;margin-top:auto}
-    .tag{margin-left:auto;font-size:12px;padding:6px 10px;border-radius:999px;border:1px solid #e8e8f5;background:#fbfbff;color:#5a46b6}
-    .soon{background:#fff5eb;border-color:#ffe1c4;color:#a66b2f}
-    a.cta{font-weight:700;color:#3a2db1;text-decoration:none}
-    a.cta:hover{text-decoration:underline}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
+    .dot{width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 0 0 4px rgba(111,87,233,.12)}
+    .beta{margin-left:8px;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--chip)}
+    .right{margin-left:auto;display:flex;gap:10px;align-items:center}
+    input.search{min-width:280px;padding:10px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:inherit}
+    .toggle{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;border:1px solid var(--line);background:var(--card);cursor:pointer}
+
+    /* Grid */
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-top:18px}
+    .card{grid-column:span 4;background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;position:relative;overflow:hidden}
+    @media(max-width:1000px){.card{grid-column:span 6}}
+    @media(max-width:640px){.card{grid-column:span 12}}
+    .card::after{content:"";position:absolute;inset:auto -40% -40% auto;width:180px;height:180px;background:radial-gradient(80px 80px at 50% 50%, rgba(111,87,233,.18), transparent 70%);transform:rotate(25deg)}
+    .card:hover{transform:translateY(-2px);border-color:#cfcfff}
+    .cd-hd{padding:16px 16px 0 16px;display:flex;align-items:center;gap:10px}
+    .icon{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:grid;place-items:center;color:#fff;font-weight:700}
+    .ttl{font-weight:800}
+    .desc{color:var(--muted);font-size:13px;padding:6px 16px 0 16px}
+    .cd-ft{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:14px 16px}
+    .btn{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:700;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;cursor:pointer}
+    .btn.ghost{background:transparent;color:var(--brand);border:1px solid var(--brand)}
+    .tag{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--chip);border:1px solid var(--line);color:var(--muted)}
+
+    /* Helper */
+    .hidden{display:none}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <header>
-      <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified Electronics">
-      <div>
-        <h1>Verified Electronics — Tools</h1>
-        <div class="sub">Built in-house at Verified Electronics for sales & operations.</div>
+    <div class="top">
+      <div class="brand"><span class="dot"></span> Verified Electronics — Tools <span class="beta">internal</span></div>
+      <div class="right">
+        <input id="search" class="search" placeholder="Search tools… (⌘/Ctrl+K)" />
+        <div class="toggle" id="compactToggle" role="button" aria-pressed="false">Compact</div>
       </div>
-    </header>
+    </div>
 
-    <!-- Available now -->
-    <h2 class="section-title">Available now</h2>
-    <div class="grid">
-      <!-- Sales Order / Invoice -->
-      <article class="card">
-        <div class="top">
-          <div class="logo-badge">
-            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
+    <div id="cards" class="grid">
+      <!-- NEW: Purchasing Requests -->
+      <article class="card" data-title="purchasing requests rfq vendor offers">
+        <div class="cd-hd">
+          <div class="icon">PR</div>
+          <div>
+            <div class="ttl">Purchasing Requests</div>
+            <div class="tag">New</div>
           </div>
-          <h3 class="title">Sales Order / Invoice PDF</h3>
         </div>
-        <div class="desc">Generate branded PDFs with VAT, delivery terms, currency & totals.</div>
-        <div class="row">
-          <a class="cta" href="./so-confirmation/index.html">Open tool →</a>
-          <span class="tag">Internal</span>
-        </div>
-      </article>
-
-      <!-- Excess Hub (renamed from Excess Checker) -->
-      <article class="card">
-        <div class="top">
-          <div class="logo-badge">
-            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
-          </div>
-          <h3 class="title">Excess Hub</h3>
-        </div>
-        <div class="desc">Excess Leaderboard, search, upload & remove excess lists.</div>
-        <div class="row">
-          <a class="cta" href="./excess-checker/index.html">Open tool →</a>
-          <span class="tag">Internal</span>
-        </div>
-      </article>
-
-      <!-- Order Tracker (NEW) -->
-      <article class="card">
-        <div class="top">
-          <div class="logo-badge">
-            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
-          </div>
-          <h3 class="title">Order Tracker</h3>
-        </div>
-        <div class="desc">Create & track orders with priority, ETA, multi-leg shipping; filter by salesperson.</div>
-        <div class="row">
-          <a class="cta" href="./order-tracker/index.html">Open tool →</a>
-          <span class="tag">Internal</span>
+        <p class="desc">Submit part + quantity from Sales, then Purchasing adds vendor offers with price, confidence, lead time. Tabs by salesperson for fast triage.</p>
+        <div class="cd-ft">
+          <a class="btn" href="purchasing/index.html">Open</a>
+          <span class="tag">RFQs • Vendors • Realtime</span>
         </div>
       </article>
 
       <!-- Certificate of Conformance (fixed link) -->
-      <article class="card">
-        <div class="top">
-          <div class="logo-badge">
-            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
-          </div>
-          <h3 class="title">Certificate of Conformance</h3>
+      <article class="card" data-title="certificate of conformance coc pro cert">
+        <div class="cd-hd">
+          <div class="icon">COC</div>
+          <div class="ttl">Certificate of Conformance</div>
         </div>
-        <div class="desc">Generate a clean, modern PDF certificate with PO refs, lot numbers, date codes and dates.</div>
-        <div class="row">
-          <a class="cta" href="./coc/index.html">Open tool →</a>
-          <span class="tag">Internal</span>
+        <p class="desc">Generate, sign, and export CoCs consistent with Verified’s formatting. Includes signature scaling and print-ready layout.</p>
+        <div class="cd-ft">
+          <a class="btn" href="coc.index.html">Open</a>
+          <span class="tag">Document</span>
         </div>
       </article>
 
-      <!-- Commercial Invoice Generator (NEW) -->
-      <article class="card">
-        <div class="top">
-          <div class="logo-badge">
-            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
-          </div>
-          <h3 class="title">Commercial Invoice Generator</h3>
+      <!-- Commercial Invoice Generator -->
+      <article class="card" data-title="commercial invoice ci shipping customs coo">
+        <div class="cd-hd">
+          <div class="icon">CI</div>
+          <div class="ttl">Commercial Invoice Generator</div>
         </div>
-        <div class="desc">Create branded commercial invoices with HS codes, COO, Incoterms, and customs-ready formatting.</div>
-        <div class="row">
-          <a class="cta" href="./commercial-invoice/index.html">Open tool →</a>
-          <span class="tag">Internal</span>
+        <p class="desc">Create official, modern CIs with optional COO lines. Save templates and export to PDF for couriers.</p>
+        <div class="cd-ft">
+          <a class="btn" href="ci.index.html">Open</a>
+          <span class="tag">Logistics</span>
         </div>
       </article>
 
-      <!-- Document Signing -->
-      <article class="card">
-        <div class="top">
-          <div class="logo-badge">
-            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
-          </div>
-          <h3 class="title">Document Signing</h3>
+      <!-- Document/PDF Editor -->
+      <article class="card" data-title="document pdf editor annotate sign whiteout">
+        <div class="cd-hd">
+          <div class="icon">DX</div>
+          <div class="ttl">Document/PDF Editor</div>
         </div>
-        <div class="desc">Upload Word/PDF, add signature/initials/date stamps, and download a signed PDF.</div>
-        <div class="row">
-          <a class="cta" href="./sign/index.html">Open tool →</a>
-          <span class="tag">Internal</span>
+        <p class="desc">In-browser toolkit for whiteout, text, shapes and signatures. Ideal for quick doc tweaks.</p>
+        <div class="cd-ft">
+          <a class="btn" href="doc-editor.index.html">Open</a>
+          <span class="tag">Utilities</span>
         </div>
       </article>
 
       <!-- Company Info -->
-      <article class="card">
-        <div class="top">
-          <div class="logo-badge">
-            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
-          </div>
-          <h3 class="title">Company Info</h3>
+      <article class="card" data-title="company info addresses vat bank certificates">
+        <div class="cd-hd">
+          <div class="icon">CO</div>
+          <div class="ttl">Company Info</div>
         </div>
-        <div class="desc">Addresses, VAT numbers, bank account details, and certificates (centralised).</div>
-        <div class="row">
-          <a class="cta" href="./company-info/index.html">Open tool →</a>
-          <span class="tag">Internal</span>
-        </div>
-      </article>
-
-      <!-- PDF Editor -->
-      <article class="card">
-        <div class="top">
-          <div class="logo-badge">
-            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
-          </div>
-          <h3 class="title">PDF Editor</h3>
-        </div>
-        <div class="desc">Edit PDFs in-browser: whiteout, text, shapes, highlights — then download the edited PDF.</div>
-        <div class="row">
-          <a class="cta" href="./pdf-editor/index.html">Open tool →</a>
-          <span class="tag">Internal</span>
-        </div>
-      </article>
-
-      <!-- Call Stats (moved from Coming soon) -->
-      <article class="card">
-        <div class="top">
-          <div class="logo-badge">
-            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
-          </div>
-          <h3 class="title">Call Stats</h3>
-        </div>
-        <div class="desc">Daily call activity and follow-up automation insights.</div>
-        <div class="row">
-          <a class="cta" href="./call-stats/index.html">Open tool →</a>
-          <span class="tag">Internal</span>
-        </div>
-      </article>
-    </div>
-
-    <!-- Coming soon -->
-    <h2 class="section-title">Coming soon</h2>
-    <div class="grid">
-      <!-- Sales Leaderboard -->
-      <article class="card">
-        <div class="top">
-          <div class="logo-badge">
-            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
-          </div>
-          <h3 class="title">Sales Leaderboard</h3>
-        </div>
-        <div class="desc">Live revenue and GP by rep with time filters and drill-downs.</div>
-        <div class="row">
-          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
-          <span class="tag soon">Coming soon</span>
-        </div>
-      </article>
-
-      <!-- Document Editor (templates) -->
-      <article class="card">
-        <div class="top">
-          <div class="logo-badge">
-            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
-          </div>
-          <h3 class="title">Document Editor</h3>
-        </div>
-        <div class="desc">Create internal docs & templates with team-ready sharing.</div>
-        <div class="row">
-          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
-          <span class="tag soon">Coming soon</span>
-        </div>
-      </article>
-
-      <!-- Upload Excess -->
-      <article class="card">
-        <div class="top">
-          <div class="logo-badge">
-            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
-          </div>
-          <h3 class="title">Upload Excess</h3>
-        </div>
-        <div class="desc">Bulk upload & manage excess stock lists with CSV templates and quick publishing.</div>
-        <div class="row">
-          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
-          <span class="tag soon">Coming soon</span>
-        </div>
-      </article>
-
-      <!-- Distribution Stock Monitor -->
-      <article class="card">
-        <div class="top">
-          <div class="logo-badge">
-            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
-          </div>
-          <h3 class="title">Distribution Stock Monitor</h3>
-        </div>
-        <div class="desc">Track distributor inventory & pricing across partners with alerts and trends.</div>
-        <div class="row">
-          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
-          <span class="tag soon">Coming soon</span>
-        </div>
-      </article>
-
-      <!-- Purchasing Requests -->
-      <article class="card">
-        <div class="top">
-          <div class="logo-badge">
-            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
-          </div>
-          <h3 class="title">Purchasing Requests</h3>
-        </div>
-        <div class="desc">Create, track and approve buy requests with supplier quotes and attachments.</div>
-        <div class="row">
-          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
-          <span class="tag soon">Coming soon</span>
-        </div>
-      </article>
-
-      <!-- Open Sales Orders -->
-      <article class="card">
-        <div class="top">
-          <div class="logo-badge">
-            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
-          </div>
-          <h3 class="title">Open Sales Orders</h3>
-        </div>
-        <div class="desc">Live view of open SOs with status, delivery dates, and fulfillment progress.</div>
-        <div class="row">
-          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
-          <span class="tag soon">Coming soon</span>
+        <p class="desc">Addresses, VAT numbers, bank details, certificates — everything in one place for quick copy/paste.</p>
+        <div class="cd-ft">
+          <a class="btn" href="company-info.index.html">Open</a>
+          <span class="tag">Reference</span>
         </div>
       </article>
 
       <!-- Auto IC Source Uploader -->
-      <article class="card">
-        <div class="top">
-          <div class="logo-badge">
-            <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="">
-          </div>
-          <h3 class="title">Auto IC Source Uploader</h3>
+      <article class="card" data-title="auto ic source uploader excess">
+        <div class="cd-hd">
+          <div class="icon">AU</div>
+          <div class="ttl">Auto IC Source Uploader</div>
         </div>
-        <div class="desc">Upload parts lists or links and auto-collect supplier offers for IC sourcing.</div>
-        <div class="row">
-          <span class="cta" style="opacity:.6;pointer-events:none">Open tool →</span>
-          <span class="tag soon">Coming soon</span>
+        <p class="desc">Upload and normalise supplier stock/excess files. Cleaning, mapping and dedupe built-in.</p>
+        <div class="cd-ft">
+          <a class="btn" href="auto-ic-uploader.index.html">Open</a>
+          <span class="tag">Data</span>
+        </div>
+      </article>
+
+      <!-- Coming soon: Distribution Stock Monitor -->
+      <article class="card" data-title="distribution stock monitor" aria-disabled="true">
+        <div class="cd-hd">
+          <div class="icon">SM</div>
+          <div class="ttl">Distribution Stock Monitor</div>
+        </div>
+        <p class="desc">Monitor key franchised stock/price moves by brand & MPN. Alerts for opportunities.</p>
+        <div class="cd-ft">
+          <button class="btn ghost" disabled>Coming soon</button>
+          <span class="tag">Research</span>
+        </div>
+      </article>
+
+      <!-- Coming soon: Open Sales Orders -->
+      <article class="card" data-title="open sales orders purchasing requests" aria-disabled="true">
+        <div class="cd-hd">
+          <div class="icon">SO</div>
+          <div class="ttl">Open Sales Orders</div>
+        </div>
+        <p class="desc">Single view of all open SOs with promised ship dates, testing status and blockers.</p>
+        <div class="cd-ft">
+          <button class="btn ghost" disabled>Coming soon</button>
+          <span class="tag">Ops</span>
         </div>
       </article>
     </div>
   </div>
+
+  <script>
+    // Search (also Ctrl/⌘+K focus)
+    const search = document.getElementById('search');
+    const cards = [...document.querySelectorAll('.card')];
+    const grid = document.getElementById('cards');
+
+    function filter(){
+      const q = (search.value||'').toLowerCase().trim();
+      let shown = 0;
+      cards.forEach(c=>{
+        const hit = c.dataset.title.includes(q) || c.querySelector('.ttl').textContent.toLowerCase().includes(q);
+        c.classList.toggle('hidden', q && !hit);
+        if(!c.classList.contains('hidden')) shown++;
+      });
+      grid.style.opacity = 1;
+    }
+    search.addEventListener('input', filter);
+    window.addEventListener('keydown', e=>{
+      if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); search.focus(); }
+    });
+
+    // Compact mode (denser cards for power users)
+    const compactBtn = document.getElementById('compactToggle');
+    compactBtn.addEventListener('click', ()=>{
+      const on = document.body.classList.toggle('compact');
+      compactBtn.setAttribute('aria-pressed', on?'true':'false');
+    });
+  </script>
+
+  <style>
+    /* Compact mode tweaks */
+    .compact .card{border-radius:14px}
+    .compact .icon{width:32px;height:32px;border-radius:10px}
+    .compact .cd-ft{padding:10px 16px}
+  </style>
 </body>
 </html>
 
