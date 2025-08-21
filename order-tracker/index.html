@@ -9,7 +9,7 @@
   :root{
     --brand:#6f57e9; --ink:#1e2330; --muted:#6d7486;
     --bg:#f6f7fb; --card:#fff; --line:#e9e9ef;
-    --green:#12a274; --red:#d24545; --purple:#3b2eca;
+    --green:#12a274; --purple:#3b2eca;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -103,8 +103,8 @@
       <select id="fltSales" class="select"><option value="">All salespeople</option></select>
       <select id="fltStatus" class="select"><option value="">All status</option><option>New</option><option>Open</option><option>Closed</option></select>
       <select id="fltPriority" class="select"><option value="">All priorities</option><option>High</option><option>Normal</option><option>Low</option></select>
-      <button id="btnNew" class="btn">+ New Order</button>
-      <button id="btnCsv" class="btn ghost">Export CSV</button>
+      <button id="btnNew" class="btn" type="button">+ New Order</button>
+      <button id="btnCsv" class="btn ghost" type="button">Export CSV</button>
     </div>
 
     <div class="table-card">
@@ -139,7 +139,7 @@
   <!-- Modal -->
   <dialog id="dlg">
     <div class="modal">
-      <header><div class="head"><strong id="dlgTitle">New Order</strong><button id="btnClose" class="btn ghost mini">✕</button></div></header>
+      <header><div class="head"><strong id="dlgTitle">New Order</strong><button id="btnClose" class="btn ghost mini" type="button">✕</button></div></header>
       <div class="content">
         <input type="hidden" id="orderId"/>
 
@@ -179,6 +179,16 @@
 
           <div><div class="note">Invoice Date</div><input id="invoice_date" type="date" class="input mini"/></div>
           <div><div class="note">Due Date</div><input id="due_date" type="date" class="input mini"/></div>
+
+          <div>
+            <div class="note">Currency</div>
+            <select id="currency" class="select mini">
+              <option value="USD" selected>USD ($)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="EUR">EUR (€)</option>
+            </select>
+          </div>
+          <div></div>
         </div>
 
         <div class="section">Testing — requirements & center</div>
@@ -217,7 +227,7 @@
           </tr></thead>
           <tbody id="itemsBody"></tbody>
         </table>
-        <div class="right"><button id="addItem" class="btn mini">+ Add item</button></div>
+        <div class="right"><button id="addItem" class="btn mini" type="button">+ Add item</button></div>
 
         <!-- PURCHASING -->
         <div class="section">PURCHASING — what Purchasing updates</div>
@@ -259,7 +269,7 @@
           </tr></thead>
           <tbody id="shipBody"></tbody>
         </table>
-        <div class="right"><button id="addShip" class="btn mini">+ Add shipment/leg</button></div>
+        <div class="right"><button id="addShip" class="btn mini" type="button">+ Add shipment/leg</button></div>
 
         <div class="grid3" style="margin-top:14px">
           <div>
@@ -277,8 +287,8 @@
         </div>
 
         <div class="right">
-          <button id="btnDelete" class="btn ghost">Delete</button>
-          <button id="btnSave" class="btn primary">Save</button>
+          <button id="btnDelete" class="btn ghost" type="button">Delete</button>
+          <button id="btnSave" class="btn primary" type="button">Save</button>
         </div>
       </div>
     </div>
@@ -316,7 +326,6 @@ const supa = {
       const outbound=(r.shipments_outbound||[]).map(s=>({kind:'Outbound',date:s.ship_date,qty:s.qty,from:'',to:'',method:'',ref:'',courier:s.courier,tracking:s.tracking,cost:''}));
       const shipments=[...legs,...inbound,...outbound];
 
-      // files & signed URLs
       const files=(r.order_files||[]).reduce((a,f)=>{a[f.kind]=f.path;return a;}, {});
       let poUrl=null,testUrl=null;
       if(files.po){const {data:s}=await supabase.storage.from('order-files').createSignedUrl(files.po,3600);poUrl=s?.signedUrl||null;}
@@ -329,6 +338,7 @@ const supa = {
         order_date:r.order_date, requested_by:r.requested_by,
         payment_terms:r.payment_terms, payment_method:r.payment_method,
         invoice_date:r.invoice_date, due_date:r.due_date,
+        currency:r.currency||'USD',
         tests:r.tests||'', test_center:r.test_center||'',
         vendor:r.vendor, incoterm:r.incoterm, notes:r.notes,
         shipping_cost_extra:r.shipping_cost_extra||0, test_cost:r.test_cost||0,
@@ -338,13 +348,13 @@ const supa = {
   },
 
   async saveOrder(rec, uploads){
-    // upsert header
     const header = {
       id:rec.id, salesperson:rec.salesperson, customer:rec.customer,
       priority:rec.priority, status:rec.status,
       order_date:rec.order_date, requested_by:rec.requested_by,
       payment_terms:rec.payment_terms, payment_method:rec.payment_method,
       invoice_date:rec.invoice_date, due_date:rec.due_date,
+      currency:rec.currency,
       tests:rec.tests, test_center:rec.test_center,
       vendor:rec.vendor, incoterm:rec.incoterm,
       shipping_cost_extra:rec.shipping_cost_extra, test_cost:rec.test_cost,
@@ -354,7 +364,6 @@ const supa = {
     if(e1) throw e1;
     const order_id=up.id;
 
-    // replace children
     await supabase.from('order_items').delete().eq('order_id',order_id);
     await supabase.from('ship_legs').delete().eq('order_id',order_id);
     await supabase.from('shipments_inbound').delete().eq('order_id',order_id);
@@ -365,11 +374,9 @@ const supa = {
         order_id, part_number:i.part_number, date_codes:i.date_codes, qty:i.qty, unit_sell:i.unit_sell, unit_cost:i.unit_cost
       })));
     }
-
     const legs = rec.shipments?.filter(s=>s.kind==='Leg')||[];
     const inbound = rec.shipments?.filter(s=>s.kind==='Inbound')||[];
     const outbound = rec.shipments?.filter(s=>s.kind==='Outbound')||[];
-
     if(legs.length){
       await supabase.from('ship_legs').insert(legs.map(l=>({
         order_id, from_loc:l.from, to_loc:l.to, method:l.method, ref:l.ref, cost:Number(l.cost||0)
@@ -403,7 +410,6 @@ const supa = {
   },
 
   async deleteOrder(id){ await supabase.from('orders').delete().eq('id',id); },
-  async updateField(id,field,value){ await supabase.from('orders').update({[field]:value}).eq('id',id); },
 
   subscribeRealtime(){
     supabase.channel('orders-rt')
@@ -421,6 +427,7 @@ function setSalespeople(){
   $('salesperson').innerHTML = SALESTEAM.map(n=>`<option>${n}</option>`).join('');
   $('fltSales').innerHTML = `<option value="">All salespeople</option>` + SALESTEAM.map(n=>`<option>${n}</option>`).join('');
 }
+function button(txt,cls,click){const b=document.createElement('button');b.textContent=txt;b.className='btn mini '+(cls||'');b.type='button';b.onclick=click;return b;}
 
 function addItemRow(v={part_number:'',date_codes:'',qty:'',unit_sell:'',unit_cost:''}){
   const tr=document.createElement('tr');
@@ -476,8 +483,6 @@ function shipsFromDOM(){
   }).filter(Boolean);
 }
 
-function button(txt,cls,click){const b=document.createElement('button');b.textContent=txt;b.className='btn mini '+(cls||'');b.onclick=click;return b;}
-
 function ageDays(d){
   if(!d) return '-';
   const ms = Date.now() - new Date(d).getTime();
@@ -515,14 +520,15 @@ function render(){
     const parts = (o.items?.length? o.items[0].part_number+(o.items.length>1? ` +${o.items.length-1} more`: '') : '-');
     const poUrl = window._sessionFiles?.[o.id]?.poUrl || null;
     const testUrl = window._sessionFiles?.[o.id]?.testUrl || null;
+    const sym = curSym(o.currency);
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td>${o.customer||'-'}</td>
       <td>${parts}</td>
       <td>${o.salesperson||'-'}</td>
       <td class="mono">${fmtInt(qty)}</td>
-      <td class="mono">£${fmt(revenue)}</td>
-      <td><span class="pill">£${fmt(gp)}</span> <span class="muted mono">(${fmt(gpPct)}%)</span></td>
+      <td class="mono">${sym}${fmt(revenue)}</td>
+      <td><span class="pill">${sym}${fmt(gp)}</span> <span class="muted mono">(${fmt(gpPct)}%)</span></td>
       <td><span class="chip">${o.status||'-'}</span></td>
       <td class="mono">${o.order_date||'-'}</td>
       <td class="mono">${o.requested_by||'-'}</td>
@@ -553,7 +559,6 @@ function openModal(o){
   $('order_date').value = o?.order_date || todayStr();
   $('requested_by').value = o?.requested_by || '';
 
-  // payment terms/method + invoice/due
   $('payment_terms').value = (['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90'].includes(o?.payment_terms)) ? o.payment_terms : 'Other';
   $('payment_terms_other').style.display = $('payment_terms').value==='Other' ? '' : 'none';
   $('payment_terms_other').value = $('payment_terms').value==='Other' ? (o?.payment_terms||'') : '';
@@ -565,52 +570,43 @@ function openModal(o){
   $('invoice_date').value = o?.invoice_date || '';
   $('due_date').value = o?.due_date || '';
 
-  // tests
+  $('currency').value = o?.currency || 'USD';
+
   [...$('testsLine').querySelectorAll('input[type="checkbox"]')].forEach(cb=>cb.checked=false);
-  $('tests_other').value = '';
+  $('tests_other').value='';
   if(o?.tests){
-    const set = new Set(o.tests.split(',').map(s=>s.trim()).filter(Boolean));
-    [...$('testsLine').querySelectorAll('input[type="checkbox"]')].forEach(cb=>{ cb.checked = set.has(cb.value); });
+    const set=new Set(o.tests.split(',').map(s=>s.trim()).filter(Boolean));
+    [...$('testsLine').querySelectorAll('input[type="checkbox"]')].forEach(cb=>cb.checked=set.has(cb.value));
     if(set.has('Other')) $('tests_other').value = (o.tests.match(/\(Other:(.*?)\)$/)?.[1] || '');
   }
   $('test_center').value = (['GETs HK','GETs Shenzhen','GETs US','White Horse US','White Horse China','White Horse EU'].includes(o?.test_center)) ? o.test_center : 'Other';
 
-  // vendor/incoterm (purchasing)
   $('vendor').value = o?.vendor || '';
   $('incoterm').value = (['DAP','DDP','EXW','CIP','FOB'].includes(o?.incoterm)) ? o.incoterm : 'Other';
   $('incoterm_other').style.display = $('incoterm').value==='Other' ? '' : 'none';
   $('incoterm_other').value = $('incoterm').value==='Other' ? (o?.incoterm||'') : '';
 
-  // items
   $('itemsBody').innerHTML=''; (o?.items?.length?o.items:[{}]).forEach(addItemRow);
+  $('shipBody').innerHTML=''; (o?.shipments||[]).forEach(addShipRow);
 
-  // unified shipments
-  $('shipBody').innerHTML='';
-  (o?.shipments||[]).forEach(addShipRow);
-
-  // costs & notes
   $('shipping_cost_extra').value = o?.shipping_cost_extra ?? '';
   $('test_cost').value = o?.test_cost ?? '';
   $('notes').value = o?.notes || '';
 
-  // files inputs blank
   $('file_po').value=''; $('file_test').value='';
-
   $('btnDelete').style.display = o?.id ? '' : 'none';
-
   $('dlg').showModal();
 }
 function collectRecord(){
   const id = $('orderId').value || crypto.randomUUID();
 
-  // tests gather
   const checks=[...$('testsLine').querySelectorAll('input[type="checkbox"]')];
   const none = $('tNone').checked;
   checks.forEach(cb=>{ if(none && cb.value!=='No test') cb.checked=false; });
   const selected = checks.filter(cb=>cb.checked).map(cb=>cb.value);
   if($('tOther').checked){
     const extra = $('tests_other').value.trim();
-    if(extra) selected[selected.indexOf('Other')] = `Other`; // keep "Other"
+    if(extra) selected[selected.indexOf('Other')] = 'Other';
   }
   let testsStr = selected.join(', ');
   if(selected.includes('Other')){
@@ -618,7 +614,6 @@ function collectRecord(){
     if(t) testsStr = testsStr.replace('Other', `Other (Other:${t})`);
   }
 
-  // terms (Other)
   const terms = $('payment_terms').value==='Other' ? $('payment_terms_other').value.trim() : $('payment_terms').value;
   const method = $('payment_method').value==='Other' ? $('payment_method_other').value.trim() : $('payment_method').value;
   const incot = $('incoterm').value==='Other' ? $('incoterm_other').value.trim() : $('incoterm').value;
@@ -632,6 +627,7 @@ function collectRecord(){
     requested_by:$('requested_by').value||null,
     payment_terms:terms||null, payment_method:method||null,
     invoice_date:$('invoice_date').value||null, due_date:$('due_date').value||null,
+    currency:$('currency').value||'USD',
     tests:testsStr||null, test_center:$('test_center').value,
     vendor:$('vendor').value.trim()||null, incoterm:incot||null,
     items:itemsFromDOM(),
@@ -661,6 +657,11 @@ $('payment_method').addEventListener('change',()=>{
 });
 $('incoterm').addEventListener('change',()=>{
   $('incoterm_other').style.display = $('incoterm').value==='Other' ? '' : 'none';
+});
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  // Ensure button always opens dialog (some browsers ignore inline assignment)
+  $('btnNew').addEventListener('click', ()=> openModal(null));
 });
 
 $('addItem').onclick=()=>addItemRow({});
@@ -704,14 +705,3 @@ init();
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
