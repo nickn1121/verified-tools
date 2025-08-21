@@ -48,13 +48,13 @@
   .link{color:#362dc7;text-decoration:none}
   .link:hover{text-decoration:underline}
 
-  /* ---------- Modal (clean, centered, scrollable) ---------- */
+  /* ---------- Modal ---------- */
   dialog{border:0;padding:0;margin:0 auto;max-width:1200px;width:96vw}
   dialog::backdrop{background:rgba(17,17,33,.35)}
   .modal{display:flex;flex-direction:column;max-height:90vh;border-radius:18px;overflow:hidden;background:#fff}
   .modal header{position:sticky;top:0;z-index:2;border-bottom:1px solid var(--line);border-radius:18px 18px 0 0;background:#fff}
   .modal .head{padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
-  .content{padding:16px;overflow:auto;overflow-x:auto; /* allow horizontal scroll when needed */ max-height:calc(90vh - 58px);overscroll-behavior:contain}
+  .content{padding:16px;overflow:auto;overflow-x:auto;max-height:calc(90vh - 58px);overscroll-behavior:contain}
 
   .grid2,.grid3{gap:12px}
   .grid2{display:grid;grid-template-columns:1fr 1fr}
@@ -69,7 +69,6 @@
   .note{font-size:12px;color:var(--muted)}
   input,select,textarea{min-width:0}
 
-  /* scroll wrappers for dense tables in the modal */
   .hscroll{overflow:auto;border:1px solid #ececf3;border-radius:12px;background:#fff}
   .hscroll table{min-width:1100px}
   .content{padding-bottom:80px}
@@ -84,8 +83,12 @@
 <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  const SUPABASE_URL = 'https://ijzroisggstkqkfhpjndq.supabase.co';
+  // ✅ Correct project URL (no typo)
+  const SUPABASE_URL = 'https://ijzroisggstqkfhpjndq.supabase.co';
+
+  // ✅ Your anon key
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
+
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 </script>
 </head>
@@ -384,7 +387,7 @@ const supa = {
     const outbound = rec.shipments?.filter(s=>s.kind==='Outbound')||[];
     if(legs.length){
       await supabase.from('ship_legs').insert(legs.map(l=>({
-        order_id, from_loc:l.from, to_loc:l.to, method:l.method, ref:l.ref, cost:Number(l.cost||0)
+        order_id, from_loc:l.from, to_loc:l.to, method:l.method, ref:l.ref, cost(Number(l.cost||0))
       })));
     }
     if(inbound.length){
@@ -428,10 +431,6 @@ const supa = {
 };
 
 /* ---------- UI render ---------- */
-function setSalespeople(){
-  $('salesperson').innerHTML = SALESTEAM.map(n=>`<option>${n}</option>`).join('');
-  $('fltSales').innerHTML = `<option value="">All salespeople</option>` + SALESTEAM.map(n=>`<option>${n}</option>`).join('');
-}
 function button(txt,cls,click){const b=document.createElement('button');b.textContent=txt;b.className='btn mini '+(cls||'');b.type='button';b.onclick=click;return b;}
 
 function addItemRow(v={part_number:'',date_codes:'',qty:'',unit_sell:'',unit_cost:''}){
@@ -707,4 +706,5 @@ init();
 </script>
 </body>
 </html>
+
 
