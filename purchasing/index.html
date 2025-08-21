@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Verified Electronics — Purchasing Board</title>
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+  <style>
+    :root{
+      --brand:#6f57e9; --ink:#1e2330; --muted:#6d7486;
+      --bg:#f6f7fb; --card:#fff; --line:#e9e9ef;
+      --green:#12a274; --amber:#f59e0b; --red:#ef4444; --blue:#3b82f6;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font:15px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background:var(--bg); color:var(--ink)}
+    .wrap{max-width:1200px;margin:0 auto;padding:20px}
+    .topbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:700}
+    .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--brand)}
+    .pill{padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;display:inline-flex;gap:8px;align-items:center}
+    .tabs{display:flex;gap:6px;flex-wrap:wrap}
+    .tab{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;user-select:none}
+    .tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+    .row{display:grid;grid-template-columns:320px 1fr;gap:16px;margin-top:16px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+    .card h3{margin:0 0 6px 0}
+    .card .hd{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+    .card .bd{padding:16px}
+    label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
+    input, select, textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit}
+    textarea{min-height:80px;resize:vertical}
+    button{appearance:none;border:0;border-radius:10px;padding:10px 14px;background:var(--brand);color:#fff;font-weight:600;cursor:pointer}
+    button.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
+    .grid{display:grid;gap:12px}
+    .rfq-list{display:grid;gap:12px}
+    .rfq{border:1px solid var(--line);border-radius:12px;background:#fff}
+    .rfq-hd{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:12px 14px;border-bottom:1px solid var(--line)}
+    .rfq-title{font-weight:700}
+    .meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+    .badge{padding:2px 8px;border-radius:999px;background:#f1f2f7;color:#555;border:1px solid var(--line);font-size:12px}
+    .status{padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line)}
+    .status.open{background:#eef2ff;color:#3b2eca;border-color:#c7d2fe}
+    .status.ordered{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
+    .status.closed{background:#f3f4f6;color:#374151;border-color:#e5e7eb}
+
+    .offer-best{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;border:1px dashed var(--line);background:#fafbff}
+    .offer-list{padding:10px 12px}
+    .offer{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:10px;margin:8px 0}
+    .offer .left{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .chip{padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line);background:#fff}
+    .conf{font-weight:700}
+    .conf[data-level="1"], .conf[data-level="2"]{background:#fee2e2;border-color:#fecaca;color:#b91c1c}
+    .conf[data-level="3"]{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
+    .conf[data-level="4"]{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
+    .conf[data-level="5"]{background:#e0f2fe;border-color:#bae6fd;color:#075985}
+
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .tools{display:flex;gap:10px;align-items:center}
+    .search{flex:1;min-width:260px}
+    .muted{color:var(--muted)}
+
+    dialog{border:0;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:560px;max-width:calc(100vw - 24px)}
+    dialog::backdrop{background:rgba(0,0,0,.3)}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+    .toast{position:fixed;bottom:18px;right:18px;background:#111827;color:#fff;padding:12px 14px;border-radius:10px;opacity:0;transform:translateY(10px);transition:.2s all}
+    .toast.show{opacity:1;transform:none}
+
+    .empty{padding:30px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);text-align:center;background:#fff}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand"><span class="dot"></span> Verified Electronics — Purchasing Board</div>
+      <div class="tools" style="margin-left:auto">
+        <input id="search" class="pill search" placeholder="Search part number…" />
+        <select id="statusFilter" class="pill">
+          <option value="all">All statuses</option>
+          <option value="open">Open</option>
+          <option value="ordered">Ordered</option>
+          <option value="closed">Closed</option>
+        </select>
+        <select id="sortBy" class="pill">
+          <option value="created_desc">Newest</option>
+          <option value="created_asc">Oldest</option>
+          <option value="best_price">Best price</option>
+          <option value="lead_time">Lead time</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="tabs" id="salesTabs" style="margin-top:12px"></div>
+
+    <div class="row">
+      <!-- LEFT: New RFQ -->
+      <div class="card">
+        <div class="hd"><strong>New RFQ</strong><span class="muted">Sales → Purchasing</span></div>
+        <div class="bd">
+          <form id="rfqForm" class="grid">
+            <div>
+              <label>Salesperson</label>
+              <input id="salesperson" placeholder="e.g., Emir" required />
+            </div>
+            <div>
+              <label>Part Number</label>
+              <input id="partNumber" placeholder="e.g., IPF015N10N5ATMA1" required />
+            </div>
+            <div class="row2">
+              <div>
+                <label>Quantity</label>
+                <input id="quantity" type="number" min="1" step="1" placeholder="e.g., 500" required />
+              </div>
+              <div>
+                <label>Target Price (optional)</label>
+                <input id="targetPrice" type="number" min="0" step="0.01" placeholder="e.g., 1.25" />
+              </div>
+            </div>
+            <div>
+              <label>Notes</label>
+              <textarea id="rfqNotes" placeholder="Any context to help purchasing…"></textarea>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center">
+              <button type="submit">Create RFQ</button>
+              <span id="rfqHint" class="muted"></span>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- RIGHT: RFQ list -->
+      <div class="card">
+        <div class="hd">
+          <strong id="listTitle">RFQs</strong>
+          <div class="muted" id="listMeta">—</div>
+        </div>
+        <div class="bd">
+          <div id="rfqList" class="rfq-list"></div>
+          <div id="emptyState" class="empty" style="display:none">No RFQs yet for this tab. Create one on the left.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Offer Modal -->
+  <dialog id="offerModal">
+    <form method="dialog" id="offerForm">
+      <div class="hd" style="padding:14px 16px;border-bottom:1px solid var(--line)"><strong>Add Offer</strong></div>
+      <div class="bd" style="padding:16px">
+        <input type="hidden" id="offer_rfq_id" />
+        <div class="row2">
+          <div>
+            <label>Vendor</label>
+            <input id="vendor" required placeholder="e.g., ABC Components" />
+          </div>
+          <div>
+            <label>Location</label>
+            <input id="location" placeholder="e.g., Shenzhen, CN" />
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label>Price (per unit)</label>
+            <input id="price" type="number" min="0" step="0.0001" required />
+          </div>
+          <div>
+            <label>Currency</label>
+            <select id="currency">
+              <option>USD</option>
+              <option>GBP</option>
+              <option>EUR</option>
+            </select>
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label>Qty Available</label>
+            <input id="qty_available" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label>MOQ</label>
+            <input id="moq" type="number" min="0" step="1" />
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label>Lead Time (days)</label>
+            <input id="lead_time" type="number" min="0" step="1" />
+          </div>
+          <div>
+            <label>Confidence</label>
+            <select id="confidence">
+              <option value="5">5 — Very High</option>
+              <option value="4">4 — High</option>
+              <option value="3">3 — Medium</option>
+              <option value="2">2 — Low</option>
+              <option value="1">1 — Very Low</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label>Comments</label>
+          <textarea id="offerNotes" placeholder="Shipping method, incoterms, test availability, etc."></textarea>
+        </div>
+      </div>
+      <div class="bd" style="display:flex;gap:10px;justify-content:flex-end;padding:16px;border-top:1px solid var(--line)">
+        <button value="cancel" class="ghost">Cancel</button>
+        <button value="submit">Save Offer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast"></div>
+
+  <script type="module">
+    // === CONFIG ===
+    // 1) Fill these in with your Supabase project's values
+    const SUPABASE_URL = "https://YOUR-SUPABASE-PROJECT.supabase.co"; // <-- replace
+    const SUPABASE_ANON_KEY = "YOUR-SUPABASE-ANON-KEY"; // <-- replace
+
+    // 2) Optional: preload known salespeople so tabs exist from day one
+    const DEFAULT_SALESPEOPLE = ["Emir","Nick K","Dan","Jake","Alan","Howell","Maddy"]; // edit as needed
+
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // === State ===
+    let allRFQs = []; // full list from DB
+    let offersByRFQ = new Map(); // rfq_id -> Offer[]
+    let activeSalesTab = 'All';
+
+    // === Elements ===
+    const tabsEl = document.getElementById('salesTabs');
+    const rfqListEl = document.getElementById('rfqList');
+    const emptyStateEl = document.getElementById('emptyState');
+    const listTitleEl = document.getElementById('listTitle');
+    const listMetaEl = document.getElementById('listMeta');
+
+    const rfqForm = document.getElementById('rfqForm');
+    const salespersonEl = document.getElementById('salesperson');
+    const partNumberEl = document.getElementById('partNumber');
+    const quantityEl = document.getElementById('quantity');
+    const targetPriceEl = document.getElementById('targetPrice');
+    const rfqNotesEl = document.getElementById('rfqNotes');
+    const rfqHint = document.getElementById('rfqHint');
+
+    const searchEl = document.getElementById('search');
+    const statusFilterEl = document.getElementById('statusFilter');
+    const sortByEl = document.getElementById('sortBy');
+
+    const offerModal = document.getElementById('offerModal');
+    const offerForm = document.getElementById('offerForm');
+
+    function toast(msg){
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'), 2200);
+    }
+
+    // === UI Builders ===
+    function buildTabs(){
+      tabsEl.innerHTML = '';
+      const names = new Set(["All", ...DEFAULT_SALESPEOPLE]);
+      allRFQs.forEach(r => names.add(r.salesperson));
+      [...names].forEach(name => {
+        const el = document.createElement('div');
+        el.className = 'tab' + (name === activeSalesTab ? ' active' : '');
+        el.textContent = name;
+        el.onclick = ()=>{ activeSalesTab = name; renderList(); };
+        tabsEl.appendChild(el);
+      });
+    }
+
+    function bestOffer(offers){
+      if(!offers || offers.length===0) return null;
+      // Pick by lowest price; tie-breaker highest confidence
+      return offers.slice().sort((a,b)=> (a.price - b.price) || (b.confidence - a.confidence))[0];
+    }
+
+    function renderList(){
+      buildTabs();
+      let rfqs = allRFQs.slice();
+      // filter by tab
+      if(activeSalesTab !== 'All') rfqs = rfqs.filter(r => r.salesperson === activeSalesTab);
+
+      // search
+      const q = (searchEl.value||'').trim().toLowerCase();
+      if(q) rfqs = rfqs.filter(r => r.part_number.toLowerCase().includes(q));
+
+      // status filter
+      const sf = statusFilterEl.value;
+      if(sf !== 'all') rfqs = rfqs.filter(r => r.status === sf);
+
+      // map offers
+      rfqs = rfqs.map(r => ({...r, offers: offersByRFQ.get(r.id)||[]}));
+
+      // sort
+      const sortBy = sortByEl.value;
+      if(sortBy === 'created_desc') rfqs.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
+      if(sortBy === 'created_asc') rfqs.sort((a,b)=> new Date(a.created_at) - new Date(b.created_at));
+      if(sortBy === 'best_price') rfqs.sort((a,b)=>{
+        const A = bestOffer(a.offers), B = bestOffer(b.offers);
+        const ap = A?A.price:Infinity, bp = B?B.price:Infinity;
+        return ap - bp;
+      });
+      if(sortBy === 'lead_time') rfqs.sort((a,b)=>{
+        const A = bestOffer(a.offers), B = bestOffer(b.offers);
+        const al = A&&A.lead_time!=null?A.lead_time:Infinity, bl = B&&B.lead_time!=null?B.lead_time:Infinity;
+        return al - bl;
+      });
+
+      // render
+      rfqListEl.innerHTML = '';
+      if(rfqs.length === 0){
+        emptyStateEl.style.display = 'block';
+        listTitleEl.textContent = activeSalesTab === 'All' ? 'RFQs — All' : `RFQs — ${activeSalesTab}`;
+        listMetaEl.textContent = '0 items';
+        return;
+      }
+      emptyStateEl.style.display = 'none';
+      listTitleEl.textContent = activeSalesTab === 'All' ? 'RFQs — All' : `RFQs — ${activeSalesTab}`;
+      listMetaEl.textContent = `${rfqs.length} item(s)`;
+
+      rfqs.forEach(r => {
+        const offers = r.offers;
+        const bo = bestOffer(offers);
+        const card = document.createElement('div');
+        card.className = 'rfq';
+        card.innerHTML = `
+          <div class="rfq-hd">
+            <div>
+              <div class="rfq-title">${r.part_number} <span class="muted">× ${r.quantity.toLocaleString()}</span></div>
+              <div class="meta">
+                <span class="badge">Sales: ${r.salesperson}</span>
+                <span class="badge">Created: ${new Date(r.created_at).toLocaleString()}</span>
+                ${r.target_price ? `<span class="badge">Target: ${fmtMoney(r.target_price, r.currency||'USD')}</span>`:''}
+                <span class="status ${r.status}">${r.status}</span>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="ghost" data-act="add-offer">Add Offer</button>
+              <button class="ghost" data-act="mark-ordered">Mark Ordered</button>
+              <button class="ghost" data-act="close">Close</button>
+            </div>
+          </div>
+          <div class="offer-list">
+            ${bo? `<div class="offer-best"><strong>Best:</strong> ${bo.vendor} — ${fmtMoney(bo.price, bo.currency)} / ${bo.qty_available||'—'} pcs <span class="chip conf" data-level="${bo.confidence}">Conf ${bo.confidence}</span> ${bo.lead_time!=null?`<span class="chip">${bo.lead_time}d</span>`:''}</div>` : `<div class="muted">No offers yet.</div>`}
+            ${offers.map(o=>offerRow(o)).join('')}
+          </div>
+        `;
+
+        // wire actions
+        card.querySelector('[data-act="add-offer"]').onclick = ()=> openOfferModal(r.id);
+        card.querySelector('[data-act="mark-ordered"]').onclick = ()=> updateRFQStatus(r.id, 'ordered');
+        card.querySelector('[data-act="close"]').onclick = ()=> updateRFQStatus(r.id, 'closed');
+        rfqListEl.appendChild(card);
+      });
+    }
+
+    function offerRow(o){
+      return `
+        <div class="offer">
+          <div class="left">
+            <strong>${o.vendor}</strong>
+            <span class="chip">${o.location||'—'}</span>
+            <span class="chip">${fmtMoney(o.price, o.currency)}</span>
+            ${o.qty_available!=null?`<span class="chip">Qty ${o.qty_available}</span>`:''}
+            ${o.moq!=null?`<span class="chip">MOQ ${o.moq}</span>`:''}
+            ${o.lead_time!=null?`<span class="chip">${o.lead_time}d</span>`:''}
+            <span class="chip conf" data-level="${o.confidence}">Conf ${o.confidence}</span>
+            ${o.comments?`<span class="muted">${escapeHTML(o.comments)}</span>`:''}
+          </div>
+          <div class="actions">
+            <button class="ghost" data-offer-id="${o.id}" data-act="select-offer">Select</button>
+          </div>
+        </div>`
+    }
+
+    function fmtMoney(v, cur){
+      try{ return new Intl.NumberFormat(undefined,{style:'currency',currency:cur||'USD'}).format(v); }
+      catch(e){ return `${cur||'USD'} ${Number(v).toFixed(2)}` }
+    }
+
+    function escapeHTML(s){
+      return s.replace(/[&<>\"]/g, c=> ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    }
+
+    // === Data IO ===
+    async function loadRFQs(){
+      const { data, error } = await supabase
+        .from('rfqs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5000);
+      if(error){ console.error(error); toast('Load RFQs failed'); return; }
+      allRFQs = data || [];
+      await loadOffersFor(allRFQs.map(r=>r.id));
+      renderList();
+    }
+
+    async function loadOffersFor(ids){
+      offersByRFQ = new Map(ids.map(id => [id, []]));
+      if(ids.length === 0) return;
+      const { data, error } = await supabase
+        .from('offers')
+        .select('*')
+        .in('rfq_id', ids)
+        .order('price', { ascending: true });
+      if(error){ console.error(error); toast('Load offers failed'); return; }
+      (data||[]).forEach(o => {
+        if(!offersByRFQ.has(o.rfq_id)) offersByRFQ.set(o.rfq_id, []);
+        offersByRFQ.get(o.rfq_id).push(o);
+      });
+    }
+
+    async function updateRFQStatus(id, status){
+      const { error } = await supabase.from('rfqs').update({ status }).eq('id', id);
+      if(error){ console.error(error); toast('Update failed'); return; }
+      toast(`RFQ ${status}`);
+      loadRFQs();
+    }
+
+    // === Events ===
+    rfqForm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const salesperson = salespersonEl.value.trim();
+      const part_number = partNumberEl.value.trim();
+      const quantity = parseInt(quantityEl.value,10);
+      const target_price = targetPriceEl.value ? parseFloat(targetPriceEl.value) : null;
+      if(!salesperson || !part_number || !quantity){ toast('Please fill required fields'); return; }
+      rfqHint.textContent = 'Saving…';
+      const { data, error } = await supabase.from('rfqs').insert({
+        salesperson, part_number, quantity, target_price, notes: rfqNotesEl.value || null, status:'open', currency:'USD'
+      }).select().single();
+      rfqHint.textContent = '';
+      if(error){ console.error(error); toast('Create failed'); return; }
+      toast('RFQ created');
+      rfqForm.reset();
+      // Switch to salesperson tab so they immediately see it
+      activeSalesTab = salesperson;
+      await loadRFQs();
+    });
+
+    searchEl.addEventListener('input', renderList);
+    statusFilterEl.addEventListener('change', renderList);
+    sortByEl.addEventListener('change', renderList);
+
+    // Offers modal
+    function openOfferModal(rfq_id){
+      document.getElementById('offer_rfq_id').value = rfq_id;
+      offerForm.reset();
+      offerModal.showModal();
+    }
+
+    offerForm.addEventListener('close', ()=>{
+      if(offerForm.returnValue === 'submit') saveOffer();
+    });
+
+    async function saveOffer(){
+      const rfq_id = document.getElementById('offer_rfq_id').value;
+      const payload = {
+        rfq_id,
+        vendor: document.getElementById('vendor').value.trim(),
+        location: document.getElementById('location').value.trim() || null,
+        price: parseFloat(document.getElementById('price').value),
+        currency: document.getElementById('currency').value,
+        qty_available: valInt(document.getElementById('qty_available').value),
+        moq: valInt(document.getElementById('moq').value),
+        lead_time: valInt(document.getElementById('lead_time').value),
+        confidence: parseInt(document.getElementById('confidence').value,10),
+        comments: document.getElementById('offerNotes').value || null,
+      };
+      if(!payload.vendor || isNaN(payload.price)){ toast('Vendor and Price required'); return; }
+      const { error } = await supabase.from('offers').insert(payload);
+      if(error){ console.error(error); toast('Save offer failed'); return; }
+      toast('Offer saved');
+      await loadRFQs();
+    }
+
+    function valInt(v){ const n = parseInt(v,10); return isNaN(n) ? null : n; }
+
+    // Delegated click for selecting offer
+    rfqListEl.addEventListener('click', async (e)=>{
+      const btn = e.target.closest('[data-act="select-offer"]');
+      if(!btn) return;
+      const offerId = btn.getAttribute('data-offer-id');
+      // Mark the RFQ as ordered and store selected_offer_id
+      const offer = findOffer(offerId);
+      if(!offer){ toast('Offer not found'); return; }
+      const { error } = await supabase.from('rfqs').update({ status:'ordered', selected_offer_id: offer.id }).eq('id', offer.rfq_id);
+      if(error){ console.error(error); toast('Select offer failed'); return; }
+      toast('Offer selected & RFQ ordered');
+      loadRFQs();
+    });
+
+    function findOffer(id){
+      for(const [rfqId, arr] of offersByRFQ.entries()){
+        const f = (arr||[]).find(o=> String(o.id) === String(id));
+        if(f) return f;
+      }
+      return null;
+    }
+
+    // Realtime updates
+    supabase.channel('rfqs-ch').on('postgres_changes', {event:'*', schema:'public', table:'rfqs'}, loadRFQs).subscribe();
+    supabase.channel('offers-ch').on('postgres_changes', {event:'*', schema:'public', table:'offers'}, loadRFQs).subscribe();
+
+    // Bootstrap
+    (async function init(){
+      await loadRFQs();
+    })();
+  </script>
+
+  <!--
+  ==========================
+  SUPABASE — SCHEMA (SQL)
+  ==========================
+
+  Run this in Supabase SQL editor.
+
+  -- RFQs created by Sales
+  create table if not exists public.rfqs (
+    id bigint generated by default as identity primary key,
+    created_at timestamptz not null default now(),
+    salesperson text not null,
+    part_number text not null,
+    quantity integer not null check (quantity > 0),
+    target_price numeric(18,6),
+    currency text default 'USD',
+    notes text,
+    status text not null default 'open' check (status in ('open','ordered','closed')),
+    selected_offer_id bigint
+  );
+
+  -- Offers added by Purchasing, linked to RFQ
+  create table if not exists public.offers (
+    id bigint generated by default as identity primary key,
+    created_at timestamptz not null default now(),
+    rfq_id bigint not null references public.rfqs(id) on delete cascade,
+    vendor text not null,
+    location text,
+    price numeric(18,6) not null check (price >= 0),
+    currency text not null default 'USD',
+    qty_available integer,
+    moq integer,
+    lead_time integer, -- days
+    confidence integer not null default 3 check (confidence between 1 and 5),
+    comments text
+  );
+
+  -- Helpful indexes
+  create index if not exists rfqs_salesperson_idx on public.rfqs (salesperson);
+  create index if not exists rfqs_part_idx on public.rfqs (part_number);
+  create index if not exists offers_rfq_idx on public.offers (rfq_id);
+  create index if not exists offers_price_idx on public.offers (price);
+
+  -- Optional: RLS (simple allow-all for authenticated users)
+  -- alter table public.rfqs enable row level security;
+  -- alter table public.offers enable row level security;
+  -- create policy "rfqs all" on public.rfqs for all to authenticated using (true) with check (true);
+  -- create policy "offers all" on public.offers for all to authenticated using (true) with check (true);
+
+  -->
+</body>
+</html>
