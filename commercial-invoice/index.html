@@ -6,374 +6,368 @@
 <title>Commercial Invoice — Verified Electronics</title>
 <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
 <style>
+  /* ---- Design tokens (subtle, official look) ---- */
   :root{
-    --brand:#673ab7; --ink:#1f2430; --muted:#677085;
-    --bg:#f6f7fb; --card:#fff; --line:#e9e9ef;
-    --accent:#efeafd;
+    --brand:#673ab7;           /* used sparingly */
+    --ink:#1a1d22;
+    --muted:#666e7a;
+    --line:#dcdfe5;
+    --bg:#f6f7fb;
+    --paper:#ffffff;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif}
-  .wrap{max-width:1160px;margin:24px auto;padding:0 16px}
-  header{
-    display:flex;align-items:center;gap:14px;
-    background:radial-gradient(1200px 260px at 160px -60px, rgba(103,58,183,.18), transparent 60%),
-               linear-gradient(180deg,#fff, #fafaff);
-    border:1px solid var(--line);
-    padding:18px; border-radius:18px;
-    box-shadow:0 4px 24px rgba(0,0,0,.04);
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:14px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif}
+
+  .wrap{max-width:980px;margin:28px auto;padding:0 16px}
+
+  /* Top bar (very light branding) */
+  .topbar{
+    display:flex;align-items:center;gap:12px;background:var(--paper);
+    border:1px solid var(--line);border-radius:14px;padding:14px 16px;
+    box-shadow:0 2px 14px rgba(0,0,0,.04)
   }
-  header img{height:40px}
-  h1{margin:0;font-size:24px;font-weight:800;letter-spacing:.2px}
-  .sub{color:var(--muted);margin-top:2px}
+  .badge{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;
+         background:#efeafd;box-shadow:inset 0 0 0 1px #e3ddfb}
+  .badge img{max-width:26px;max-height:26px}
+  .top h1{margin:0;font-size:20px;font-weight:800;letter-spacing:.2px}
+  .top .sub{font-size:12px;color:var(--muted);margin-top:2px}
 
   .actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
-  .btn{
-    background:#fff;border:1px solid var(--line);padding:10px 14px;border-radius:10px;
-    font-weight:700;cursor:pointer;
-    box-shadow:0 1px 0 rgba(0,0,0,.02);
+  button, .btn{
+    border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;
+    font-weight:700;cursor:pointer
   }
-  .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff}
-  .btn.ghost{background:#fff}
-  .btn:active{transform:translateY(1px)}
+  .brand{background:var(--brand);border-color:var(--brand);color:#fff}
+  .ghost{background:#fff}
+  .danger{color:#a63b2f}
 
-  .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:18px}
-  @media (max-width:1024px){ .grid{grid-template-columns:1fr} }
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:960px){ .grid{grid-template-columns:1fr} }
 
   .panel{
-    background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;
-    box-shadow:0 8px 30px rgba(103,58,183,.06), 0 1px 0 rgba(0,0,0,.02);
+    background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;
   }
-  .panel h2{
-    font-size:16px;margin:0 0 12px;font-weight:800;color:#262b3a;display:flex;align-items:center;gap:8px
-  }
+  .panel h2{margin:0 0 10px;font-size:15px;font-weight:800;letter-spacing:.02em}
+
   .row{display:grid;grid-template-columns:repeat(12,1fr);gap:10px}
   .field{display:flex;flex-direction:column;gap:6px}
   .field label{font-size:12px;color:var(--muted)}
   input[type="text"],input[type="number"],input[type="date"],select,textarea{
-    border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff;width:100%;
+    border:1px solid var(--line);border-radius:8px;background:#fff;padding:8px;width:100%
   }
-  textarea{min-height:74px;resize:vertical}
+  textarea{min-height:72px;resize:vertical}
 
   .k2{grid-column:span 2}.k3{grid-column:span 3}.k4{grid-column:span 4}
   .k5{grid-column:span 5}.k6{grid-column:span 6}.k7{grid-column:span 7}
   .k8{grid-column:span 8}.k9{grid-column:span 9}.k12{grid-column:span 12}
 
-  /* Table */
-  table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
-  thead th{
-    font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#425066;background:#fbfaff;
-    border-bottom:1px solid var(--line);padding:10px 8px;text-align:left
-  }
-  tbody td{border-bottom:1px solid var(--line);padding:8px}
-  tbody tr:last-child td{border-bottom:none}
-  tfoot td{padding:8px}
-  .num{text-align:right}
-  .ctrl{display:flex;gap:8px;align-items:center}
-  .small{font-size:12px;color:var(--muted)}
-  .danger{color:#a63b2f}
+  /* Invoice preview (print layout) */
+  .invoice{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px}
 
-  .totals{
-    display:grid;grid-template-columns:1fr minmax(280px, 40%);gap:16px;margin-top:14px
+  .hdr{
+    display:grid;grid-template-columns:1fr auto;gap:12px;border-bottom:1px solid var(--line);
+    padding-bottom:8px;margin-bottom:10px
   }
+  .hdr-left{display:flex;gap:10px;align-items:center}
+  .hdr-title{font-size:22px;font-weight:900;letter-spacing:.2px}
+  .hdr-meta{font-size:12px;color:#2a2f36}
+  .col-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
   .box{
-    border:1px dashed #ddd;border-radius:12px;padding:12px;background:#fff
+    border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff
   }
+  .box .cap{font-size:12px;color:var(--muted);margin-bottom:6px}
 
-  /* Print layout */
+  table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);
+        border-radius:10px;overflow:hidden;margin-top:8px}
+  thead th{
+    font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#3a4250;background:#fafaff;
+    border-bottom:1px solid var(--line);padding:8px;text-align:left
+  }
+  tbody td{border-bottom:1px solid var(--line);padding:8px;vertical-align:top}
+  tbody tr:last-child td{border-bottom:none}
+  .num{text-align:right}
+
+  .totalsGrid{display:grid;grid-template-columns:1fr minmax(280px,40%);gap:10px;margin-top:10px}
+  .right{display:grid;gap:6px}
+  .trow{display:flex;justify-content:space-between;gap:8px}
+  .trow .label{color:#3a4250}
+  .trow .val{font-weight:800}
+
+  .signature{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center;margin-top:10px}
+  .sigimg{max-height:70px;border:1px dashed var(--line);border-radius:8px;padding:4px}
+
+  .declaration{font-size:12px;color:#3b3f47;line-height:1.45}
+
+  /* Print rules: A4 portrait, repeating thead */
   @media print{
     body{background:#fff}
-    header,.actions,.panel.form{display:none}
-    .panel.preview{border:none;box-shadow:none;padding:0}
-    .invoice{page-break-after:auto}
-    table{border-color:#ddd}
+    .topbar,.actions,.panel.form{display:none}
+    .invoice{border:none;border-radius:0;padding:0}
     thead{display:table-header-group}
     tfoot{display:table-row-group}
     tr{page-break-inside:avoid}
-    .invoice .titlebar{border:none}
+    @page{size:A4;margin:14mm}
   }
-
-  /* Preview (print look) */
-  .invoice{
-    background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;
-  }
-  .titlebar{
-    display:flex;justify-content:space-between;align-items:flex-start;gap:16px;
-    padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:12px
-  }
-  .brand{
-    display:flex;align-items:center;gap:12px
-  }
-  .brand .badge{
-    width:50px;height:50px;border-radius:12px;background:var(--accent);display:grid;place-items:center;
-    box-shadow:inset 0 0 0 1px #e3ddfb;
-  }
-  .brand img{max-width:34px;max-height:34px;object-fit:contain}
-  .doc-meta{font-size:13px;color:#333}
-  .doc-h1{font-size:22px;font-weight:800;margin:0 0 2px}
-  .muted{color:var(--muted)}
-  .sig{max-height:70px;object-fit:contain;border:1px dashed #ddd;border-radius:8px;padding:4px;background:#fff}
-
-  .declaration{font-size:12px;color:#444;line-height:1.45}
 </style>
 </head>
 <body>
   <div class="wrap">
-    <header>
-      <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified Electronics">
-      <div>
-        <h1>Commercial Invoice — Verified Electronics</h1>
-        <div class="sub">Customs-ready, print-perfect invoices with HS code, COO, Incoterms & more.</div>
+    <!-- Light branded header -->
+    <div class="topbar top">
+      <div class="badge">
+        <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="VE">
       </div>
-    </header>
+      <div>
+        <h1>Commercial Invoice</h1>
+        <div class="sub">Verified Electronics · Official customs invoice</div>
+      </div>
+    </div>
 
+    <!-- Actions -->
     <div class="actions">
-      <button class="btn brand" onclick="generatePDF()">Download PDF</button>
-      <button class="btn ghost" onclick="addRow()">Add line</button>
-      <button class="btn ghost" onclick="clearRows()">Clear lines</button>
-      <button class="btn ghost" onclick="saveJSON()">Save JSON</button>
-      <label class="btn ghost" style="cursor:pointer">
-        Load JSON <input type="file" accept=".json" style="display:none" onchange="loadJSON(event)">
+      <button class="brand" onclick="window.print()">Download / Print PDF</button>
+      <button class="ghost" onclick="addRow()">Add line</button>
+      <button class="ghost" onclick="clearRows()">Clear lines</button>
+      <button class="ghost" onclick="saveJSON()">Save JSON</button>
+      <label class="ghost" style="cursor:pointer">Load JSON
+        <input type="file" accept=".json" style="display:none" onchange="loadJSON(event)">
       </label>
-      <button class="btn ghost" onclick="loadSample()">Load sample</button>
+      <button class="ghost" onclick="loadSample()">Load sample</button>
     </div>
 
     <div class="grid">
-      <!-- Form Panel -->
+      <!-- Form (left) -->
       <section class="panel form">
         <h2>Invoice details</h2>
         <div class="row">
           <div class="field k6">
-            <label>Exporter / Shipper</label>
-            <textarea id="exporter" placeholder="Verified Electronics Ltd&#10;Address line 1&#10;City, Postcode, Country&#10;EORI / VAT:"></textarea>
+            <label>From (Exporter/Shipper)</label>
+            <textarea id="from" placeholder="Verified Electronics Ltd&#10;Address&#10;City, Postcode, Country&#10;Tax ID/VAT / EORI"></textarea>
           </div>
-          <div class="field k6">
-            <label>Consignee (Bill To)</label>
-            <textarea id="consignee" placeholder="Company&#10;Address&#10;City, Postcode, Country&#10;VAT / Tax ID:"></textarea>
+          <div class="field k3">
+            <label>Waybill / AWB</label>
+            <input id="awb" type="text" placeholder="—">
+          </div>
+          <div class="field k3">
+            <label>Shipment ID</label>
+            <input id="shipmentId" type="text" placeholder="—">
           </div>
 
           <div class="field k6">
-            <label>Ship To (if different)</label>
-            <textarea id="shipTo" placeholder="Company&#10;Address&#10;City, Postcode, Country"></textarea>
+            <label>Ship To</label>
+            <textarea id="shipTo" placeholder="Company&#10;Address&#10;City, State/Province&#10;Postal Code, Country&#10;Tax ID/VAT"></textarea>
+          </div>
+          <div class="field k6">
+            <label>Sold To (Bill To)</label>
+            <textarea id="soldTo" placeholder="Company&#10;Address&#10;City, State/Province&#10;Postal Code, Country&#10;Tax ID/VAT"></textarea>
+          </div>
+
+          <div class="field k3">
+            <label>Contact Name</label>
+            <input id="contact" type="text">
           </div>
           <div class="field k3">
-            <label>Invoice No.</label>
+            <label>Date</label>
+            <input id="invDate" type="date">
+          </div>
+          <div class="field k3">
+            <label>Invoice # (Ref 1)</label>
             <input id="invNo" type="text" placeholder="VE-CI-0001">
           </div>
           <div class="field k3">
-            <label>Invoice Date</label>
-            <input id="invDate" type="date">
+            <label>PO # (Ref 2)</label>
+            <input id="poNo" type="text" placeholder="PO-12345">
           </div>
 
           <div class="field k3">
-            <label>Purchase Order #</label>
-            <input id="poNo" type="text" placeholder="PO-12345">
+            <label>Terms of Sale (Incoterm)</label>
+            <select id="incoterm">
+              <option>EXW</option><option>FCA</option><option>CPT</option><option>CIP</option>
+              <option selected>DAP</option><option>DPU</option><option>DDP</option>
+            </select>
+          </div>
+          <div class="field k3">
+            <label>Incoterm Place</label>
+            <input id="incotermPlace" type="text" placeholder="e.g., Austin, TX">
           </div>
           <div class="field k3">
             <label>Currency</label>
-            <select id="currency" onchange="updateCurrency()">
+            <select id="currency" onchange="sync()">
               <option value="USD" selected>USD $</option>
               <option value="GBP">GBP £</option>
               <option value="EUR">EUR €</option>
             </select>
           </div>
           <div class="field k3">
-            <label>Payment Terms</label>
-            <input id="paymentTerms" type="text" placeholder="TT in advance / Net 30">
-          </div>
-          <div class="field k3">
-            <label>Ship Method</label>
-            <input id="shipMethod" type="text" placeholder="FedEx Intl Priority">
-          </div>
-
-          <div class="field k4">
-            <label>Incoterms (place)</label>
-            <div class="row">
-              <div class="k5">
-                <select id="incoterm">
-                  <option value="EXW">EXW</option>
-                  <option value="FCA">FCA</option>
-                  <option value="CPT">CPT</option>
-                  <option value="CIP">CIP</option>
-                  <option value="DAP" selected>DAP</option>
-                  <option value="DPU">DPU</option>
-                  <option value="DDP">DDP</option>
-                </select>
-              </div>
-              <div class="k7">
-                <input id="incotermPlace" type="text" placeholder="e.g., Austin, TX">
-              </div>
-            </div>
-          </div>
-
-          <div class="field k4">
-            <label>Tracking / AWB</label>
-            <input id="tracking" type="text" placeholder="1234 5678 9012">
-          </div>
-          <div class="field k4">
             <label>Reason for Export</label>
-            <input id="exportReason" type="text" placeholder="Sale of goods">
+            <input id="reason" type="text" placeholder="Sale of goods">
           </div>
 
           <div class="field k3">
             <label>Total Packages</label>
-            <input id="packages" type="number" step="1" min="0" placeholder="1">
+            <input id="packages" type="number" step="1" min="0">
           </div>
           <div class="field k3">
-            <label>Total Net Weight (kg)</label>
-            <input id="netWeight" type="number" step="0.001" min="0" placeholder="10.00">
+            <label>Total Weight (kg)</label>
+            <input id="weight" type="number" step="0.001" min="0">
           </div>
-          <div class="field k3">
-            <label>Total Gross Weight (kg)</label>
-            <input id="grossWeight" type="number" step="0.001" min="0" placeholder="11.00">
-          </div>
-          <div class="field k3">
-            <label>Package Dimensions (optional)</label>
-            <input id="dims" type="text" placeholder='2 boxes, 60×45×45cm'>
+          <div class="field k6">
+            <label>Phone (optional)</label>
+            <input id="phone" type="text">
           </div>
         </div>
 
-        <h2 style="margin-top:14px">Line items</h2>
-        <table id="items">
+        <h2 style="margin-top:10px">Line items</h2>
+        <table id="editTable">
           <thead>
             <tr>
-              <th style="width:14%">Part No.</th>
-              <th style="width:22%">Description</th>
+              <th style="width:12%">Units</th>
+              <th style="width:10%">U/M</th>
+              <th>Description of Goods / Part Number</th>
               <th style="width:12%">HS Code</th>
-              <th style="width:10%">COO</th>
-              <th style="width:8%" class="num">Qty</th>
-              <th style="width:10%" class="num">Unit</th>
+              <th style="width:10%">C/O</th>
               <th style="width:12%" class="num">Unit Value</th>
-              <th style="width:12%" class="num">Line Total</th>
+              <th style="width:14%" class="num">Total Value</th>
               <th style="width:10%">Actions</th>
             </tr>
           </thead>
-          <tbody id="tbody">
-          </tbody>
+          <tbody id="tbody"></tbody>
         </table>
 
-        <div class="totals">
-          <div class="box">
-            <div class="small">Notes (shown on invoice)</div>
-            <textarea id="notes" placeholder="Any special instructions, license numbers, or references."></textarea>
+        <div class="row" style="margin-top:8px">
+          <div class="field k6">
+            <label>Additional Comments</label>
+            <textarea id="comments" placeholder="Licenses, special notes, packing declaration, etc."></textarea>
           </div>
-          <div class="box">
+          <div class="field k6">
             <div class="row">
               <div class="field k6">
                 <label>Freight</label>
-                <input id="freight" type="number" step="0.01" value="0" oninput="calcTotals()">
-              </div>
-              <div class="field k6">
-                <label>Other/Misc</label>
-                <input id="other" type="number" step="0.01" value="0" oninput="calcTotals()">
+                <input id="freight" type="number" step="0.01" value="0" oninput="sync()">
               </div>
               <div class="field k6">
                 <label>Insurance</label>
-                <input id="insurance" type="number" step="0.01" value="0" oninput="calcTotals()">
+                <input id="insurance" type="number" step="0.01" value="0" oninput="sync()">
               </div>
               <div class="field k6">
-                <label class="ctrl">
-                  <input id="autoIns" type="checkbox" onchange="calcTotals()"> Auto-calc insurance (%)
-                </label>
-                <input id="insRate" type="number" step="0.01" value="0.8" title="Percent" oninput="calcTotals()">
-                <div class="small" style="grid-column:span 12">Tip: If you insure on CIF basis, a common formula is (goods × 1.1 × 0.8%).</div>
+                <label>Other</label>
+                <input id="other" type="number" step="0.01" value="0" oninput="sync()">
               </div>
-            </div>
-            <div class="row">
-              <div class="k12" id="totalsView" style="text-align:right;font-weight:800;margin-top:10px"></div>
+              <div class="field k6">
+                <label>Discount/Rebate</label>
+                <input id="discount" type="number" step="0.01" value="0" oninput="sync()">
+              </div>
             </div>
           </div>
         </div>
 
-        <h2 style="margin-top:14px">Signature</h2>
+        <h2 style="margin-top:10px">Signature</h2>
         <div class="row">
           <div class="field k6">
-            <label>Signed by (name & title)</label>
+            <label>Signer (name & title)</label>
             <input id="signedBy" type="text" placeholder="Name, Title">
-          </div>
-          <div class="field k3">
-            <label>Place of issue</label>
-            <input id="place" type="text" placeholder="London, UK">
           </div>
           <div class="field k3">
             <label>Date of issue</label>
             <input id="issueDate" type="date">
           </div>
-          <div class="field k12">
-            <label>Signature image (PNG/JPG)</label>
+          <div class="field k3">
+            <label>Upload Signature (PNG/JPG)</label>
             <input id="sigFile" type="file" accept="image/*" onchange="loadSignature(event)">
           </div>
         </div>
       </section>
 
-      <!-- Preview Panel -->
-      <section class="panel preview">
+      <!-- Preview (right) -->
+      <section class="panel">
         <h2>Preview</h2>
         <div id="printArea" class="invoice">
-          <div class="titlebar">
-            <div class="brand">
+          <div class="hdr">
+            <div class="hdr-left">
               <div class="badge">
                 <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="VE">
               </div>
               <div>
-                <div class="doc-h1">Commercial Invoice</div>
-                <div class="muted">Verified Electronics — Internal Generator</div>
+                <div class="hdr-title">Commercial Invoice</div>
+                <div class="hdr-meta">Verified Electronics · Official customs invoice</div>
               </div>
             </div>
-            <div class="doc-meta" id="metaBox">
-              <!-- filled by JS -->
+            <div class="hdr-meta" id="metaBox"></div>
+          </div>
+
+          <div class="col-2">
+            <div class="box">
+              <div class="cap">From (Exporter/Shipper)</div>
+              <div id="v-from" style="white-space:pre-wrap"></div>
+            </div>
+            <div class="box">
+              <div class="cap">Waybill / Shipment</div>
+              <div id="v-shipmeta"></div>
             </div>
           </div>
 
-          <div id="addresses" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px">
-            <!-- filled by JS -->
+          <div class="col-2" style="margin-top:10px">
+            <div class="box">
+              <div class="cap">Ship To</div>
+              <div id="v-shipto" style="white-space:pre-wrap"></div>
+            </div>
+            <div class="box">
+              <div class="cap">Sold To (Bill To)</div>
+              <div id="v-soldto" style="white-space:pre-wrap"></div>
+            </div>
           </div>
 
-          <table id="previewTable">
+          <table style="margin-top:10px">
             <thead>
               <tr>
-                <th>Part No.</th>
-                <th>Description</th>
-                <th>HS Code</th>
-                <th>COO</th>
-                <th class="num">Qty</th>
-                <th class="num">Unit</th>
+                <th>Units</th>
+                <th>U/M</th>
+                <th>Description of Goods / Part Number</th>
+                <th>Harmonized Code</th>
+                <th>C/O</th>
                 <th class="num">Unit Value</th>
-                <th class="num">Line Total</th>
+                <th class="num">Total Value</th>
               </tr>
             </thead>
             <tbody id="pbody"></tbody>
             <tfoot>
               <tr>
-                <td colspan="8" id="tfootTotals" class="num" style="font-weight:800"></td>
+                <td colspan="7" id="lineTotalCell" class="num" style="font-weight:800"></td>
               </tr>
             </tfoot>
           </table>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+          <div class="totalsGrid">
             <div class="box">
-              <div class="small">Shipment details</div>
-              <div id="shipDetails"></div>
+              <div class="cap">Additional Comments</div>
+              <div id="v-comments" style="white-space:pre-wrap"></div>
             </div>
-            <div class="box">
-              <div class="small">Charges</div>
-              <div id="chargeDetails"></div>
-            </div>
+            <div class="box right" id="totalsBox"></div>
           </div>
 
           <div class="box" style="margin-top:10px">
-            <div class="small">Notes</div>
-            <div id="notesBox" style="white-space:pre-wrap"></div>
+            <div class="cap">Declaration Statement</div>
+            <div class="declaration">
+              I declare the information contained in this invoice to be true and correct and that the goods are
+              of the origin indicated. The goods are sold on the stated Incoterms. This document is issued for
+              customs purposes. These items may be subject to U.S., E.U., and other export controls and are
+              authorized for export only to the country of ultimate destination for use by the identified
+              consignee/end-user. They may not be resold, transferred, or otherwise disposed of to any other
+              country or person without prior authorization where required.
+            </div>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;align-items:center">
-            <div class="declaration">
-              I declare that the information contained in this invoice is true and correct and that the goods are of the
-              origin indicated. The goods are sold on the stated Incoterms. This document is issued for customs purposes.
+          <div class="signature">
+            <div>
+              <img id="sigImg" class="sigimg" alt="Signature" />
+              <div id="sigMeta" class="muted" style="margin-top:6px"></div>
             </div>
-            <div style="text-align:right">
-              <img id="sigImg" class="sig" alt="Signature" />
-              <div id="sigMeta" class="small muted"></div>
+            <div class="box">
+              <div class="trow"><span class="label">Total Number of Packages</span><span class="val" id="v-packages">—</span></div>
+              <div class="trow"><span class="label">Total Weight (kg)</span><span class="val" id="v-weight">—</span></div>
             </div>
           </div>
         </div>
@@ -382,32 +376,24 @@
   </div>
 
 <script>
-  // ----- Utilities -----
-  const $ = sel => document.querySelector(sel);
-  const $$ = sel => Array.from(document.querySelectorAll(sel));
-  const CURRENCY = { USD: "$", GBP: "£", EUR: "€" };
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const CUR = { USD:'$', GBP:'£', EUR:'€' };
 
-  function fmt(n){
-    if(n===null || n===undefined || isNaN(n)) return "0.00";
-    return Number(n).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
-  }
+  function fmt(n){ n=Number(n||0); return n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function sym(){ return CUR[$('#currency').value] || '$'; }
+  function esc(s=''){ return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
-  function currencySymbol(){ return CURRENCY[$('#currency').value] || "$"; }
-
-  // ----- Items table -----
-  function addRow(item={}){
+  function addRow(obj={}){
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input type="text" placeholder="Part No." value="${item.part||''}" oninput="sync()"></td>
-      <td><input type="text" placeholder="Description" value="${item.desc||''}" oninput="sync()"></td>
-      <td><input type="text" placeholder="HS Code" value="${item.hs||''}" oninput="sync()"></td>
-      <td><input type="text" placeholder="COO" value="${item.coo||''}" oninput="sync()"></td>
-      <td class="num"><input type="number" step="1" min="0" value="${item.qty??''}" oninput="sync()"></td>
-      <td class="num">
-        <input type="text" placeholder="pcs" value="${item.unit||'pcs'}" oninput="sync()">
-      </td>
-      <td class="num"><input type="number" step="0.01" min="0" value="${item.unitValue??''}" oninput="sync()"></td>
-      <td class="num line-total">0.00</td>
+      <td><input type="number" step="1" min="0" value="${obj.units??''}" oninput="sync()"></td>
+      <td><input type="text" value="${obj.um??'pcs'}" oninput="sync()"></td>
+      <td><input type="text" value="${obj.desc??''}" placeholder="Part number + description" oninput="sync()"></td>
+      <td><input type="text" value="${obj.hs??''}" placeholder="e.g., 854239" oninput="sync()"></td>
+      <td><input type="text" value="${obj.coo??''}" placeholder="C/O (COO), e.g., CN" oninput="sync()"></td>
+      <td class="num"><input type="number" step="0.01" min="0" value="${obj.unitValue??''}" oninput="sync()"></td>
+      <td class="num vtotal">0.00</td>
       <td>
         <button class="btn" onclick="dupRow(this)">Duplicate</button>
         <button class="btn danger" onclick="delRow(this)">Delete</button>
@@ -417,331 +403,192 @@
     sync();
   }
   function dupRow(btn){
-    const tds = btn.closest('tr').querySelectorAll('td');
-    const item = {
-      part: tds[0].querySelector('input').value,
-      desc: tds[1].querySelector('input').value,
-      hs: tds[2].querySelector('input').value,
-      coo: tds[3].querySelector('input').value,
-      qty: tds[4].querySelector('input').value,
-      unit: tds[5].querySelector('input').value,
-      unitValue: tds[6].querySelector('input').value
-    };
-    addRow(item);
+    const t = btn.closest('tr'); const v = [...t.querySelectorAll('input')].map(i=>i.value);
+    addRow({units:v[0],um:v[1],desc:v[2],hs:v[3],coo:v[4],unitValue:v[5]});
   }
-  function delRow(btn){
-    btn.closest('tr').remove();
-    sync();
-  }
-  function clearRows(){
-    $('#tbody').innerHTML = '';
-    sync();
-  }
+  function delRow(btn){ btn.closest('tr').remove(); sync(); }
+  function clearRows(){ $('#tbody').innerHTML=''; sync(); }
 
-  // ----- Calculations & Preview -----
-  function updateCurrency(){ sync(); }
-
-  function getItems(){
+  function items(){
     return $$('#tbody tr').map(tr=>{
-      const inputs = tr.querySelectorAll('input');
-      const item = {
-        part: inputs[0].value.trim(),
-        desc: inputs[1].value.trim(),
-        hs: inputs[2].value.trim(),
-        coo: inputs[3].value.trim(),
-        qty: parseFloat(inputs[4].value)||0,
-        unit: inputs[5].value.trim()||'pcs',
-        unitValue: parseFloat(inputs[6].value)||0
+      const [units,um,desc,hs,coo,unitValue] = tr.querySelectorAll('input');
+      const it = {
+        units: parseFloat(units.value)||0,
+        um: um.value||'pcs',
+        desc: desc.value.trim(),
+        hs: hs.value.trim(),
+        coo: coo.value.trim(),
+        unitValue: parseFloat(unitValue.value)||0
       };
-      item.lineTotal = item.qty * item.unitValue;
-      tr.querySelector('.line-total').textContent = fmt(item.lineTotal);
-      return item;
+      const total = it.units * it.unitValue;
+      tr.querySelector('.vtotal').textContent = fmt(total);
+      return {...it,total};
     });
-  }
-
-  function calcTotals(){
-    const items = getItems();
-    const goods = items.reduce((s,i)=>s + i.lineTotal, 0);
-    let freight = parseFloat($('#freight').value)||0;
-    let other = parseFloat($('#other').value)||0;
-    let insurance = parseFloat($('#insurance').value)||0;
-
-    if($('#autoIns').checked){
-      const rate = (parseFloat($('#insRate').value)||0)/100; // %
-      insurance = (goods * 1.1) * rate;
-      $('#insurance').value = insurance.toFixed(2);
-    }
-
-    const grand = goods + freight + other + insurance;
-    const sym = currencySymbol();
-
-    $('#totalsView').innerHTML = `
-      Goods: <b>${sym} ${fmt(goods)}</b>&nbsp; · &nbsp;
-      Freight: <b>${sym} ${fmt(freight)}</b>&nbsp; · &nbsp;
-      Insurance: <b>${sym} ${fmt(insurance)}</b>&nbsp; · &nbsp;
-      Other: <b>${sym} ${fmt(other)}</b>
-      <div style="margin-top:6px;font-size:18px">Total: <span style="font-weight:900">${sym} ${fmt(grand)}</span></div>
-    `;
-
-    // Preview footer totals
-    $('#tfootTotals').textContent = `Total: ${sym} ${fmt(grand)}`;
-
-    // Charges box
-    $('#chargeDetails').innerHTML = `
-      <div>Goods value: <b>${sym} ${fmt(goods)}</b></div>
-      <div>Freight: <b>${sym} ${fmt(freight)}</b></div>
-      <div>Insurance: <b>${sym} ${fmt(insurance)}</b></div>
-      <div>Other: <b>${sym} ${fmt(other)}</b></div>
-      <div style="margin-top:6px;font-weight:800">Grand total: ${sym} ${fmt(grand)}</div>
-    `;
   }
 
   function sync(){
-    const sym = currencySymbol();
-    const items = getItems();
+    const list = items();
+    const goods = list.reduce((s,i)=>s+i.total,0);
+    const discount = parseFloat($('#discount').value)||0;
+    const freight = parseFloat($('#freight').value)||0;
+    const insurance = parseFloat($('#insurance').value)||0;
+    const other = parseFloat($('#other').value)||0;
+    const subtotal = Math.max(goods - discount, 0);
+    const grand = subtotal + freight + insurance + other;
 
-    // Meta box
+    // Header meta
     const meta = [];
-    if($('#invNo').value) meta.push(`<div><b>Invoice #:</b> ${escapeHtml($('#invNo').value)}</div>`);
-    if($('#invDate').value) meta.push(`<div><b>Date:</b> ${formatDate($('#invDate').value)}</div>`);
-    if($('#poNo').value) meta.push(`<div><b>PO #:</b> ${escapeHtml($('#poNo').value)}</div>`);
-    meta.push(`<div><b>Currency:</b> ${$('#currency').value} ${sym}</div>`);
-    if($('#paymentTerms').value) meta.push(`<div><b>Payment terms:</b> ${escapeHtml($('#paymentTerms').value)}</div>`);
-    $('#metaBox').innerHTML = meta.join("");
+    if($('#invDate').value) meta.push(`<div><b>Date:</b> ${new Date($('#invDate').value).toLocaleDateString()}</div>`);
+    if($('#invNo').value) meta.push(`<div><b>Invoice #:</b> ${esc($('#invNo').value)}</div>`);
+    if($('#poNo').value) meta.push(`<div><b>PO #:</b> ${esc($('#poNo').value)}</div>`);
+    meta.push(`<div><b>Currency:</b> ${$('#currency').value} ${sym()}</div>`);
+    meta.push(`<div><b>Incoterms:</b> ${$('#incoterm').value} ${esc($('#incotermPlace').value)}</div>`);
+    if($('#reason').value) meta.push(`<div><b>Reason for export:</b> ${esc($('#reason').value)}</div>`);
+    $('#metaBox').innerHTML = meta.join('');
 
-    // Addresses
-    const addrLeft = `
-      <div class="box">
-        <div class="small">Exporter / Shipper</div>
-        <div>${nl2br(escapeHtml($('#exporter').value))||'<span class="muted">—</span>'}</div>
-      </div>
-      <div class="box">
-        <div class="small">Consignee (Bill To)</div>
-        <div>${nl2br(escapeHtml($('#consignee').value))||'<span class="muted">—</span>'}</div>
-      </div>
+    // From / Ship meta
+    $('#v-from').textContent = $('#from').value || '';
+    $('#v-shipto').textContent = $('#shipTo').value || '';
+    $('#v-soldto').textContent = $('#soldTo').value || '';
+    $('#v-packages').textContent = $('#packages').value || '—';
+    $('#v-weight').textContent = $('#weight').value || '—';
+    $('#v-shipmeta').innerHTML = `
+      <div><b>Waybill/AWB:</b> ${esc($('#awb').value||'—')}</div>
+      <div><b>Shipment ID:</b> ${esc($('#shipmentId').value||'—')}</div>
+      <div><b>Contact:</b> ${esc($('#contact').value||'—')}</div>
+      <div><b>Phone:</b> ${esc($('#phone').value||'—')}</div>
     `;
-    const addrRight = `
-      <div class="box">
-        <div class="small">Ship To</div>
-        <div>${nl2br(escapeHtml($('#shipTo').value))||'<span class="muted">—</span>'}</div>
-      </div>
-      <div class="box">
-        <div class="small">Incoterms & Shipping</div>
-        <div>
-          <div><b>Incoterms:</b> ${$('#incoterm').value} ${escapeHtml($('#incotermPlace').value)}</div>
-          <div><b>Ship method:</b> ${escapeHtml($('#shipMethod').value)||'—'}</div>
-          <div><b>Tracking/AWB:</b> ${escapeHtml($('#tracking').value)||'—'}</div>
-          <div><b>Reason for export:</b> ${escapeHtml($('#exportReason').value)||'—'}</div>
-        </div>
-      </div>
-    `;
-    $('#addresses').innerHTML = addrLeft + addrRight;
 
-    // Preview table
-    const pbody = $('#pbody');
-    pbody.innerHTML = '';
-    items.forEach(i=>{
+    // Preview table rows
+    const pb = $('#pbody'); pb.innerHTML='';
+    list.forEach(i=>{
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${escapeHtml(i.part)}</td>
-        <td>${escapeHtml(i.desc)}</td>
-        <td>${escapeHtml(i.hs)}</td>
-        <td>${escapeHtml(i.coo)}</td>
-        <td class="num">${fmt(i.qty)}</td>
-        <td class="num">${escapeHtml(i.unit||'pcs')}</td>
-        <td class="num">${sym} ${fmt(i.unitValue)}</td>
-        <td class="num">${sym} ${fmt(i.lineTotal)}</td>
+        <td>${fmt(i.units)}</td>
+        <td>${esc(i.um)}</td>
+        <td>${esc(i.desc)}</td>
+        <td>${esc(i.hs)}</td>
+        <td>${esc(i.coo)}</td>
+        <td class="num">${sym()} ${fmt(i.unitValue)}</td>
+        <td class="num">${sym()} ${fmt(i.total)}</td>
       `;
-      pbody.appendChild(tr);
+      pb.appendChild(tr);
     });
+    $('#lineTotalCell').textContent = `Invoice Line total: ${sym()} ${fmt(goods)}`;
 
-    // Shipment details
-    $('#shipDetails').innerHTML = `
-      <div>Packages: <b>${escapeHtml($('#packages').value||'—')}</b></div>
-      <div>Net weight: <b>${escapeHtml($('#netWeight').value||'—')}</b> kg</div>
-      <div>Gross weight: <b>${escapeHtml($('#grossWeight').value||'—')}</b> kg</div>
-      <div>Dimensions: <b>${escapeHtml($('#dims').value||'—')}</b></div>
+    // Totals box (official fields)
+    $('#totalsBox').innerHTML = `
+      <div class="trow"><span class="label">Invoice Sub-Total</span><span class="val">${sym()} ${fmt(subtotal)}</span></div>
+      <div class="trow"><span class="label">Freight</span><span class="val">${sym()} ${fmt(freight)}</span></div>
+      <div class="trow"><span class="label">Insurance</span><span class="val">${sym()} ${fmt(insurance)}</span></div>
+      <div class="trow"><span class="label">Other</span><span class="val">${sym()} ${fmt(other)}</span></div>
+      <div class="trow"><span class="label">Discount/Rebate</span><span class="val">-${sym()} ${fmt(discount)}</span></div>
+      <hr style="border:none;border-top:1px solid var(--line)">
+      <div class="trow"><span class="label" style="font-weight:800">Total Invoice amount</span><span class="val" style="font-size:16px">${sym()} ${fmt(grand)}</span></div>
+      <div class="muted" style="font-size:12px;margin-top:4px">Currency: ${$('#currency').value}</div>
     `;
 
-    // Notes
-    $('#notesBox').textContent = $('#notes').value || '';
+    $('#v-comments').textContent = $('#comments').value || '';
 
     // Signature meta
     const parts = [];
-    if($('#signedBy').value) parts.push(escapeHtml($('#signedBy').value));
-    if($('#place').value) parts.push(escapeHtml($('#place').value));
-    if($('#issueDate').value) parts.push(formatDate($('#issueDate').value));
+    if($('#signedBy').value) parts.push($('#signedBy').value);
+    if($('#issueDate').value) parts.push(new Date($('#issueDate').value).toLocaleDateString());
     $('#sigMeta').textContent = parts.join(' • ');
-
-    calcTotals();
   }
 
-  function generatePDF(){
-    // Use the browser's print to PDF for best fidelity
-    window.print();
-  }
-
-  function formatDate(v){
-    try{
-      const d = new Date(v);
-      if(isNaN(d)) return v;
-      return d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'});
-    }catch{ return v }
-  }
-  function nl2br(s){ return s.replace(/\n/g,'<br>'); }
-  function escapeHtml(s){
-    return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  }
-
-  // ----- Signature -----
   function loadSignature(e){
-    const file = e.target.files?.[0];
-    if(!file) return;
-    const r = new FileReader();
-    r.onload = ()=>{ $('#sigImg').src = r.result; }
-    r.readAsDataURL(file);
+    const f = e.target.files?.[0]; if(!f) return;
+    const r = new FileReader(); r.onload = ()=> $('#sigImg').src = r.result; r.readAsDataURL(f);
   }
 
-  // ----- Save/Load JSON -----
-  function collectState(){
+  function collect(){
     return {
-      exporter: $('#exporter').value,
-      consignee: $('#consignee').value,
-      shipTo: $('#shipTo').value,
-      invNo: $('#invNo').value,
-      invDate: $('#invDate').value,
-      poNo: $('#poNo').value,
-      currency: $('#currency').value,
-      paymentTerms: $('#paymentTerms').value,
-      shipMethod: $('#shipMethod').value,
-      incoterm: $('#incoterm').value,
-      incotermPlace: $('#incotermPlace').value,
-      tracking: $('#tracking').value,
-      exportReason: $('#exportReason').value,
-      packages: $('#packages').value,
-      netWeight: $('#netWeight').value,
-      grossWeight: $('#grossWeight').value,
-      dims: $('#dims').value,
-      notes: $('#notes').value,
-      freight: $('#freight').value,
-      insurance: $('#insurance').value,
-      other: $('#other').value,
-      autoIns: $('#autoIns').checked,
-      insRate: $('#insRate').value,
-      signedBy: $('#signedBy').value,
-      place: $('#place').value,
-      issueDate: $('#issueDate').value,
-      sigImg: $('#sigImg').src || '',
-      items: getItems().map(({part,desc,hs,coo,qty,unit,unitValue})=>({part,desc,hs,coo,qty,unit,unitValue}))
+      from: $('#from').value, shipTo: $('#shipTo').value, soldTo: $('#soldTo').value,
+      awb: $('#awb').value, shipmentId: $('#shipmentId').value, contact: $('#contact').value,
+      phone: $('#phone').value, invDate: $('#invDate').value, invNo: $('#invNo').value,
+      poNo: $('#poNo').value, incoterm: $('#incoterm').value, incotermPlace: $('#incotermPlace').value,
+      currency: $('#currency').value, reason: $('#reason').value,
+      packages: $('#packages').value, weight: $('#weight').value,
+      comments: $('#comments').value, freight: $('#freight').value, insurance: $('#insurance').value,
+      other: $('#other').value, discount: $('#discount').value,
+      signedBy: $('#signedBy').value, issueDate: $('#issueDate').value, sigImg: $('#sigImg').src || '',
+      items: items().map(({units,um,desc,hs,coo,unitValue})=>({units,um,desc,hs,coo,unitValue}))
     };
   }
-  function applyState(s){
-    $('#exporter').value = s.exporter||'';
-    $('#consignee').value = s.consignee||'';
-    $('#shipTo').value = s.shipTo||'';
-    $('#invNo').value = s.invNo||'';
-    $('#invDate').value = s.invDate||'';
-    $('#poNo').value = s.poNo||'';
-    $('#currency').value = s.currency||'USD';
-    $('#paymentTerms').value = s.paymentTerms||'';
-    $('#shipMethod').value = s.shipMethod||'';
-    $('#incoterm').value = s.incoterm||'DAP';
-    $('#incotermPlace').value = s.incotermPlace||'';
-    $('#tracking').value = s.tracking||'';
-    $('#exportReason').value = s.exportReason||'';
-    $('#packages').value = s.packages||'';
-    $('#netWeight').value = s.netWeight||'';
-    $('#grossWeight').value = s.grossWeight||'';
-    $('#dims').value = s.dims||'';
-    $('#notes').value = s.notes||'';
-    $('#freight').value = s.freight||0;
-    $('#insurance').value = s.insurance||0;
-    $('#other').value = s.other||0;
-    $('#autoIns').checked = !!s.autoIns;
-    $('#insRate').value = s.insRate||0.8;
-    $('#signedBy').value = s.signedBy||'';
-    $('#place').value = s.place||'';
-    $('#issueDate').value = s.issueDate||'';
-    if(s.sigImg) $('#sigImg').src = s.sigImg;
+  function apply(s){
+    $('#from').value = s.from||''; $('#shipTo').value=s.shipTo||''; $('#soldTo').value=s.soldTo||'';
+    $('#awb').value=s.awb||''; $('#shipmentId').value=s.shipmentId||''; $('#contact').value=s.contact||'';
+    $('#phone').value=s.phone||''; $('#invDate').value=s.invDate||''; $('#invNo').value=s.invNo||'';
+    $('#poNo').value=s.poNo||''; $('#incoterm').value=s.incoterm||'DAP'; $('#incotermPlace').value=s.incotermPlace||'';
+    $('#currency').value=s.currency||'USD'; $('#reason').value=s.reason||'';
+    $('#packages').value=s.packages||''; $('#weight').value=s.weight||'';
+    $('#comments').value=s.comments||''; $('#freight').value=s.freight||0; $('#insurance').value=s.insurance||0;
+    $('#other').value=s.other||0; $('#discount').value=s.discount||0;
+    $('#signedBy').value=s.signedBy||''; $('#issueDate').value=s.issueDate||'';
+    if(s.sigImg) $('#sigImg').src=s.sigImg;
 
     clearRows();
-    (s.items||[]).forEach(it=>addRow(it));
+    (s.items||[]).forEach(addRow);
     if(!s.items || !s.items.length) addRow();
     sync();
   }
   function saveJSON(){
-    const data = collectState();
-    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    const name = data.invNo ? data.invNo.replace(/[^a-z0-9-_]/gi,'_') : 'commercial-invoice';
-    a.download = `${name}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    const blob = new Blob([JSON.stringify(collect(),null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download = `${($('#invNo').value||'commercial-invoice').replace(/[^a-z0-9-_]/gi,'_')}.json`;
+    a.click(); URL.revokeObjectURL(a.href);
   }
   function loadJSON(e){
-    const file = e.target.files?.[0];
-    if(!file) return;
-    const r = new FileReader();
-    r.onload = () => {
-      try{ const s = JSON.parse(r.result); applyState(s); }
-      catch{ alert('Invalid JSON file'); }
-    };
-    r.readAsText(file);
+    const f = e.target.files?.[0]; if(!f) return;
+    const r=new FileReader(); r.onload=()=>{ try{apply(JSON.parse(r.result));}catch{alert('Invalid JSON');} };
+    r.readAsText(f);
   }
 
-  // ----- Sample -----
   function loadSample(){
     const today = new Date().toISOString().slice(0,10);
-    applyState({
-      exporter: "Verified Electronics Ltd\n1 Example Street\nChichester, PO19 1AA, UK\nEORI/VAT: GB123456789",
-      consignee: "Acme Devices Inc.\n500 Market St\nAustin, TX 78701, USA\nTAX ID: 12-3456789",
-      shipTo: "Acme Devices Inc. Warehouse\n1000 Logistics Dr\nDallas, TX 75001, USA",
-      invNo: "VE-CI-1024",
+    apply({
+      from: "Verified Electronics Ltd\n1 Example Street\nChichester, PO19 1AA, UK\nEORI/VAT: GB123456789",
+      shipTo: "Acme Devices Inc.\n1000 Logistics Dr\nDallas, TX 75001, USA\nTAX ID: 12-3456789",
+      soldTo: "Acme Devices Inc.\n500 Market St\nAustin, TX 78701, USA\nTAX ID: 12-3456789",
+      awb: "7790 1234 5678",
+      shipmentId: "SHIP-8891",
+      contact: "Jane Buyer",
+      phone: "+1 (512) 555-0199",
       invDate: today,
+      invNo: "VE-CI-1025",
       poNo: "PO-78910",
-      currency: "USD",
-      paymentTerms: "TT in advance",
-      shipMethod: "FedEx International Priority",
       incoterm: "DAP",
       incotermPlace: "Austin, TX",
-      tracking: "7790 1234 5678",
-      exportReason: "Sale of goods",
+      currency: "USD",
+      reason: "Sale of goods",
       packages: "2",
-      netWeight: "18.4",
-      grossWeight: "20.0",
-      dims: "2 boxes, 60×45×45cm",
-      notes: "No wood packaging materials used.\nNon-hazardous electronic components.",
-      freight: 120.00,
-      insurance: 0,
+      weight: "20.0",
+      comments: "No wood packaging materials used. Non-hazardous electronic components.",
+      freight: 120,
+      insurance: 40,
       other: 0,
-      autoIns: true,
-      insRate: 0.8,
+      discount: 0,
       signedBy: "Nick North, Director",
-      place: "Chichester, UK",
       issueDate: today,
       items: [
-        {part:"IPF015N10N5ATMA1", desc:"MOSFET 100V 150A", hs:"854129", coo:"CN", qty:1000, unit:"pcs", unitValue:1.92},
-        {part:"DS1644-120+", desc:"RTC + NV SRAM 120ns", hs:"854232", coo:"PH", qty:40, unit:"pcs", unitValue:66.90}
+        {units:1000, um:"pcs", desc:"IPF015N10N5ATMA1 — MOSFET 100V 150A", hs:"854129", coo:"CN", unitValue:1.92},
+        {units:40, um:"pcs", desc:"DS1644-120+ — RTC + NV SRAM 120ns", hs:"854232", coo:"PH", unitValue:66.90}
       ]
     });
   }
 
-  // ----- Init -----
+  // Init
   window.addEventListener('load', ()=>{
-    // Default one row
     if(!$('#tbody').children.length) addRow();
-    // Set default dates
-    const today = new Date().toISOString().slice(0,10);
-    $('#invDate').value = today;
-    $('#issueDate').value = today;
-    sync();
-    // Live sync
+    const d = new Date().toISOString().slice(0,10);
+    $('#invDate').value = d; $('#issueDate').value = d;
     $$('.form input, .form textarea, .form select').forEach(el=>{
-      el.addEventListener('input', sync);
-      el.addEventListener('change', sync);
+      el.addEventListener('input', sync); el.addEventListener('change', sync);
     });
+    sync();
   });
 </script>
 </body>
 </html>
+
