@@ -26,12 +26,12 @@
   .sub{color:var(--muted);margin-top:2px}
 
   .toolbar{display:grid;grid-template-columns:1fr 190px 170px 170px auto auto;gap:10px;margin:16px 0}
-  .input,.select,.btn{height:36px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:0 12px;font:inherit}
+  .input,.select,.btn, textarea{height:36px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:0 12px;font:inherit}
   .input{width:100%}
+  textarea{height:auto;padding:10px 12px;resize:vertical}
   .select{appearance:none;padding-right:28px;background-image:
     linear-gradient(45deg, transparent 50%, #869 50%),
-    linear-gradient(135deg, #869 50%, transparent 50%);
-    background-position:calc(100% - 16px) calc(50% - 2px), calc(100% - 10px) calc(50% - 2px);
+    linear-gradient(135deg, #869 50%, transparent 50%);background-position:calc(100% - 16px) calc(50% - 2px), calc(100% - 10px) calc(50% - 2px);
     background-size:6px 6px, 6px 6px;background-repeat:no-repeat}
   .btn{background:#f7f5ff;color:var(--purple);border-color:#ece8ff;font-weight:700;cursor:pointer}
   .btn:hover{background:#eee8ff}
@@ -84,7 +84,7 @@
   .hscroll table{min-width:1100px}
   .right{display:flex;justify-content:flex-end;gap:8px;margin:10px 0 2px}
 
-  /* View summary */
+  /* View / Summary cards */
   .summary{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
   .card{border:1px solid var(--line);border-radius:12px;background:#fff}
   .card h3{margin:0;padding:8px 10px;border-bottom:1px solid var(--line);background:#fafaff;font-size:15px}
@@ -280,6 +280,11 @@
             <div class="note">Test Report (file)</div>
             <input id="file_test" type="file" class="input mini" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"/>
           </div>
+          <div>
+            <div class="note">Notes</div>
+            <!-- CHANGED: textarea for notes -->
+            <textarea id="notes" rows="2" class="input mini" placeholder="Internal notes..."></textarea>
+          </div>
         </div>
 
         <div class="section">Shipments — legs & partials (unified)</div>
@@ -312,13 +317,27 @@
             <div class="note">Test cost</div>
             <input id="test_cost" type="number" step="0.01" class="input mini mono" placeholder="0.00"/>
           </div>
-          <div>
-            <div class="note">Notes</div>
-            <input id="notes" class="input mini"/>
+          <div></div>
+        </div>
+
+        <!-- CHANGED: Financial summary box -->
+        <div class="card" style="margin-top:12px">
+          <h3>Financial Summary</h3>
+          <div class="pad">
+            <div class="kv">
+              <div>Total Qty</div><div id="finQty" class="mono">0</div>
+              <div>Sell (Revenue)</div><div id="finSell" class="mono">$0.00</div>
+              <div>Item Cost</div><div id="finItemCost" class="mono">$0.00</div>
+              <div>Shipping Cost</div><div id="finShipCost" class="mono">$0.00</div>
+              <div>Test Cost</div><div id="finTestCost" class="mono">$0.00</div>
+              <div>Total Cost</div><div id="finTotalCost" class="mono">$0.00</div>
+              <div>GP</div><div id="finGP" class="mono">$0.00</div>
+              <div>GP %</div><div id="finGPPct" class="mono">0%</div>
+            </div>
           </div>
         </div>
 
-        <div class="right">
+        <div class="right" style="margin-top:10px">
           <button id="btnDelete" class="btn ghost" type="button">Delete</button>
           <button id="btnSave" class="btn primary" type="button">Save</button>
         </div>
@@ -407,13 +426,11 @@ const supa = {
       vendor:rec.vendor, incoterm:rec.incoterm,
       shipping_cost_extra:rec.shipping_cost_extra, test_cost:rec.test_cost,
       notes:rec.notes
-      // do NOT include shipped/invoiced here to avoid errors on DBs without these columns
     };
     const {data:up, error:e1} = await supabase.from('orders').upsert(header).select().single();
     if(e1) throw e1;
     const order_id=up.id;
 
-    // replace children
     await supabase.from('order_items').delete().eq('order_id',order_id);
     await supabase.from('ship_legs').delete().eq('order_id',order_id);
     await supabase.from('shipments_inbound').delete().eq('order_id',order_id);
@@ -443,7 +460,7 @@ const supa = {
       })));
     }
 
-    // Optional: if these columns exist, persist them (ignore if not)
+    // Optional flags (update only if columns exist)
     await this.quickUpdate(order_id, 'is_shipped', rec.is_shipped, true);
     await this.quickUpdate(order_id, 'is_invoiced', rec.is_invoiced, true);
 
@@ -470,10 +487,7 @@ const supa = {
       const { error } = await supabase.from('orders').update({ [field]: value }).eq('id', id);
       if(error) throw error;
     }catch(e){
-      // Unknown column -> ignore if requested
-      if(silentIfMissing && String(e?.message||'').toLowerCase().includes('column')){
-        return;
-      }
+      if(silentIfMissing && String(e?.message||'').toLowerCase().includes('column')) return;
       throw e;
     }
   },
@@ -501,8 +515,9 @@ function addItemRow(v={part_number:'',date_codes:'',qty:'',unit_sell:'',unit_cos
     <td><input type="number" step="0.01" class="input mini mono" value="${v.unit_sell||''}"/></td>
     <td><input type="number" step="0.01" class="input mini mono" value="${v.unit_cost||''}"/></td>
     <td class="right"></td>`;
-  tr.lastElementChild.appendChild(button('−','ghost',()=>tr.remove()));
+  tr.lastElementChild.appendChild(button('−','ghost',()=>{ tr.remove(); recalcFinance(); }));
   $('itemsBody').appendChild(tr);
+  recalcFinance();
 }
 function itemsFromDOM(){
   return [...$('itemsBody').querySelectorAll('tr')].map(tr=>{
@@ -532,8 +547,9 @@ function addShipRow(v={kind:'Leg',date:'',qty:'',from:'',to:'',method:'',ref:'',
     <td><input class="input mini" value="${v.tracking||''}"/></td>
     <td><input type="number" step="0.01" class="input mini mono" value="${v.cost||''}"/></td>
     <td class="right"></td>`;
-  tr.lastElementChild.appendChild(button('−','ghost',()=>tr.remove()));
+  tr.lastElementChild.appendChild(button('−','ghost',()=>{ tr.remove(); recalcFinance(); }));
   $('shipBody').appendChild(tr);
+  recalcFinance();
 }
 function shipsFromDOM(){
   return [...$('shipBody').querySelectorAll('tr')].map(tr=>{
@@ -563,10 +579,10 @@ function totals(o){
   const gp = revenue - cost;
   const gpPct = revenue ? (gp/revenue)*100 : 0;
   const avgUnit = qty ? (revenue/qty) : 0;
-  return {revenue,cost,gp,gpPct,qty,avgUnit};
+  return {revenue,cost,gp,gpPct,qty,avgUnit,itemCost,shipCost,testCost};
 }
 
-/* ---------- render list ---------- */
+/* ---------- render list (fixed View button) ---------- */
 function makeInlineSelectCell(order, field, options){
   const wrap = document.createElement('div'); wrap.className='ie';
   const chip = document.createElement('span'); chip.className='chip'; chip.textContent = order[field] || '-';
@@ -574,13 +590,9 @@ function makeInlineSelectCell(order, field, options){
   const sel = document.createElement('select'); options.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o)});
   sel.value = options.includes(order[field]) ? order[field] : options[0];
 
-  btn.onclick=()=>{ wrap.classList.add('editing'); sel.focus(); };
-  sel.onchange=async()=>{
-    try{
-      await supa.quickUpdate(order.id, field, sel.value);
-      await supa.loadOrders(); render();
-    }catch(e){ alert('Update failed'); console.error(e); }
-  };
+  const startEdit=()=>{ wrap.classList.add('editing'); sel.focus(); };
+  btn.onclick=startEdit; chip.style.cursor='pointer'; chip.onclick=startEdit;
+  sel.onchange=async()=>{ try{ await supa.quickUpdate(order.id, field, sel.value); await supa.loadOrders(); render(); }catch(e){ alert('Update failed'); console.error(e); } };
   sel.onblur=()=>wrap.classList.remove('editing');
 
   wrap.append(chip, btn, sel);
@@ -599,6 +611,7 @@ function render(){
   });
 
   const tb=$('tbody'); tb.innerHTML='';
+
   rows.forEach(o=>{
     const {revenue,gp,gpPct,qty,avgUnit} = totals(o);
     const parts = (o.items?.length? o.items[0].part_number+(o.items.length>1? ` +${o.items.length-1} more`: '') : '-');
@@ -609,60 +622,62 @@ function render(){
     const tr=document.createElement('tr');
 
     // View
-    const tdView=document.createElement('td'); const viewBtn=button('View','ghost',()=>openView(o)); tdView.appendChild(viewBtn); tr.appendChild(tdView);
+    let td=document.createElement('td');
+    td.appendChild(button('View','ghost',()=>openView(o)));
+    tr.appendChild(td);
 
-    tr.innerHTML += `
-      <td>${o.customer||'-'}</td>
-      <td>${parts}</td>
-      <td>${o.salesperson||'-'}</td>
-      <td class="mono">${fmtInt(qty)}</td>
-      <td class="mono">${sym}${fmt(avgUnit)}</td>
-      <td class="mono">${sym}${fmt(revenue)}</td>
-      <td><span class="pill">${sym}${fmt(gp)}</span> <span class="muted mono">(${fmt(gpPct)}%)</span></td>
-      <td><span class="chip">${o.priority||'-'}</span></td>
-    `;
+    const cells = [
+      o.customer||'-',
+      parts,
+      o.salesperson||'-',
+      {html: `<span class="mono">${fmtInt(qty)}</span>`},
+      {html: `<span class="mono">${sym}${fmt(avgUnit)}</span>`},
+      {html: `<span class="mono">${sym}${fmt(revenue)}</span>`},
+      {html: `<span class="pill">${sym}${fmt(gp)}</span> <span class="muted mono">(${fmt(gpPct)}%)</span>`},
+      {html: `<span class="chip">${o.priority||'-'}</span>`},
+    ];
+    cells.forEach(c=>{
+      const td=document.createElement('td');
+      if(typeof c==='string') td.textContent=c;
+      else td.innerHTML=c.html;
+      tr.appendChild(td);
+    });
 
     // Inline Status
-    const tdStatus=document.createElement('td');
-    tdStatus.appendChild(makeInlineSelectCell(o,'status',['New','Open','Closed']));
-    tr.appendChild(tdStatus);
+    td=document.createElement('td'); td.appendChild(makeInlineSelectCell(o,'status',['New','Open','Closed'])); tr.appendChild(td);
 
-    tr.innerHTML += `
-      <td class="mono">${o.order_date||'-'}</td>
-      <td class="mono">${o.requested_by||'-'}</td>
-      <td class="mono">${ageDays(o.order_date)}</td>
-      <td>${o.tests||'-'}</td>
-      <td>${o.vendor||'-'}</td>
-      <td>${o.incoterm||'-'}</td>
-    `;
+    // Dates, age, tests, vendor, incoterm
+    const tail = [
+      o.order_date||'-',
+      o.requested_by||'-',
+      ageDays(o.order_date),
+      o.tests||'-',
+      o.vendor||'-',
+      o.incoterm||'-'
+    ];
+    tail.forEach(val=>{ const td=document.createElement('td'); td.textContent=val; tr.appendChild(td); });
 
     // Inline Terms
-    const tdTerms=document.createElement('td');
-    tdTerms.appendChild(makeInlineSelectCell(o,'payment_terms',
-      ['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90']));
-    tr.appendChild(tdTerms);
+    td=document.createElement('td'); td.appendChild(makeInlineSelectCell(o,'payment_terms',['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90'])); tr.appendChild(td);
 
-    // Shipped / Invoiced (silent if columns missing)
-    const chk = (name,val)=>{ const c=document.createElement('input'); c.type='checkbox'; c.checked=!!val;
+    // Shipped / Invoiced
+    const mkChk=(name,val)=>{ const c=document.createElement('input'); c.type='checkbox'; c.checked=!!val;
       c.onchange=async()=>{ try{ await supa.quickUpdate(o.id,name,c.checked,true);}catch(e){ console.warn(e);} };
       return c;
     };
-    const tdShip=document.createElement('td'); tdShip.appendChild(chk('is_shipped',o.is_shipped)); tr.appendChild(tdShip);
-    const tdInv=document.createElement('td'); tdInv.appendChild(chk('is_invoiced',o.is_invoiced)); tr.appendChild(tdInv);
+    td=document.createElement('td'); td.appendChild(mkChk('is_shipped',o.is_shipped)); tr.appendChild(td);
+    td=document.createElement('td'); td.appendChild(mkChk('is_invoiced',o.is_invoiced)); tr.appendChild(td);
 
     // Files
-    const tdFiles=document.createElement('td');
-    tdFiles.innerHTML = [poUrl?`<a class="link" target="_blank" href="${poUrl}">PO</a>`:'', testUrl?`<a class="link" target="_blank" href="${testUrl}">Test</a>`:'']
-      .filter(Boolean).join(' · ')||'';
-    tr.appendChild(tdFiles);
+    td=document.createElement('td');
+    td.innerHTML = [poUrl?`<a class="link" target="_blank" href="${poUrl}">PO</a>`:'', testUrl?`<a class="link" target="_blank" href="${testUrl}">Test</a>`:''].filter(Boolean).join(' · ')||'';
+    tr.appendChild(td);
 
     // Actions
-    const act=document.createElement('td'); act.className='actions';
-    act.append(
-      button('Edit','ghost',()=>openModal(o)),
-      button('Delete','ghost',async()=>{ if(!confirm('Delete this order?'))return; await supa.deleteOrder(o.id); await supa.loadOrders(); render(); })
-    );
-    tr.appendChild(act);
+    td=document.createElement('td'); td.className='actions';
+    td.appendChild(button('Edit','ghost',()=>openModal(o)));
+    td.appendChild(button('Delete','ghost',async()=>{ if(!confirm('Delete this order?'))return; await supa.deleteOrder(o.id); await supa.loadOrders(); render(); }));
+    tr.appendChild(td);
 
     tb.appendChild(tr);
   });
@@ -709,24 +724,25 @@ function openModal(o){
   $('test_center').value = (['GETs HK','GETs Shenzhen','GETs US','White Horse US','White Horse China','White Horse EU'].includes(o?.test_center)) ? o.test_center : 'Other';
 
   $('vendor').value = o?.vendor || '';
+  $('notes').value  = o?.notes  || '';  // CHANGED: textarea
 
   $('itemsBody').innerHTML=''; (o?.items?.length?o.items:[{}]).forEach(addItemRow);
   $('shipBody').innerHTML=''; (o?.shipments||[]).forEach(addShipRow);
 
   $('shipping_cost_extra').value = o?.shipping_cost_extra ?? '';
   $('test_cost').value = o?.test_cost ?? '';
-  $('notes').value = o?.notes || '';
 
   $('file_po').value=''; $('file_test').value='';
+
   $('btnDelete').style.display = o?.id ? '' : 'none';
 
-  // After prefill, take a snapshot for dirty-checking (exclude id)
-  _snapshot = snapshotRecord(collectRecord(/*preview*/true));
+  // After prefill, snapshot for dirty check and show
+  _snapshot = snapshotRecord(collectRecord(true));
   $('dlg').showModal();
+  recalcFinance(); // CHANGED: compute on open
 }
 
 function collectRecord(preview=false){
-  // For "new" we keep id blank in preview snapshot to avoid churn
   const id = $('orderId').value || (preview ? '' : crypto.randomUUID());
 
   const checks=[...$('testsLine').querySelectorAll('input[type="checkbox"]')];
@@ -764,7 +780,6 @@ function collectRecord(preview=false){
     shipping_cost_extra:Number($('shipping_cost_extra').value||0),
     test_cost:Number($('test_cost').value||0),
     notes:$('notes').value.trim()||null,
-    // optional flags (saved only if DB supports)
     is_shipped:false,
     is_invoiced:false
   };
@@ -792,14 +807,33 @@ function maybeCloseDialog(){
   $('dlg').close(); return true;
 }
 $('btnClose').onclick=()=>maybeCloseDialog();
-$('dlg').addEventListener('cancel', (e)=>{ // Esc
-  const ok = maybeCloseDialog();
-  if(!ok) e.preventDefault();
-});
+$('dlg').addEventListener('cancel', (e)=>{ const ok = maybeCloseDialog(); if(!ok) e.preventDefault(); });
 
 /* add rows */
 $('addItem').onclick=()=>addItemRow({});
 $('addShip').onclick=()=>addShipRow({});
+
+/* live finance summary (delegated) */
+['itemsBody','shipBody'].forEach(id=>{
+  $(id).addEventListener('input',recalcFinance);
+  $(id).addEventListener('change',recalcFinance);
+});
+['shipping_cost_extra','test_cost','currency'].forEach(id=>$(id).addEventListener('input',recalcFinance));
+['shipping_cost_extra','test_cost','currency'].forEach(id=>$(id).addEventListener('change',recalcFinance));
+
+function recalcFinance(){
+  const rec = collectRecord(true);
+  const t = totals(rec);
+  const sym = curSym(rec.currency);
+  $('finQty').textContent = fmtInt(t.qty);
+  $('finSell').textContent = sym+fmt(t.revenue);
+  $('finItemCost').textContent = sym+fmt(t.itemCost);
+  $('finShipCost').textContent = sym+fmt(t.shipCost);
+  $('finTestCost').textContent = sym+fmt(t.testCost);
+  $('finTotalCost').textContent = sym+fmt(t.cost);
+  $('finGP').textContent = sym+fmt(t.gp);
+  $('finGPPct').textContent = fmt(t.gpPct)+'%';
+}
 
 /* save / delete */
 $('btnSave').onclick=async()=>{
@@ -831,7 +865,7 @@ $('btnCsv').onclick=()=>{
 
 /* view summary */
 function openView(o){
-  const {revenue,gp,gpPct,qty,avgUnit} = totals(o);
+  const {revenue,gp,gpPct,qty,avgUnit,itemCost,shipCost,testCost,cost} = totals(o);
   const sym = curSym(o.currency);
   const files = window._sessionFiles?.[o.id]||{};
   const partsRows = (o.items||[]).map(i=>`
@@ -863,9 +897,11 @@ function openView(o){
       <div>Total Qty</div><div class="mono">${fmtInt(qty)}</div>
       <div>Avg Unit</div><div class="mono">${sym}${fmt(avgUnit)}</div>
       <div>Sell</div><div class="mono">${sym}${fmt(revenue)}</div>
+      <div>Item Cost</div><div class="mono">${sym}${fmt(itemCost)}</div>
+      <div>Shipping Cost</div><div class="mono">${sym}${fmt(shipCost)}</div>
+      <div>Test Cost</div><div class="mono">${sym}${fmt(testCost)}</div>
+      <div>Total Cost</div><div class="mono">${sym}${fmt(cost)}</div>
       <div>GP</div><div><span class="pill">${sym}${fmt(gp)}</span> <span class="muted mono">(${fmt(gpPct)}%)</span></div>
-      <div>Extra Shipping</div><div class="mono">${o.shipping_cost_extra? sym+fmt(o.shipping_cost_extra):'-'}</div>
-      <div>Test Cost</div><div class="mono">${o.test_cost? sym+fmt(o.test_cost):'-'}</div>
       <div>Files</div><div>
         ${files.poUrl?`<a class="link" target="_blank" href="${files.poUrl}">PO</a>`:''}
         ${files.testUrl?` · <a class="link" target="_blank" href="${files.testUrl}">Test</a>`:''}
@@ -906,10 +942,3 @@ init();
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
