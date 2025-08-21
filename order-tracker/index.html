@@ -48,30 +48,31 @@
   .link{color:#362dc7;text-decoration:none}
   .link:hover{text-decoration:underline}
 
-  /* ---------- Modal (clean, centered, no sideways scroll) ---------- */
-  dialog{border:0;padding:0;margin:0 auto;max-width:1000px;width:96vw}
+  /* ---------- Modal (clean, centered, scrollable) ---------- */
+  dialog{border:0;padding:0;margin:0 auto;max-width:1200px;width:96vw}
   dialog::backdrop{background:rgba(17,17,33,.35)}
   .modal{display:flex;flex-direction:column;max-height:90vh;border-radius:18px;overflow:hidden;background:#fff}
   .modal header{position:sticky;top:0;z-index:2;border-bottom:1px solid var(--line);border-radius:18px 18px 0 0;background:#fff}
   .modal .head{padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
-  .content{padding:16px;overflow:auto;max-height:calc(90vh - 58px);overscroll-behavior:contain}
+  .content{padding:16px;overflow:auto;overflow-x:auto; /* allow horizontal scroll when needed */ max-height:calc(90vh - 58px);overscroll-behavior:contain}
+
   .grid2,.grid3{gap:12px}
   .grid2{display:grid;grid-template-columns:1fr 1fr}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr}
   .section{margin:16px 0 8px;font-weight:800;color:#262b3a}
   .row{display:flex;gap:8px;align-items:center}
   .tbl{width:100%;border-collapse:collapse;table-layout:fixed}
-  .tbl th,.tbl td{border:1px solid #ececf3;padding:8px;text-align:left}
+  .tbl th,.tbl td{border:1px solid #ececf3;padding:8px;text-align:left;white-space:nowrap}
   .tbl th{background:#fafaff}
-  .tbl td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .mini{height:34px}
   .right{display:flex;justify-content:flex-end;gap:8px;margin:12px 0 4px}
   .note{font-size:12px;color:var(--muted)}
   input,select,textarea{min-width:0}
-  .content{overflow-x:hidden}
-  .checkline{display:flex;flex-wrap:wrap;gap:10px}
-  .checkline label{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;border:1px solid #ececf3;border-radius:999px;background:#fff;font-size:13px}
-  .checkline input[type="checkbox"]{accent-color:var(--brand)}
+
+  /* scroll wrappers for dense tables in the modal */
+  .hscroll{overflow:auto;border:1px solid #ececf3;border-radius:12px;background:#fff}
+  .hscroll table{min-width:1100px}
+  .content{padding-bottom:80px}
 
   @media (max-width:960px){
     .toolbar{grid-template-columns:1fr 1fr 1fr auto auto;gap:8px}
@@ -216,17 +217,19 @@
         </div>
 
         <div class="section">Line Items — parts, date codes & pricing</div>
-        <table class="tbl" id="itemsTbl">
-          <thead><tr>
-            <th style="width:22%">Part Number</th>
-            <th style="width:18%">Date Codes</th>
-            <th style="width:10%">Qty</th>
-            <th style="width:12%">Unit Sell</th>
-            <th style="width:12%">Unit Cost</th>
-            <th style="width:8%"></th>
-          </tr></thead>
-          <tbody id="itemsBody"></tbody>
-        </table>
+        <div class="hscroll">
+          <table class="tbl" id="itemsTbl">
+            <thead><tr>
+              <th style="width:26%">Part Number</th>
+              <th style="width:18%">Date Codes</th>
+              <th style="width:10%">Qty</th>
+              <th style="width:16%">Unit Sell</th>
+              <th style="width:16%">Unit Cost</th>
+              <th style="width:8%"></th>
+            </tr></thead>
+            <tbody id="itemsBody"></tbody>
+          </table>
+        </div>
         <div class="right"><button id="addItem" class="btn mini" type="button">+ Add item</button></div>
 
         <!-- PURCHASING -->
@@ -253,22 +256,24 @@
         </div>
 
         <div class="section">Shipments — legs & partials (unified)</div>
-        <table class="tbl" id="shipTbl">
-          <thead><tr>
-            <th style="width:10%">Kind</th>
-            <th style="width:12%">Date</th>
-            <th style="width:10%">Qty</th>
-            <th style="width:15%">From</th>
-            <th style="width:15%">To</th>
-            <th style="width:12%">Method</th>
-            <th style="width:10%">Ref</th>
-            <th style="width:12%">Courier</th>
-            <th style="width:16%">Tracking</th>
-            <th style="width:10%">Cost</th>
-            <th style="width:6%"></th>
-          </tr></thead>
-          <tbody id="shipBody"></tbody>
-        </table>
+        <div class="hscroll">
+          <table class="tbl" id="shipTbl">
+            <thead><tr>
+              <th style="width:10%">Kind</th>
+              <th style="width:12%">Date</th>
+              <th style="width:10%">Qty</th>
+              <th style="width:15%">From</th>
+              <th style="width:15%">To</th>
+              <th style="width:12%">Method</th>
+              <th style="width:10%">Ref</th>
+              <th style="width:12%">Courier</th>
+              <th style="width:16%">Tracking</th>
+              <th style="width:10%">Cost</th>
+              <th style="width:6%"></th>
+            </tr></thead>
+            <tbody id="shipBody"></tbody>
+          </table>
+        </div>
         <div class="right"><button id="addShip" class="btn mini" type="button">+ Add shipment/leg</button></div>
 
         <div class="grid3" style="margin-top:14px">
@@ -489,7 +494,6 @@ function ageDays(d){
   const days = Math.floor(ms/86400000);
   return days<0?'-':`${days} ${days===1?'day':'days'}`;
 }
-
 function calcTotals(o){
   const revenue=(o.items||[]).reduce((s,i)=>s+(Number(i.qty||0)*Number(i.unit_sell||0)),0);
   const itemCost=(o.items||[]).reduce((s,i)=>s+(Number(i.qty||0)*Number(i.unit_cost||0)),0);
@@ -502,7 +506,6 @@ function calcTotals(o){
   const qty=(o.items||[]).reduce((s,i)=>s+Number(i.qty||0),0);
   return {revenue,cost,gp,gpPct,qty};
 }
-
 function render(){
   const q=$('q').value.toLowerCase(), sSales=$('fltSales').value, sStat=$('fltStatus').value, sPri=$('fltPriority').value;
   const rows=supa.getOrders().filter(o=>{
@@ -660,7 +663,6 @@ $('incoterm').addEventListener('change',()=>{
 });
 
 document.addEventListener('DOMContentLoaded', ()=>{
-  // Ensure button always opens dialog (some browsers ignore inline assignment)
   $('btnNew').addEventListener('click', ()=> openModal(null));
 });
 
@@ -705,3 +707,4 @@ init();
 </script>
 </body>
 </html>
+
