@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Commercial Invoice — Verified Electronics</title>
+<link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+<style>
+  :root{
+    --brand:#673ab7; --ink:#1f2430; --muted:#677085;
+    --bg:#f6f7fb; --card:#fff; --line:#e9e9ef;
+    --accent:#efeafd;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:1160px;margin:24px auto;padding:0 16px}
+  header{
+    display:flex;align-items:center;gap:14px;
+    background:radial-gradient(1200px 260px at 160px -60px, rgba(103,58,183,.18), transparent 60%),
+               linear-gradient(180deg,#fff, #fafaff);
+    border:1px solid var(--line);
+    padding:18px; border-radius:18px;
+    box-shadow:0 4px 24px rgba(0,0,0,.04);
+  }
+  header img{height:40px}
+  h1{margin:0;font-size:24px;font-weight:800;letter-spacing:.2px}
+  .sub{color:var(--muted);margin-top:2px}
+
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+  .btn{
+    background:#fff;border:1px solid var(--line);padding:10px 14px;border-radius:10px;
+    font-weight:700;cursor:pointer;
+    box-shadow:0 1px 0 rgba(0,0,0,.02);
+  }
+  .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn.ghost{background:#fff}
+  .btn:active{transform:translateY(1px)}
+
+  .grid{display:grid;grid-template-columns:1.1fr 1fr;gap:18px}
+  @media (max-width:1024px){ .grid{grid-template-columns:1fr} }
+
+  .panel{
+    background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;
+    box-shadow:0 8px 30px rgba(103,58,183,.06), 0 1px 0 rgba(0,0,0,.02);
+  }
+  .panel h2{
+    font-size:16px;margin:0 0 12px;font-weight:800;color:#262b3a;display:flex;align-items:center;gap:8px
+  }
+  .row{display:grid;grid-template-columns:repeat(12,1fr);gap:10px}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field label{font-size:12px;color:var(--muted)}
+  input[type="text"],input[type="number"],input[type="date"],select,textarea{
+    border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff;width:100%;
+  }
+  textarea{min-height:74px;resize:vertical}
+
+  .k2{grid-column:span 2}.k3{grid-column:span 3}.k4{grid-column:span 4}
+  .k5{grid-column:span 5}.k6{grid-column:span 6}.k7{grid-column:span 7}
+  .k8{grid-column:span 8}.k9{grid-column:span 9}.k12{grid-column:span 12}
+
+  /* Table */
+  table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  thead th{
+    font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#425066;background:#fbfaff;
+    border-bottom:1px solid var(--line);padding:10px 8px;text-align:left
+  }
+  tbody td{border-bottom:1px solid var(--line);padding:8px}
+  tbody tr:last-child td{border-bottom:none}
+  tfoot td{padding:8px}
+  .num{text-align:right}
+  .ctrl{display:flex;gap:8px;align-items:center}
+  .small{font-size:12px;color:var(--muted)}
+  .danger{color:#a63b2f}
+
+  .totals{
+    display:grid;grid-template-columns:1fr minmax(280px, 40%);gap:16px;margin-top:14px
+  }
+  .box{
+    border:1px dashed #ddd;border-radius:12px;padding:12px;background:#fff
+  }
+
+  /* Print layout */
+  @media print{
+    body{background:#fff}
+    header,.actions,.panel.form{display:none}
+    .panel.preview{border:none;box-shadow:none;padding:0}
+    .invoice{page-break-after:auto}
+    table{border-color:#ddd}
+    thead{display:table-header-group}
+    tfoot{display:table-row-group}
+    tr{page-break-inside:avoid}
+    .invoice .titlebar{border:none}
+  }
+
+  /* Preview (print look) */
+  .invoice{
+    background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;
+  }
+  .titlebar{
+    display:flex;justify-content:space-between;align-items:flex-start;gap:16px;
+    padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:12px
+  }
+  .brand{
+    display:flex;align-items:center;gap:12px
+  }
+  .brand .badge{
+    width:50px;height:50px;border-radius:12px;background:var(--accent);display:grid;place-items:center;
+    box-shadow:inset 0 0 0 1px #e3ddfb;
+  }
+  .brand img{max-width:34px;max-height:34px;object-fit:contain}
+  .doc-meta{font-size:13px;color:#333}
+  .doc-h1{font-size:22px;font-weight:800;margin:0 0 2px}
+  .muted{color:var(--muted)}
+  .sig{max-height:70px;object-fit:contain;border:1px dashed #ddd;border-radius:8px;padding:4px;background:#fff}
+
+  .declaration{font-size:12px;color:#444;line-height:1.45}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified Electronics">
+      <div>
+        <h1>Commercial Invoice — Verified Electronics</h1>
+        <div class="sub">Customs-ready, print-perfect invoices with HS code, COO, Incoterms & more.</div>
+      </div>
+    </header>
+
+    <div class="actions">
+      <button class="btn brand" onclick="generatePDF()">Download PDF</button>
+      <button class="btn ghost" onclick="addRow()">Add line</button>
+      <button class="btn ghost" onclick="clearRows()">Clear lines</button>
+      <button class="btn ghost" onclick="saveJSON()">Save JSON</button>
+      <label class="btn ghost" style="cursor:pointer">
+        Load JSON <input type="file" accept=".json" style="display:none" onchange="loadJSON(event)">
+      </label>
+      <button class="btn ghost" onclick="loadSample()">Load sample</button>
+    </div>
+
+    <div class="grid">
+      <!-- Form Panel -->
+      <section class="panel form">
+        <h2>Invoice details</h2>
+        <div class="row">
+          <div class="field k6">
+            <label>Exporter / Shipper</label>
+            <textarea id="exporter" placeholder="Verified Electronics Ltd&#10;Address line 1&#10;City, Postcode, Country&#10;EORI / VAT:"></textarea>
+          </div>
+          <div class="field k6">
+            <label>Consignee (Bill To)</label>
+            <textarea id="consignee" placeholder="Company&#10;Address&#10;City, Postcode, Country&#10;VAT / Tax ID:"></textarea>
+          </div>
+
+          <div class="field k6">
+            <label>Ship To (if different)</label>
+            <textarea id="shipTo" placeholder="Company&#10;Address&#10;City, Postcode, Country"></textarea>
+          </div>
+          <div class="field k3">
+            <label>Invoice No.</label>
+            <input id="invNo" type="text" placeholder="VE-CI-0001">
+          </div>
+          <div class="field k3">
+            <label>Invoice Date</label>
+            <input id="invDate" type="date">
+          </div>
+
+          <div class="field k3">
+            <label>Purchase Order #</label>
+            <input id="poNo" type="text" placeholder="PO-12345">
+          </div>
+          <div class="field k3">
+            <label>Currency</label>
+            <select id="currency" onchange="updateCurrency()">
+              <option value="USD" selected>USD $</option>
+              <option value="GBP">GBP £</option>
+              <option value="EUR">EUR €</option>
+            </select>
+          </div>
+          <div class="field k3">
+            <label>Payment Terms</label>
+            <input id="paymentTerms" type="text" placeholder="TT in advance / Net 30">
+          </div>
+          <div class="field k3">
+            <label>Ship Method</label>
+            <input id="shipMethod" type="text" placeholder="FedEx Intl Priority">
+          </div>
+
+          <div class="field k4">
+            <label>Incoterms (place)</label>
+            <div class="row">
+              <div class="k5">
+                <select id="incoterm">
+                  <option value="EXW">EXW</option>
+                  <option value="FCA">FCA</option>
+                  <option value="CPT">CPT</option>
+                  <option value="CIP">CIP</option>
+                  <option value="DAP" selected>DAP</option>
+                  <option value="DPU">DPU</option>
+                  <option value="DDP">DDP</option>
+                </select>
+              </div>
+              <div class="k7">
+                <input id="incotermPlace" type="text" placeholder="e.g., Austin, TX">
+              </div>
+            </div>
+          </div>
+
+          <div class="field k4">
+            <label>Tracking / AWB</label>
+            <input id="tracking" type="text" placeholder="1234 5678 9012">
+          </div>
+          <div class="field k4">
+            <label>Reason for Export</label>
+            <input id="exportReason" type="text" placeholder="Sale of goods">
+          </div>
+
+          <div class="field k3">
+            <label>Total Packages</label>
+            <input id="packages" type="number" step="1" min="0" placeholder="1">
+          </div>
+          <div class="field k3">
+            <label>Total Net Weight (kg)</label>
+            <input id="netWeight" type="number" step="0.001" min="0" placeholder="10.00">
+          </div>
+          <div class="field k3">
+            <label>Total Gross Weight (kg)</label>
+            <input id="grossWeight" type="number" step="0.001" min="0" placeholder="11.00">
+          </div>
+          <div class="field k3">
+            <label>Package Dimensions (optional)</label>
+            <input id="dims" type="text" placeholder='2 boxes, 60×45×45cm'>
+          </div>
+        </div>
+
+        <h2 style="margin-top:14px">Line items</h2>
+        <table id="items">
+          <thead>
+            <tr>
+              <th style="width:14%">Part No.</th>
+              <th style="width:22%">Description</th>
+              <th style="width:12%">HS Code</th>
+              <th style="width:10%">COO</th>
+              <th style="width:8%" class="num">Qty</th>
+              <th style="width:10%" class="num">Unit</th>
+              <th style="width:12%" class="num">Unit Value</th>
+              <th style="width:12%" class="num">Line Total</th>
+              <th style="width:10%">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+          </tbody>
+        </table>
+
+        <div class="totals">
+          <div class="box">
+            <div class="small">Notes (shown on invoice)</div>
+            <textarea id="notes" placeholder="Any special instructions, license numbers, or references."></textarea>
+          </div>
+          <div class="box">
+            <div class="row">
+              <div class="field k6">
+                <label>Freight</label>
+                <input id="freight" type="number" step="0.01" value="0" oninput="calcTotals()">
+              </div>
+              <div class="field k6">
+                <label>Other/Misc</label>
+                <input id="other" type="number" step="0.01" value="0" oninput="calcTotals()">
+              </div>
+              <div class="field k6">
+                <label>Insurance</label>
+                <input id="insurance" type="number" step="0.01" value="0" oninput="calcTotals()">
+              </div>
+              <div class="field k6">
+                <label class="ctrl">
+                  <input id="autoIns" type="checkbox" onchange="calcTotals()"> Auto-calc insurance (%)
+                </label>
+                <input id="insRate" type="number" step="0.01" value="0.8" title="Percent" oninput="calcTotals()">
+                <div class="small" style="grid-column:span 12">Tip: If you insure on CIF basis, a common formula is (goods × 1.1 × 0.8%).</div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="k12" id="totalsView" style="text-align:right;font-weight:800;margin-top:10px"></div>
+            </div>
+          </div>
+        </div>
+
+        <h2 style="margin-top:14px">Signature</h2>
+        <div class="row">
+          <div class="field k6">
+            <label>Signed by (name & title)</label>
+            <input id="signedBy" type="text" placeholder="Name, Title">
+          </div>
+          <div class="field k3">
+            <label>Place of issue</label>
+            <input id="place" type="text" placeholder="London, UK">
+          </div>
+          <div class="field k3">
+            <label>Date of issue</label>
+            <input id="issueDate" type="date">
+          </div>
+          <div class="field k12">
+            <label>Signature image (PNG/JPG)</label>
+            <input id="sigFile" type="file" accept="image/*" onchange="loadSignature(event)">
+          </div>
+        </div>
+      </section>
+
+      <!-- Preview Panel -->
+      <section class="panel preview">
+        <h2>Preview</h2>
+        <div id="printArea" class="invoice">
+          <div class="titlebar">
+            <div class="brand">
+              <div class="badge">
+                <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="VE">
+              </div>
+              <div>
+                <div class="doc-h1">Commercial Invoice</div>
+                <div class="muted">Verified Electronics — Internal Generator</div>
+              </div>
+            </div>
+            <div class="doc-meta" id="metaBox">
+              <!-- filled by JS -->
+            </div>
+          </div>
+
+          <div id="addresses" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px">
+            <!-- filled by JS -->
+          </div>
+
+          <table id="previewTable">
+            <thead>
+              <tr>
+                <th>Part No.</th>
+                <th>Description</th>
+                <th>HS Code</th>
+                <th>COO</th>
+                <th class="num">Qty</th>
+                <th class="num">Unit</th>
+                <th class="num">Unit Value</th>
+                <th class="num">Line Total</th>
+              </tr>
+            </thead>
+            <tbody id="pbody"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="8" id="tfootTotals" class="num" style="font-weight:800"></td>
+              </tr>
+            </tfoot>
+          </table>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px">
+            <div class="box">
+              <div class="small">Shipment details</div>
+              <div id="shipDetails"></div>
+            </div>
+            <div class="box">
+              <div class="small">Charges</div>
+              <div id="chargeDetails"></div>
+            </div>
+          </div>
+
+          <div class="box" style="margin-top:10px">
+            <div class="small">Notes</div>
+            <div id="notesBox" style="white-space:pre-wrap"></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;align-items:center">
+            <div class="declaration">
+              I declare that the information contained in this invoice is true and correct and that the goods are of the
+              origin indicated. The goods are sold on the stated Incoterms. This document is issued for customs purposes.
+            </div>
+            <div style="text-align:right">
+              <img id="sigImg" class="sig" alt="Signature" />
+              <div id="sigMeta" class="small muted"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+  // ----- Utilities -----
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+  const CURRENCY = { USD: "$", GBP: "£", EUR: "€" };
+
+  function fmt(n){
+    if(n===null || n===undefined || isNaN(n)) return "0.00";
+    return Number(n).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function currencySymbol(){ return CURRENCY[$('#currency').value] || "$"; }
+
+  // ----- Items table -----
+  function addRow(item={}){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" placeholder="Part No." value="${item.part||''}" oninput="sync()"></td>
+      <td><input type="text" placeholder="Description" value="${item.desc||''}" oninput="sync()"></td>
+      <td><input type="text" placeholder="HS Code" value="${item.hs||''}" oninput="sync()"></td>
+      <td><input type="text" placeholder="COO" value="${item.coo||''}" oninput="sync()"></td>
+      <td class="num"><input type="number" step="1" min="0" value="${item.qty??''}" oninput="sync()"></td>
+      <td class="num">
+        <input type="text" placeholder="pcs" value="${item.unit||'pcs'}" oninput="sync()">
+      </td>
+      <td class="num"><input type="number" step="0.01" min="0" value="${item.unitValue??''}" oninput="sync()"></td>
+      <td class="num line-total">0.00</td>
+      <td>
+        <button class="btn" onclick="dupRow(this)">Duplicate</button>
+        <button class="btn danger" onclick="delRow(this)">Delete</button>
+      </td>
+    `;
+    $('#tbody').appendChild(tr);
+    sync();
+  }
+  function dupRow(btn){
+    const tds = btn.closest('tr').querySelectorAll('td');
+    const item = {
+      part: tds[0].querySelector('input').value,
+      desc: tds[1].querySelector('input').value,
+      hs: tds[2].querySelector('input').value,
+      coo: tds[3].querySelector('input').value,
+      qty: tds[4].querySelector('input').value,
+      unit: tds[5].querySelector('input').value,
+      unitValue: tds[6].querySelector('input').value
+    };
+    addRow(item);
+  }
+  function delRow(btn){
+    btn.closest('tr').remove();
+    sync();
+  }
+  function clearRows(){
+    $('#tbody').innerHTML = '';
+    sync();
+  }
+
+  // ----- Calculations & Preview -----
+  function updateCurrency(){ sync(); }
+
+  function getItems(){
+    return $$('#tbody tr').map(tr=>{
+      const inputs = tr.querySelectorAll('input');
+      const item = {
+        part: inputs[0].value.trim(),
+        desc: inputs[1].value.trim(),
+        hs: inputs[2].value.trim(),
+        coo: inputs[3].value.trim(),
+        qty: parseFloat(inputs[4].value)||0,
+        unit: inputs[5].value.trim()||'pcs',
+        unitValue: parseFloat(inputs[6].value)||0
+      };
+      item.lineTotal = item.qty * item.unitValue;
+      tr.querySelector('.line-total').textContent = fmt(item.lineTotal);
+      return item;
+    });
+  }
+
+  function calcTotals(){
+    const items = getItems();
+    const goods = items.reduce((s,i)=>s + i.lineTotal, 0);
+    let freight = parseFloat($('#freight').value)||0;
+    let other = parseFloat($('#other').value)||0;
+    let insurance = parseFloat($('#insurance').value)||0;
+
+    if($('#autoIns').checked){
+      const rate = (parseFloat($('#insRate').value)||0)/100; // %
+      insurance = (goods * 1.1) * rate;
+      $('#insurance').value = insurance.toFixed(2);
+    }
+
+    const grand = goods + freight + other + insurance;
+    const sym = currencySymbol();
+
+    $('#totalsView').innerHTML = `
+      Goods: <b>${sym} ${fmt(goods)}</b>&nbsp; · &nbsp;
+      Freight: <b>${sym} ${fmt(freight)}</b>&nbsp; · &nbsp;
+      Insurance: <b>${sym} ${fmt(insurance)}</b>&nbsp; · &nbsp;
+      Other: <b>${sym} ${fmt(other)}</b>
+      <div style="margin-top:6px;font-size:18px">Total: <span style="font-weight:900">${sym} ${fmt(grand)}</span></div>
+    `;
+
+    // Preview footer totals
+    $('#tfootTotals').textContent = `Total: ${sym} ${fmt(grand)}`;
+
+    // Charges box
+    $('#chargeDetails').innerHTML = `
+      <div>Goods value: <b>${sym} ${fmt(goods)}</b></div>
+      <div>Freight: <b>${sym} ${fmt(freight)}</b></div>
+      <div>Insurance: <b>${sym} ${fmt(insurance)}</b></div>
+      <div>Other: <b>${sym} ${fmt(other)}</b></div>
+      <div style="margin-top:6px;font-weight:800">Grand total: ${sym} ${fmt(grand)}</div>
+    `;
+  }
+
+  function sync(){
+    const sym = currencySymbol();
+    const items = getItems();
+
+    // Meta box
+    const meta = [];
+    if($('#invNo').value) meta.push(`<div><b>Invoice #:</b> ${escapeHtml($('#invNo').value)}</div>`);
+    if($('#invDate').value) meta.push(`<div><b>Date:</b> ${formatDate($('#invDate').value)}</div>`);
+    if($('#poNo').value) meta.push(`<div><b>PO #:</b> ${escapeHtml($('#poNo').value)}</div>`);
+    meta.push(`<div><b>Currency:</b> ${$('#currency').value} ${sym}</div>`);
+    if($('#paymentTerms').value) meta.push(`<div><b>Payment terms:</b> ${escapeHtml($('#paymentTerms').value)}</div>`);
+    $('#metaBox').innerHTML = meta.join("");
+
+    // Addresses
+    const addrLeft = `
+      <div class="box">
+        <div class="small">Exporter / Shipper</div>
+        <div>${nl2br(escapeHtml($('#exporter').value))||'<span class="muted">—</span>'}</div>
+      </div>
+      <div class="box">
+        <div class="small">Consignee (Bill To)</div>
+        <div>${nl2br(escapeHtml($('#consignee').value))||'<span class="muted">—</span>'}</div>
+      </div>
+    `;
+    const addrRight = `
+      <div class="box">
+        <div class="small">Ship To</div>
+        <div>${nl2br(escapeHtml($('#shipTo').value))||'<span class="muted">—</span>'}</div>
+      </div>
+      <div class="box">
+        <div class="small">Incoterms & Shipping</div>
+        <div>
+          <div><b>Incoterms:</b> ${$('#incoterm').value} ${escapeHtml($('#incotermPlace').value)}</div>
+          <div><b>Ship method:</b> ${escapeHtml($('#shipMethod').value)||'—'}</div>
+          <div><b>Tracking/AWB:</b> ${escapeHtml($('#tracking').value)||'—'}</div>
+          <div><b>Reason for export:</b> ${escapeHtml($('#exportReason').value)||'—'}</div>
+        </div>
+      </div>
+    `;
+    $('#addresses').innerHTML = addrLeft + addrRight;
+
+    // Preview table
+    const pbody = $('#pbody');
+    pbody.innerHTML = '';
+    items.forEach(i=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(i.part)}</td>
+        <td>${escapeHtml(i.desc)}</td>
+        <td>${escapeHtml(i.hs)}</td>
+        <td>${escapeHtml(i.coo)}</td>
+        <td class="num">${fmt(i.qty)}</td>
+        <td class="num">${escapeHtml(i.unit||'pcs')}</td>
+        <td class="num">${sym} ${fmt(i.unitValue)}</td>
+        <td class="num">${sym} ${fmt(i.lineTotal)}</td>
+      `;
+      pbody.appendChild(tr);
+    });
+
+    // Shipment details
+    $('#shipDetails').innerHTML = `
+      <div>Packages: <b>${escapeHtml($('#packages').value||'—')}</b></div>
+      <div>Net weight: <b>${escapeHtml($('#netWeight').value||'—')}</b> kg</div>
+      <div>Gross weight: <b>${escapeHtml($('#grossWeight').value||'—')}</b> kg</div>
+      <div>Dimensions: <b>${escapeHtml($('#dims').value||'—')}</b></div>
+    `;
+
+    // Notes
+    $('#notesBox').textContent = $('#notes').value || '';
+
+    // Signature meta
+    const parts = [];
+    if($('#signedBy').value) parts.push(escapeHtml($('#signedBy').value));
+    if($('#place').value) parts.push(escapeHtml($('#place').value));
+    if($('#issueDate').value) parts.push(formatDate($('#issueDate').value));
+    $('#sigMeta').textContent = parts.join(' • ');
+
+    calcTotals();
+  }
+
+  function generatePDF(){
+    // Use the browser's print to PDF for best fidelity
+    window.print();
+  }
+
+  function formatDate(v){
+    try{
+      const d = new Date(v);
+      if(isNaN(d)) return v;
+      return d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'2-digit'});
+    }catch{ return v }
+  }
+  function nl2br(s){ return s.replace(/\n/g,'<br>'); }
+  function escapeHtml(s){
+    return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  // ----- Signature -----
+  function loadSignature(e){
+    const file = e.target.files?.[0];
+    if(!file) return;
+    const r = new FileReader();
+    r.onload = ()=>{ $('#sigImg').src = r.result; }
+    r.readAsDataURL(file);
+  }
+
+  // ----- Save/Load JSON -----
+  function collectState(){
+    return {
+      exporter: $('#exporter').value,
+      consignee: $('#consignee').value,
+      shipTo: $('#shipTo').value,
+      invNo: $('#invNo').value,
+      invDate: $('#invDate').value,
+      poNo: $('#poNo').value,
+      currency: $('#currency').value,
+      paymentTerms: $('#paymentTerms').value,
+      shipMethod: $('#shipMethod').value,
+      incoterm: $('#incoterm').value,
+      incotermPlace: $('#incotermPlace').value,
+      tracking: $('#tracking').value,
+      exportReason: $('#exportReason').value,
+      packages: $('#packages').value,
+      netWeight: $('#netWeight').value,
+      grossWeight: $('#grossWeight').value,
+      dims: $('#dims').value,
+      notes: $('#notes').value,
+      freight: $('#freight').value,
+      insurance: $('#insurance').value,
+      other: $('#other').value,
+      autoIns: $('#autoIns').checked,
+      insRate: $('#insRate').value,
+      signedBy: $('#signedBy').value,
+      place: $('#place').value,
+      issueDate: $('#issueDate').value,
+      sigImg: $('#sigImg').src || '',
+      items: getItems().map(({part,desc,hs,coo,qty,unit,unitValue})=>({part,desc,hs,coo,qty,unit,unitValue}))
+    };
+  }
+  function applyState(s){
+    $('#exporter').value = s.exporter||'';
+    $('#consignee').value = s.consignee||'';
+    $('#shipTo').value = s.shipTo||'';
+    $('#invNo').value = s.invNo||'';
+    $('#invDate').value = s.invDate||'';
+    $('#poNo').value = s.poNo||'';
+    $('#currency').value = s.currency||'USD';
+    $('#paymentTerms').value = s.paymentTerms||'';
+    $('#shipMethod').value = s.shipMethod||'';
+    $('#incoterm').value = s.incoterm||'DAP';
+    $('#incotermPlace').value = s.incotermPlace||'';
+    $('#tracking').value = s.tracking||'';
+    $('#exportReason').value = s.exportReason||'';
+    $('#packages').value = s.packages||'';
+    $('#netWeight').value = s.netWeight||'';
+    $('#grossWeight').value = s.grossWeight||'';
+    $('#dims').value = s.dims||'';
+    $('#notes').value = s.notes||'';
+    $('#freight').value = s.freight||0;
+    $('#insurance').value = s.insurance||0;
+    $('#other').value = s.other||0;
+    $('#autoIns').checked = !!s.autoIns;
+    $('#insRate').value = s.insRate||0.8;
+    $('#signedBy').value = s.signedBy||'';
+    $('#place').value = s.place||'';
+    $('#issueDate').value = s.issueDate||'';
+    if(s.sigImg) $('#sigImg').src = s.sigImg;
+
+    clearRows();
+    (s.items||[]).forEach(it=>addRow(it));
+    if(!s.items || !s.items.length) addRow();
+    sync();
+  }
+  function saveJSON(){
+    const data = collectState();
+    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const name = data.invNo ? data.invNo.replace(/[^a-z0-9-_]/gi,'_') : 'commercial-invoice';
+    a.download = `${name}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  function loadJSON(e){
+    const file = e.target.files?.[0];
+    if(!file) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try{ const s = JSON.parse(r.result); applyState(s); }
+      catch{ alert('Invalid JSON file'); }
+    };
+    r.readAsText(file);
+  }
+
+  // ----- Sample -----
+  function loadSample(){
+    const today = new Date().toISOString().slice(0,10);
+    applyState({
+      exporter: "Verified Electronics Ltd\n1 Example Street\nChichester, PO19 1AA, UK\nEORI/VAT: GB123456789",
+      consignee: "Acme Devices Inc.\n500 Market St\nAustin, TX 78701, USA\nTAX ID: 12-3456789",
+      shipTo: "Acme Devices Inc. Warehouse\n1000 Logistics Dr\nDallas, TX 75001, USA",
+      invNo: "VE-CI-1024",
+      invDate: today,
+      poNo: "PO-78910",
+      currency: "USD",
+      paymentTerms: "TT in advance",
+      shipMethod: "FedEx International Priority",
+      incoterm: "DAP",
+      incotermPlace: "Austin, TX",
+      tracking: "7790 1234 5678",
+      exportReason: "Sale of goods",
+      packages: "2",
+      netWeight: "18.4",
+      grossWeight: "20.0",
+      dims: "2 boxes, 60×45×45cm",
+      notes: "No wood packaging materials used.\nNon-hazardous electronic components.",
+      freight: 120.00,
+      insurance: 0,
+      other: 0,
+      autoIns: true,
+      insRate: 0.8,
+      signedBy: "Nick North, Director",
+      place: "Chichester, UK",
+      issueDate: today,
+      items: [
+        {part:"IPF015N10N5ATMA1", desc:"MOSFET 100V 150A", hs:"854129", coo:"CN", qty:1000, unit:"pcs", unitValue:1.92},
+        {part:"DS1644-120+", desc:"RTC + NV SRAM 120ns", hs:"854232", coo:"PH", qty:40, unit:"pcs", unitValue:66.90}
+      ]
+    });
+  }
+
+  // ----- Init -----
+  window.addEventListener('load', ()=>{
+    // Default one row
+    if(!$('#tbody').children.length) addRow();
+    // Set default dates
+    const today = new Date().toISOString().slice(0,10);
+    $('#invDate').value = today;
+    $('#issueDate').value = today;
+    sync();
+    // Live sync
+    $$('.form input, .form textarea, .form select').forEach(el=>{
+      el.addEventListener('input', sync);
+      el.addEventListener('change', sync);
+    });
+  });
+</script>
+</body>
+</html>
