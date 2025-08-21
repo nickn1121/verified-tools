@@ -5,20 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Verified — Purchasing Board</title>
 <style>
-:root{
-  --brand:#6f57e9;--ink:#1e2330;--muted:#6d7486;--bg:#f6f7fb;--card:#fff;--line:#e9e9ef;--chip:#f1f2f7
-}
+:root{--brand:#6f57e9;--ink:#1e2330;--muted:#6d7486;--bg:#f6f7fb;--card:#fff;--line:#e9e9ef;--chip:#f1f2f7}
 *{box-sizing:border-box}html,body{height:100%}
 body{margin:0;font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial;background:var(--bg);color:var(--ink)}
 .wrap{max-width:1280px;margin:0 auto;padding:20px}
-.top{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .brand{display:flex;gap:10px;align-items:center;font-weight:800}.dot{width:10px;height:10px;border-radius:50%;background:var(--brand)}
-.pill{padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;display:inline-flex;gap:8px;align-items:center}
-.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
+.top{display:flex;gap:12px;align-items:center}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 0}
 .tab{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:pointer}
 .tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
-.row{display:grid;grid-template-columns:360px 1fr;gap:16px;margin-top:16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+/* 3 columns: New RFQ | RFQs | Filters  */
+.row{display:grid;grid-template-columns:360px 1fr 260px;gap:16px;margin-top:16px}
+@media(max-width:1200px){.row{grid-template-columns:360px 1fr}}
+@media(max-width:860px){.row{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
 .hd{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
 .bd{padding:16px}
 label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
@@ -27,8 +27,9 @@ textarea{min-height:80px;resize:vertical}
 button{appearance:none;border:0;border-radius:10px;padding:10px 14px;background:var(--brand);color:#fff;font-weight:600;cursor:pointer}
 button.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
 .muted{color:var(--muted)}
+/* RFQ list cards with verified purple border */
 .rfq-list{display:grid;gap:12px}
-.rfq{border:1px solid var(--line);border-radius:12px;background:#fff}
+.rfq{border:2px solid rgba(111,87,233,.35);border-radius:14px;background:#fff}
 .rfq-hd{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:12px 14px;border-bottom:1px solid var(--line)}
 .rfq-title{font-weight:800}
 .meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12px}
@@ -42,49 +43,39 @@ button.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand)}
 .priority.normal{background:#eef2ff;color:#3b2eca;border-color:#c7d2fe}
 .priority.high{background:#fff7ed;color:#9a3412;border-color:#fed7aa}
 .priority.urgent{background:#fee2e2;color:#b91c1c;border-color:#fecaca}
-.offer-list{padding:10px 12px}.chip{padding:4px 8px;border-radius:999px;border:1px solid var(--line);font-size:12px;background:#fff}
+.offer-list{padding:10px 12px}
+.chip{padding:4px 8px;border-radius:999px;border:1px solid var(--line);font-size:12px;background:#fff}
 .conf[data-level="1"],.conf[data-level="2"]{background:#fee2e2;border-color:#fecaca;color:#b91c1c}
 .conf[data-level="3"]{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
 .conf[data-level="4"]{background:#ecfdf5;border-color:#a7f3d0;color:#065f46}
 .conf[data-level="5"]{background:#e0f2fe;border-color:#bae6fd;color:#075985}
 .coverage{height:8px;background:#f3f4f6;border-radius:999px;overflow:hidden}
 .coverage>i{display:block;height:100%;background:linear-gradient(90deg,#a78bfa,#60a5fa);width:0%}
-.offer{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:10px;margin:8px 0}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
 /* Board */
 .board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .col{background:#fff;border:1px solid var(--line);border-radius:12px}
 .col-hd{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);font-weight:700}
-.col-bd{padding:10px}.mini{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px}.mini .meta{font-size:12px;color:var(--muted)}
-/* Drawer */
+.col-bd{padding:10px}.mini{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px}.mini .meta{font-size:12px;color:#6d7486}
+/* Drawer (read-only) */
 dialog{border:0;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:920px;max-width:calc(100vw - 24px)}
 dialog.side{width:920px;max-width:920px;margin:0 0 0 auto;height:100%;border-radius:0}
 dialog::backdrop{background:rgba(0,0,0,.3)}
 table{width:100%;border-collapse:separate;border-spacing:0 8px}
-th,td{padding:8px 10px;text-align:left} thead th{font-size:12px;color:var(--muted)}
+th,td{padding:8px 10px;text-align:left} thead th{font-size:12px;color:#6d7486}
 tbody tr{background:#fff;border:1px solid var(--line)} tbody tr td:first-child{border-radius:10px 0 0 10px} tbody tr td:last-child{border-radius:0 10px 10px 0}
 .inline-input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
 .toast{position:fixed;bottom:18px;right:18px;background:#111827;color:#fff;padding:12px 14px;border-radius:10px;opacity:0;transform:translateY(10px);transition:.2s}
 .toast.show{opacity:1;transform:none}
 .empty{padding:30px;border:1px dashed var(--line);border-radius:12px;color:#6d7486;text-align:center;background:#fff}
+/* Filters sidebar */
+.filters{position:sticky;top:20px}
+.filters .bd{display:grid;gap:10px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="top brand"><span class="dot"></span> Verified — Purchasing Board</div>
-  <div class="top" style="margin-top:8px">
-    <input id="search" class="pill" placeholder="Search part number…">
-    <select id="salesFilter" class="pill"><option value="All">All salespeople</option></select>
-    <select id="statusFilter" class="pill">
-      <option value="all">All statuses</option><option value="open">Open</option>
-      <option value="ordered">Sent to Orders</option><option value="closed">Closed</option>
-    </select>
-    <select id="sortBy" class="pill">
-      <option value="created_desc">Newest</option><option value="created_asc">Oldest</option>
-      <option value="best_price">Best price</option><option value="lead_time">Lead time</option>
-      <option value="priority">Priority</option><option value="coverage">Coverage</option>
-    </select>
-  </div>
 
   <div id="salesTabs" class="tabs"></div>
 
@@ -129,10 +120,45 @@ tbody tr{background:#fff;border:1px solid var(--line)} tbody tr td:first-child{b
         <div id="emptyState" class="empty" style="display:none">No RFQs yet for this tab. Create one on the left.</div>
       </div>
     </div>
+
+    <!-- Filters sidebar -->
+    <aside class="card filters">
+      <div class="hd"><strong>Filters</strong></div>
+      <div class="bd">
+        <div>
+          <label>Search</label>
+          <input id="search" placeholder="Search part…" />
+        </div>
+        <div>
+          <label>Salesperson</label>
+          <select id="fSales"><option>All</option></select>
+        </div>
+        <div>
+          <label>Status</label>
+          <select id="fStatus">
+            <option value="all">All statuses</option>
+            <option value="open">Open</option>
+            <option value="ordered">Sent to Orders</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+        <div>
+          <label>Sort</label>
+          <select id="fSort">
+            <option value="created_desc">Newest</option>
+            <option value="created_asc">Oldest</option>
+            <option value="best_price">Best price</option>
+            <option value="lead_time">Lead time</option>
+            <option value="priority">Priority</option>
+            <option value="coverage">Coverage</option>
+          </select>
+        </div>
+      </div>
+    </aside>
   </div>
 </div>
 
-<!-- Drawer -->
+<!-- Read-only Drawer -->
 <dialog id="rfqDrawer" class="side">
   <div class="hd"><strong id="drawerTitle">RFQ</strong><span id="drawerMeta" class="muted"></span>
     <div style="margin-left:auto;display:flex;gap:8px">
@@ -148,35 +174,14 @@ tbody tr{background:#fff;border:1px solid var(--line)} tbody tr td:first-child{b
     </div>
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px">
-      <div><strong>Offers</strong></div><div class="muted">Quick-add row — press Enter</div>
+      <div><strong>Offers</strong></div>
+      <div class="muted">Best price highlighted</div>
     </div>
 
     <table>
-      <thead><tr><th>Vendor</th><th>Loc</th><th>Price</th><th>Cur</th><th>Qty</th><th>MOQ</th><th>LT(d)</th><th>Conf</th><th>Comments</th><th></th></tr></thead>
+      <thead><tr><th>Vendor</th><th>Loc</th><th>Price</th><th>Cur</th><th>Qty</th><th>MOQ</th><th>LT(d)</th><th>Conf</th><th>Comments</th></tr></thead>
       <tbody id="offerRows"></tbody>
-      <tfoot><tr>
-        <td><input class="inline-input" id="in_vendor" list="vendorList" placeholder="Vendor"></td>
-        <td><input class="inline-input" id="in_location" placeholder="Loc"></td>
-        <td><input class="inline-input" id="in_price" type="number" step="0.0001" placeholder="0.00"></td>
-        <td><select class="inline-input" id="in_currency"><option>USD</option><option>GBP</option><option>EUR</option></select></td>
-        <td><input class="inline-input" id="in_qty" type="number" step="1" placeholder="0"></td>
-        <td><input class="inline-input" id="in_moq" type="number" step="1" placeholder="0"></td>
-        <td><input class="inline-input" id="in_lt" type="number" step="1" placeholder="0"></td>
-        <td><select class="inline-input" id="in_conf"><option>5</option><option>4</option><option selected>3</option><option>2</option><option>1</option></select></td>
-        <td><input class="inline-input" id="in_comments" placeholder="Comments"></td>
-        <td style="text-align:right"><button class="ghost" id="quickAdd">Add</button></td>
-      </tr></tfoot>
     </table>
-    <datalist id="vendorList"></datalist>
-
-    <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
-      <button class="ghost" id="pasteToggle">Paste offers</button>
-      <span class="muted">CSV: vendor,location,price,currency,qty,moq,lead,confidence,comments</span>
-    </div>
-    <div id="pasteBox" style="display:none;margin-top:8px">
-      <textarea id="pasteArea" placeholder="Acme,Shenzhen,1.23,USD,500,100,7,4,In stock&#10;…"></textarea>
-      <div style="display:flex;justify-content:flex-end;margin-top:8px"><button class="ghost" id="pasteImport">Import</button></div>
-    </div>
 
     <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
     <div style="display:flex;justify-content:space-between;align-items:center"><strong>Comments</strong><span class="muted" id="cCount"></span></div>
@@ -189,7 +194,7 @@ tbody tr{background:#fff;border:1px solid var(--line)} tbody tr td:first-child{b
   </div>
 </dialog>
 
-<!-- Offer Modal -->
+<!-- Offer Modal (for Purchasing) -->
 <dialog id="offerModal"><form id="offerForm">
   <div class="hd"><strong>Add Offer</strong></div>
   <div class="bd">
@@ -221,35 +226,35 @@ tbody tr{background:#fff;border:1px solid var(--line)} tbody tr td:first-child{b
 <div id="toast" class="toast"></div>
 
 <script>
-/* ========= Local store (v6) ========= */
-const K_RFQ='ve_rfqs_v6', K_OFF='ve_offers_v6', K_VEND='ve_vendors_v1', K_CMT='ve_comments_v1';
+/* ==== Local store (v7) ==== */
+const K_RFQ='ve_rfqs_v7', K_OFF='ve_offers_v7', K_CMT='ve_comments_v1';
 const DEFAULT_SALES = JSON.parse(localStorage.getItem('ve_salespeople')||'null') || ["Emir","Nick K","Dan","Jake","Alan","Howell","Maddy"];
 const state={salespeople:[...DEFAULT_SALES], allRFQs:[], offersByRFQ:new Map(), tab:'All', view:'list', active:null};
 
-/* DOM */
-const tabsEl=$('#salesTabs'), rfqListEl=$('#rfqList'), boardEl=$('#board'), emptyEl=$('#emptyState');
-const listTitle=$('#listTitle'), listMeta=$('#listMeta');
-const searchEl=$('#search'), salesFilterEl=$('#salesFilter'), statusFilterEl=$('#statusFilter'), sortEl=$('#sortBy');
-const viewListBtn=$('#viewList'), viewBoardBtn=$('#viewBoard');
-const rfqForm=$('#rfqForm'), salespersonEl=$('#salesperson'), manageSalesBtn=$('#manageSales');
-const partEl=$('#partNumber'), qtyEl=$('#quantity'), targetEl=$('#targetPrice'), notesEl=$('#rfqNotes'), priorityEl=$('#priority'), currencyEl=$('#currency'), rfqHint=$('#rfqHint');
-const offerModal=$('#offerModal'), offerForm=$('#offerForm'), offerCancel=$('#offerCancel');
-const rfqDrawer=$('#rfqDrawer'), drawerTitle=$('#drawerTitle'), drawerMeta=$('#drawerMeta'), drawerSendBtn=$('#drawerSend'), drawerCloseBtn=$('#drawerCloseBtn');
-const covBar=$('#rfqDrawer .coverage i'), covTxt=$('#drawerCoverageText'), offerRows=$('#offerRows'), vendorList=$('#vendorList');
-const quickBtn=$('#quickAdd'), pasteToggle=$('#pasteToggle'), pasteBox=$('#pasteBox'), pasteImport=$('#pasteImport'), pasteArea=$('#pasteArea');
-const commentsEl=$('#comments'), cAuthorEl=$('#cAuthor'), cTextEl=$('#cText'), cAddBtn=$('#cAdd'), cCountEl=$('#cCount');
+/* DOM grabs */
+const $=s=>document.querySelector(s);
+const tabsEl=$("#salesTabs"), rfqListEl=$("#rfqList"), boardEl=$("#board"), emptyEl=$("#emptyState");
+const listTitle=$("#listTitle"), listMeta=$("#listMeta");
+const searchEl=$("#search"), fSales=$("#fSales"), fStatus=$("#fStatus"), fSort=$("#fSort");
+const viewListBtn=$("#viewList"), viewBoardBtn=$("#viewBoard");
+const rfqForm=$("#rfqForm"), salespersonEl=$("#salesperson"), manageSalesBtn=$("#manageSales");
+const partEl=$("#partNumber"), qtyEl=$("#quantity"), targetEl=$("#targetPrice"), notesEl=$("#rfqNotes"), priorityEl=$("#priority"), currencyEl=$("#currency"), rfqHint=$("#rfqHint");
+const offerModal=$("#offerModal"), offerForm=$("#offerForm"), offerCancel=$("#offerCancel");
+const rfqDrawer=$("#rfqDrawer"), drawerTitle=$("#drawerTitle"), drawerMeta=$("#drawerMeta"), drawerSendBtn=$("#drawerSend"), drawerCloseBtn=$("#drawerCloseBtn");
+const covBar=$("#rfqDrawer .coverage i"), covTxt=$("#drawerCoverageText"), offerRows=$("#offerRows");
+const commentsEl=$("#comments"), cAuthorEl=$("#cAuthor"), cTextEl=$("#cText"), cAddBtn=$("#cAdd"), cCountEl=$("#cCount");
 
-/* Utils */
-function $(s,c=document){return c.querySelector(s)}
-function toast(m){const t=$('#toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000)}
-const read=k=>JSON.parse(localStorage.getItem(k)||'[]'), write=(k,v)=>localStorage.setItem(k,JSON.stringify(v)), nid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2)
-function money(v,cur){try{return new Intl.NumberFormat(undefined,{style:'currency',currency:cur||'USD'}).format(Number(v))}catch(e){return (cur||'USD')+' '+Number(v).toFixed(2)}}
-const cap=s=>s.charAt(0).toUpperCase()+s.slice(1)
-function bestOffer(os){return os && os.length?os[0]:null}
-function coverage(os,need){const sum=(os||[]).reduce((t,o)=>t+(Number(o.qty_offer)||0),0);return {sum,pct:Math.max(0,Math.min(100,Math.round((sum/Math.max(need||0,1))*100)))}}
+/* utils */
+const read=k=>JSON.parse(localStorage.getItem(k)||'[]'), write=(k,v)=>localStorage.setItem(k,JSON.stringify(v)), nid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
+const money=(v,cur)=>{try{return new Intl.NumberFormat(undefined,{style:'currency',currency:cur||'USD'}).format(Number(v))}catch(e){return (cur||'USD')+' '+Number(v).toFixed(2)}};
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const best=arr=>arr && arr.length?arr.slice().sort((a,b)=>(a.price-b.price)||(b.confidence-a.confidence))[0]:null;
+const coverage=(arr,need)=>{const sum=(arr||[]).reduce((t,o)=>t+(Number(o.qty_offer)||0),0);return{sum,pct:Math.max(0,Math.min(100,Math.round((sum/Math.max(need||0,1))*100)))}};
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 
-/* Load + map */
-async function loadAll(){
+/* load */
+function loadAll(){
   state.allRFQs=read(K_RFQ).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   const allOff=read(K_OFF); state.offersByRFQ=new Map(state.allRFQs.map(r=>[r.id,[]]));
   allOff.forEach(o=>{const arr=state.offersByRFQ.get(o.rfq_id); if(arr) arr.push(o)});
@@ -257,16 +262,18 @@ async function loadAll(){
   render();
 }
 
-/* Build */
-function buildSales(){const opts=state.salespeople.map(n=>`<option>${n}</option>`).join(''); salespersonEl.innerHTML=opts; salesFilterEl.innerHTML='<option>All</option>'+opts}
+/* tabs + filters */
+function buildSales(){
+  const opts=state.salespeople.map(n=>`<option>${n}</option>`).join('');
+  salespersonEl.innerHTML=opts; fSales.innerHTML='<option>All</option>'+opts;
+}
 function buildTabs(){
   tabsEl.innerHTML=''; const names=new Set(['All',...state.salespeople]); state.allRFQs.forEach(r=>names.add(r.salesperson));
   const counts={}; state.allRFQs.forEach(r=>counts[r.salesperson]=(counts[r.salesperson]||0)+1);
-  [...names].forEach(n=>{const el=document.createElement('div'); el.className='tab'+(n===state.tab?' active':''); el.textContent=`${n}${n==='All'?` (${state.allRFQs.length})`:` (${counts[n]||0})`}`;
-    el.onclick=()=>{state.tab=n; render()}; tabsEl.appendChild(el)})
+  [...names].forEach(n=>{const el=document.createElement('div'); el.className='tab'+(n===state.tab?' active':''); el.textContent=`${n}${n==='All'?` (${state.allRFQs.length})`:` (${counts[n]||0})`}`; el.onclick=()=>{state.tab=n; render()}; tabsEl.appendChild(el)});
 }
 
-/* Render */
+/* render */
 function render(){
   buildTabs(); buildSales();
   viewListBtn.setAttribute('aria-pressed',state.view==='list'); viewBoardBtn.setAttribute('aria-pressed',state.view==='board');
@@ -274,17 +281,16 @@ function render(){
 
   let rfqs=[...state.allRFQs];
   if(state.tab!=='All') rfqs=rfqs.filter(r=>r.salesperson===state.tab);
-  if(salesFilterEl.value!=='All') rfqs=rfqs.filter(r=>r.salesperson===salesFilterEl.value);
-  const q=(searchEl.value||'').trim().toLowerCase(); if(q) rfqs=rfqs.filter(r=>r.part_number.toLowerCase().includes(q));
-  const sf=statusFilterEl.value; if(sf!=='all') rfqs=rfqs.filter(r=>r.status===sf);
+  if(fSales.value!=='All') rfqs=rfqs.filter(r=>r.salesperson===fSales.value);
+  const q=(searchEl.value||'').toLowerCase().trim(); if(q) rfqs=rfqs.filter(r=>r.part_number.toLowerCase().includes(q));
+  const st=fStatus.value; if(st!=='all') rfqs=rfqs.filter(r=>r.status===st);
   rfqs=rfqs.map(r=>({...r,offers:state.offersByRFQ.get(r.id)||[]}));
 
-  // sort
-  const srt=sortEl.value;
+  const srt=fSort.value;
   if(srt==='created_desc') rfqs.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   if(srt==='created_asc') rfqs.sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
-  if(srt==='best_price') rfqs.sort((a,b)=>((bestOffer(a.offers)||{price:Infinity}).price)-((bestOffer(b.offers)||{price:Infinity}).price));
-  if(srt==='lead_time') rfqs.sort((a,b)=>((bestOffer(a.offers)||{lead_time:Infinity}).lead_time||Infinity)-((bestOffer(b.offers)||{lead_time:Infinity}).lead_time||Infinity));
+  if(srt==='best_price') rfqs.sort((a,b)=>((best(a.offers)||{price:Infinity}).price)-((best(b.offers)||{price:Infinity}).price));
+  if(srt==='lead_time') rfqs.sort((a,b)=>((best(a.offers)||{lead_time:Infinity}).lead_time||Infinity)-((best(b.offers)||{lead_time:Infinity}).lead_time||Infinity));
   if(srt==='priority'){const sc=p=>({low:1,normal:2,high:3,urgent:4}[p]||0); rfqs.sort((a,b)=>sc(b.priority)-sc(a.priority))}
   if(srt==='coverage') rfqs.sort((a,b)=>coverage(b.offers,b.quantity).pct-coverage(a.offers,a.quantity).pct);
 
@@ -295,7 +301,7 @@ function render(){
 function renderList(rfqs){
   rfqListEl.innerHTML=''; if(!rfqs.length){emptyEl.style.display='block'; return} emptyEl.style.display='none';
   rfqs.forEach(r=>{
-    const os=r.offers, bo=bestOffer(os), cov=coverage(os,r.quantity);
+    const os=r.offers, bo=best(os), cov=coverage(os,r.quantity);
     const el=document.createElement('div'); el.className='rfq';
     el.innerHTML=`<div class="rfq-hd">
       <div><div class="rfq-title">${r.part_number} <span class="muted">× ${r.quantity.toLocaleString()}</span></div>
@@ -317,7 +323,7 @@ function renderList(rfqs){
           <div class="coverage" style="flex:1"><i style="width:${cov.pct}%"></i></div>
           <div class="muted" style="width:120px;text-align:right">${cov.sum}/${r.quantity}</div>
         </div>
-        ${bo?`<div class="offer"><div><strong>${bo.vendor}</strong> <span class="chip">${bo.location||'—'}</span> <span class="chip">${money(bo.price,bo.currency)}</span> ${bo.qty_offer?`<span class="chip">Qty ${bo.qty_offer}</span>`:''} ${bo.lead_time?`<span class="chip">${bo.lead_time}d</span>`:''} <span class="chip conf" data-level="${bo.confidence}">Conf ${bo.confidence}</span></div><div></div></div>`:`<div class="muted">No offers yet.</div>`}
+        ${bo?`<div class="chip"><strong>${bo.vendor}</strong> • ${bo.location||'—'} • ${money(bo.price,bo.currency)} • ${bo.qty_offer||'—'} pcs • ${bo.lead_time||'—'}d <span class="chip conf" data-level="${bo.confidence}">Conf ${bo.confidence}</span></div>`:`<div class="muted">No offers yet.</div>`}
       </div>`;
     el.querySelector('[data-act="view"]').onclick=()=>openDrawer(r);
     el.querySelector('[data-act="add"]').onclick=()=>openOfferModal(r.id);
@@ -330,142 +336,94 @@ function renderList(rfqs){
 function renderBoard(rfqs){
   boardEl.innerHTML='';
   const g={need:[],partial:[],full:[],sent:[]};
-  rfqs.forEach(r=>{
-    const cov=coverage(r.offers,r.quantity).sum;
-    if(r.status==='ordered') g.sent.push(r);
-    else if(!cov) g.need.push(r);
-    else if(cov<r.quantity) g.partial.push(r);
-    else g.full.push(r);
-  });
-  const spec=[['need','Needs Offers'],['partial','Partially Covered'],['full','Fully Covered'],['sent','Sent to Orders']];
-  spec.forEach(([key,label])=>{
+  rfqs.forEach(r=>{const s=coverage(r.offers,r.quantity).sum; if(r.status==='ordered')g.sent.push(r); else if(!s)g.need.push(r); else if(s<r.quantity)g.partial.push(r); else g.full.push(r);});
+  [['need','Needs Offers'],['partial','Partially Covered'],['full','Fully Covered'],['sent','Sent to Orders']].forEach(([k,label])=>{
     const col=document.createElement('div'); col.className='col';
-    col.innerHTML=`<div class="col-hd">${label}<span class="muted">${g[key].length}</span></div><div class="col-bd"></div>`;
+    col.innerHTML=`<div class="col-hd">${label}<span class="muted">${g[k].length}</span></div><div class="col-bd"></div>`;
     const bd=col.querySelector('.col-bd');
-    g[key].forEach(r=>{
-      const bo=bestOffer(r.offers), cov=coverage(r.offers,r.quantity);
-      const m=document.createElement('div'); m.className='mini';
-      m.innerHTML=`<div style="font-weight:700">${r.part_number}</div><div class="meta">Qty ${r.quantity} • ${r.offers.length} offers${bo?` • Best ${money(bo.price,bo.currency)}`:''} • ${cov.sum}/${r.quantity}</div><div style="display:flex;gap:8px;margin-top:8px"><button class="ghost" data-a="view">View</button><button class="ghost" data-a="add">Add</button></div>`;
-      m.querySelector('[data-a="view"]').onclick=()=>openDrawer(r);
-      m.querySelector('[data-a="add"]').onclick=()=>openOfferModal(r.id);
-      bd.appendChild(m);
+    g[k].forEach(r=>{const bo=best(r.offers), c=coverage(r.offers,r.quantity); const m=document.createElement('div'); m.className='mini';
+      m.innerHTML=`<div style="font-weight:700">${r.part_number}</div><div class="meta">Qty ${r.quantity} • ${r.offers.length} offers${bo?` • Best ${money(bo.price,bo.currency)}`:''} • ${c.sum}/${r.quantity}</div><div style="display:flex;gap:8px;margin-top:8px"><button class="ghost" data-a="view">View</button><button class="ghost" data-a="add">Add</button></div>`;
+      m.querySelector('[data-a="view"]').onclick=()=>openDrawer(r); m.querySelector('[data-a="add"]').onclick=()=>openOfferModal(r.id); bd.appendChild(m);
     });
     boardEl.appendChild(col);
   });
 }
 
-/* Actions */
-function updateRFQ(id,patch){
-  const arr=read(K_RFQ); const i=arr.findIndex(r=>r.id===id); if(i<0){toast('RFQ not found');return}
-  arr[i]={...arr[i],...patch}; write(K_RFQ,arr); toast('Updated'); loadAll();
-}
+/* CRUD */
+function updateRFQ(id,patch){const arr=read(K_RFQ); const i=arr.findIndex(r=>r.id===id); if(i<0){toast('RFQ not found');return} arr[i]={...arr[i],...patch}; write(K_RFQ,arr); toast('Updated'); loadAll();}
+
 rfqForm.addEventListener('submit',e=>{
   e.preventDefault();
   const rfq={ id:nid(), created_at:new Date().toISOString(), salesperson:salespersonEl.value,
     part_number:partEl.value.trim(), quantity:Number(qtyEl.value), target_price:targetEl.value?Number(targetEl.value):null,
     priority:priorityEl.value||'normal', currency:currencyEl.value||'USD', notes:notesEl.value||null, status:'open'
   };
-  if(!rfq.salesperson || !rfq.part_number || !rfq.quantity){toast('Please fill required fields');return}
+  if(!rfq.salesperson||!rfq.part_number||!rfq.quantity){toast('Please fill required fields');return}
   rfqHint.textContent='Saving…'; const arr=read(K_RFQ); arr.push(rfq); write(K_RFQ,arr); rfqHint.textContent=''; toast('RFQ created'); rfqForm.reset(); state.tab=rfq.salesperson; loadAll();
 });
+
 manageSalesBtn.addEventListener('click',()=>{
-  const val=prompt('Add salesperson (or edit list CSV):',state.salespeople.join(', ')); if(val==null) return;
+  const val=prompt('Add salesperson (or edit list CSV):',state.salespeople.join(', ')); if(val==null)return;
   state.salespeople=val.split(',').map(s=>s.trim()).filter(Boolean); localStorage.setItem('ve_salespeople',JSON.stringify(state.salespeople)); buildSales(); buildTabs();
 });
-searchEl.addEventListener('input',render); salesFilterEl.addEventListener('change',render); statusFilterEl.addEventListener('change',render); sortEl.addEventListener('change',render);
+
+["input","change"].forEach(ev=>{searchEl.addEventListener(ev,render); fSales.addEventListener(ev,render); fStatus.addEventListener(ev,render); fSort.addEventListener(ev,render);});
 viewListBtn.addEventListener('click',()=>{state.view='list';render()}); viewBoardBtn.addEventListener('click',()=>{state.view='board';render()});
 
-/* Drawer + offers */
-function openOfferModal(rfq_id){ $('#offer_rfq_id').value=rfq_id; offerForm.reset(); offerModal.showModal() }
+/* Offer modal (Purchasing) */
+function openOfferModal(rfq_id){ $("#offer_rfq_id").value=rfq_id; offerForm.reset(); offerModal.showModal(); }
 offerCancel.addEventListener('click',()=>offerModal.close());
 offerForm.addEventListener('submit',e=>{
   e.preventDefault();
-  const p={ id:nid(), created_at:new Date().toISOString(), rfq_id:$('#offer_rfq_id').value,
-    vendor:$('#vendor').value.trim(), location:$('#location').value.trim()||null,
-    price:Number($('#price').value), currency:$('#offer_currency').value, qty_offer:valInt($('#qty_offer').value),
-    moq:valInt($('#moq').value), lead_time:valInt($('#lead_time').value), confidence:Number($('#confidence').value||3),
-    comments:$('#offerNotes').value||null
+  const p={ id:nid(), created_at:new Date().toISOString(), rfq_id:$("#offer_rfq_id").value,
+    vendor:$("#vendor").value.trim(), location:$("#location").value.trim()||null,
+    price:Number($("#price").value), currency:$("#offer_currency").value,
+    qty_offer:parseInt($("#qty_offer").value||"",10) || null,
+    moq:parseInt($("#moq").value||"",10) || null,
+    lead_time:parseInt($("#lead_time").value||"",10) || null,
+    confidence:Number($("#confidence").value||3),
+    comments:$("#offerNotes").value||null
   };
   if(!p.vendor||isNaN(p.price)){toast('Vendor + price required');return}
-  const arr=read(K_OFF); arr.push(p); write(K_OFF,arr); bumpVendors(p.vendor); toast('Offer saved'); offerModal.close(); loadAll(); if(state.active&&state.active.id===p.rfq_id) openDrawer(getRFQ(p.rfq_id),true);
+  const arr=read(K_OFF); arr.push(p); write(K_OFF,arr); toast('Offer saved'); offerModal.close(); loadAll(); if(state.active&&state.active.id===p.rfq_id) openDrawer(getRFQ(p.rfq_id),true);
 });
-function valInt(v){const n=parseInt(v,10);return isNaN(n)?null:n}
-function bumpVendors(v){const s=new Set(read(K_VEND)); s.add(v); write(K_VEND,[...s])}
-function getRFQ(id){return state.allRFQs.find(r=>String(r.id)===String(id))}
+const getRFQ=id=>state.allRFQs.find(r=>String(r.id)===String(id));
 
-function openDrawer(r,keep){ state.active=r; const os=state.offersByRFQ.get(r.id)||[]; const cov=coverage(os,r.quantity);
-  drawerTitle.textContent=`${r.part_number} × ${r.quantity}`; drawerMeta.textContent=`Sales: ${r.salesperson} • Priority: ${cap(r.priority)} • ${new Date(r.created_at).toLocaleString()}`
+/* Drawer (read-only except comments) */
+function openDrawer(r,keep){
+  state.active=r; const os=state.offersByRFQ.get(r.id)||[]; const cov=coverage(os,r.quantity);
+  drawerTitle.textContent=`${r.part_number} × ${r.quantity}`; drawerMeta.textContent=`Sales: ${r.salesperson} • Priority: ${cap(r.priority)} • ${new Date(r.created_at).toLocaleString()}`;
   covBar.style.width=cov.pct+'%'; covTxt.textContent=`${cov.sum}/${r.quantity}`;
-  vendorList.innerHTML=(read(K_VEND)||[]).map(v=>`<option value="${v}">`).join('');
   renderOfferRows(os); renderComments(r.id); if(!keep) rfqDrawer.showModal();
 }
-drawerCloseBtn.addEventListener('click',()=>rfqDrawer.close());
-drawerSendBtn.addEventListener('click',()=>{ if(!state.active) return; updateRFQ(state.active.id,{status:'ordered',sent_to_orders_at:new Date().toISOString()}) });
-
 function renderOfferRows(os){
-  offerRows.innerHTML=''; os.forEach(o=>{
+  offerRows.innerHTML=''; const bestO=best(os);
+  os.forEach(o=>{
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${esc(o.vendor)}</td><td>${esc(o.location||'')}</td><td>${money(o.price,o.currency)}</td>
-      <td>${o.currency}</td><td>${o.qty_offer||''}</td><td>${o.moq||''}</td><td>${o.lead_time||''}</td>
-      <td><span class="chip conf" data-level="${o.confidence}">${o.confidence}</span></td><td>${esc(o.comments||'')}</td><td></td>`;
+    if(bestO && bestO.id===o.id) tr.style.outline='2px solid rgba(111,87,233,.35)';
+    tr.innerHTML=`<td>${esc(o.vendor)}</td><td>${esc(o.location||'')}</td><td>${money(o.price,o.currency)}</td><td>${o.currency}</td><td>${o.qty_offer||''}</td><td>${o.moq||''}</td><td>${o.lead_time||''}</td><td><span class="chip conf" data-level="${o.confidence}">${o.confidence}</span></td><td>${esc(o.comments||'')}</td>`;
     offerRows.appendChild(tr);
   });
 }
-function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-
-/* Quick add row */
-['#in_vendor','#in_location','#in_price','#in_currency','#in_qty','#in_moq','#in_lt','#in_conf','#in_comments'].forEach(sel=>{
-  $(sel).addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); quickAdd() }});
-});
-$('#quickAdd').addEventListener('click',quickAdd);
-function quickAdd(){
-  if(!state.active) return;
-  const p={ id:nid(), created_at:new Date().toISOString(), rfq_id:state.active.id,
-    vendor:$('#in_vendor').value.trim(), location:$('#in_location').value.trim()||null,
-    price:Number($('#in_price').value), currency:$('#in_currency').value,
-    qty_offer:valInt($('#in_qty').value), moq:valInt($('#in_moq').value), lead_time:valInt($('#in_lt').value),
-    confidence:Number($('#in_conf').value||3), comments:$('#in_comments').value||null
-  };
-  if(!p.vendor||isNaN(p.price)){toast('Vendor + price required');return}
-  const arr=read(K_OFF); arr.push(p); write(K_OFF,arr); bumpVendors(p.vendor); toast('Offer added');
-  ['#in_vendor','#in_location','#in_price','#in_qty','#in_moq','#in_lt','#in_comments'].forEach(sel=>$(sel).value=''); loadAll(); openDrawer(getRFQ(state.active.id),true);
-}
-
-/* Paste import */
-pasteToggle.addEventListener('click',()=>{ pasteBox.style.display=pasteBox.style.display==='none'?'block':'none' });
-pasteImport.addEventListener('click',()=>{
-  if(!state.active) return; const lines=pasteArea.value.trim().split(/\n+/);
-  const arr=read(K_OFF);
-  lines.forEach(l=>{
-    const [vendor,location,price,currency,qty,moq,lead,conf,comments]=l.split(/\s*,\s*/);
-    if(!vendor||!price) return;
-    arr.push({id:nid(),created_at:new Date().toISOString(),rfq_id:state.active.id,vendor,location:location||null,price:Number(price),currency:(currency||'USD').toUpperCase(),qty_offer:valInt(qty),moq:valInt(moq),lead_time:valInt(lead),confidence:Number(conf||3),comments:comments||null});
-    bumpVendors(vendor);
-  });
-  write(K_OFF,arr); toast('Offers imported'); loadAll(); openDrawer(getRFQ(state.active.id),true);
-});
+drawerCloseBtn.addEventListener('click',()=>rfqDrawer.close());
+drawerSendBtn.addEventListener('click',()=>{ if(!state.active)return; updateRFQ(state.active.id,{status:'ordered',sent_to_orders_at:new Date().toISOString()}) });
 
 /* Comments */
-async function renderComments(rid){
-  commentsEl.innerHTML=''; const cs=read(K_CMT).filter(c=>c.rfq_id===rid).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
-  cCountEl.textContent=cs.length;
-  cs.forEach(c=>{
-    const row=document.createElement('div'); row.style.cssText='border:1px solid var(--line);border-radius:10px;padding:8px 10px';
-    row.innerHTML=`<div style="display:flex;justify-content:space-between"><strong>${esc(c.author||'Anon')}</strong><span class="muted">${new Date(c.created_at).toLocaleString()}</span></div><div>${esc(c.text||'')}</div>`;
-    commentsEl.appendChild(row);
-  });
+function renderComments(rid){
+  commentsEl.innerHTML=''; const arr=read(K_CMT).filter(c=>c.rfq_id===rid).sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+  cCountEl.textContent=arr.length;
+  arr.forEach(c=>{const row=document.createElement('div');row.style.cssText='border:1px solid var(--line);border-radius:10px;padding:8px 10px';
+    row.innerHTML=`<div style="display:flex;justify-content:space-between"><strong>${esc(c.author||'Anon')}</strong><span class="muted">${new Date(c.created_at).toLocaleString()}</span></div><div>${esc(c.text||'')}</div>`;commentsEl.appendChild(row)});
 }
 cAddBtn.addEventListener('click',()=>{
   if(!state.active) return; const text=cTextEl.value.trim(); if(!text) return;
-  const arr=read(K_CMT); arr.push({id:nid(),created_at:new Date().toISOString(),rfq_id:state.active.id,author:cAuthorEl.value.trim()||'Anon',text});
-  write(K_CMT,arr); cTextEl.value=''; renderComments(state.active.id);
+  const arr=read(K_CMT); arr.push({id:nid(),created_at:new Date().toISOString(),rfq_id:state.active.id,author:cAuthorEl.value.trim()||'Anon',text}); write(K_CMT,arr); cTextEl.value=''; renderComments(state.active.id);
 });
 
-/* Init */
-(function init(){
-  buildSales(); loadAll();
-})();
+/* init */
+(function init(){ buildSales(); loadAll(); })();
 </script>
 </body>
 </html>
+
 
