@@ -10,6 +10,7 @@
       --brand:#6f57e9; --ink:#1e2330; --muted:#6d7486;
       --bg:#f6f7fb; --card:#fff; --line:#e9e9ef;
       --green:#12a274; --amber:#f59e0b; --red:#ef4444; --blue:#3b82f6;
+      --purple:#3b2eca; --chip:#f1f2f7;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -38,11 +39,17 @@
     .rfq-hd{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;padding:12px 14px;border-bottom:1px solid var(--line)}
     .rfq-title{font-weight:700}
     .meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12px}
-    .badge{padding:2px 8px;border-radius:999px;background:#f1f2f7;color:#555;border:1px solid var(--line);font-size:12px}
+    .badge{padding:2px 8px;border-radius:999px;background:var(--chip);color:#555;border:1px solid var(--line);font-size:12px}
     .status{padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line)}
     .status.open{background:#eef2ff;color:#3b2eca;border-color:#c7d2fe}
     .status.ordered{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
     .status.closed{background:#f3f4f6;color:#374151;border-color:#e5e7eb}
+
+    .priority{padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line)}
+    .priority.low{background:#f3f4f6;color:#374151}
+    .priority.normal{background:#eef2ff;color:#3b2eca;border-color:#c7d2fe}
+    .priority.high{background:#fff7ed;color:#9a3412;border-color:#fed7aa}
+    .priority.urgent{background:#fee2e2;color:#b91c1c;border-color:#fecaca}
 
     .offer-best{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;border:1px dashed var(--line);background:#fafbff}
     .offer-list{padding:10px 12px}
@@ -57,7 +64,7 @@
 
     .actions{display:flex;gap:8px;flex-wrap:wrap}
     .tools{display:flex;gap:10px;align-items:center}
-    .search{flex:1;min-width:260px}
+    .search{flex:1;min-width:220px}
     .muted{color:var(--muted)}
 
     dialog{border:0;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.2);width:560px;max-width:calc(100vw - 24px)}
@@ -68,6 +75,10 @@
     .toast.show{opacity:1;transform:none}
 
     .empty{padding:30px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);text-align:center;background:#fff}
+
+    /* coverage bar */
+    .coverage{height:8px;background:#f3f4f6;border-radius:999px;overflow:hidden}
+    .coverage > i{display:block;height:100%;background:linear-gradient(90deg,#a78bfa,#60a5fa);width:0%}
   </style>
 </head>
 <body>
@@ -76,6 +87,9 @@
       <div class="brand"><span class="dot"></span> Verified Electronics — Purchasing Board</div>
       <div class="tools" style="margin-left:auto">
         <input id="search" class="pill search" placeholder="Search part number…" />
+        <select id="salesFilter" class="pill">
+          <option value="All">All salespeople</option>
+        </select>
         <select id="statusFilter" class="pill">
           <option value="all">All statuses</option>
           <option value="open">Open</option>
@@ -87,6 +101,7 @@
           <option value="created_asc">Oldest</option>
           <option value="best_price">Best price</option>
           <option value="lead_time">Lead time</option>
+          <option value="priority">Priority</option>
         </select>
       </div>
     </div>
@@ -115,6 +130,25 @@
               <div>
                 <label>Target Price (optional)</label>
                 <input id="targetPrice" type="number" min="0" step="0.01" placeholder="e.g., 1.25" />
+              </div>
+            </div>
+            <div class="row2">
+              <div>
+                <label>Priority</label>
+                <select id="priority">
+                  <option value="normal">Normal</option>
+                  <option value="low">Low</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+              <div>
+                <label>Currency</label>
+                <select id="currency">
+                  <option>USD</option>
+                  <option>GBP</option>
+                  <option>EUR</option>
+                </select>
               </div>
             </div>
             <div>
@@ -166,7 +200,7 @@
           </div>
           <div>
             <label>Currency</label>
-            <select id="currency">
+            <select id="offer_currency">
               <option>USD</option>
               <option>GBP</option>
               <option>EUR</option>
@@ -175,8 +209,8 @@
         </div>
         <div class="row2">
           <div>
-            <label>Qty Available</label>
-            <input id="qty_available" type="number" min="0" step="1" />
+            <label>Qty Offered (can be partial)</label>
+            <input id="qty_offer" type="number" min="0" step="1" />
           </div>
           <div>
             <label>MOQ</label>
@@ -214,19 +248,91 @@
   <div id="toast" class="toast"></div>
 
   <script type="module">
-    // === CONFIG ===
-    // 1) Fill these in with your Supabase project's values
-    const SUPABASE_URL = "https://YOUR-SUPABASE-PROJECT.supabase.co"; // <-- replace
-    const SUPABASE_ANON_KEY = "YOUR-SUPABASE-ANON-KEY"; // <-- replace
+    // ===============================
+    // MODE: Supabase or Local Storage
+    // ===============================
+    const SUPABASE_URL = "https://YOUR-SUPABASE-PROJECT.supabase.co"; // replace when ready
+    const SUPABASE_ANON_KEY = "YOUR-SUPABASE-ANON-KEY"; // replace when ready
+    const HAS_SUPABASE = SUPABASE_URL && !/YOUR-SUPABASE-PROJECT/.test(SUPABASE_URL) && SUPABASE_ANON_KEY && !/YOUR-/.test(SUPABASE_ANON_KEY);
 
-    // 2) Optional: preload known salespeople so tabs exist from day one
+    // Preload known salespeople for tabs; grows automatically as RFQs come in
     const DEFAULT_SALESPEOPLE = ["Emir","Nick K","Dan","Jake","Alan","Howell","Maddy"]; // edit as needed
 
-    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let store; // data access abstraction
+
+    // ===== Local Store (runs offline) =====
+    const localStore = (()=>{
+      const kRFQ = 've_rfqs_v2';
+      const kOFF = 've_offers_v2';
+      const read = k => JSON.parse(localStorage.getItem(k)||'[]');
+      const write = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+      const nid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
+
+      async function listRFQs(){ return read(kRFQ).sort((a,b)=> new Date(b.created_at)-new Date(a.created_at)); }
+      async function listOffersFor(rfqIds){
+        const all = read(kOFF);
+        const map = new Map(rfqIds.map(id=>[id,[]]));
+        all.forEach(o=>{ if(map.has(o.rfq_id)) map.get(o.rfq_id).push(o); });
+        return map;
+      }
+      async function createRFQ(payload){
+        const rfqs = read(kRFQ);
+        const id = nid();
+        rfqs.push({ id, created_at: new Date().toISOString(), status:'open', selected_offer_id:null, ...payload });
+        write(kRFQ, rfqs);
+        return rfqs.find(r=>r.id===id);
+      }
+      async function updateRFQ(id, patch){
+        const rfqs = read(kRFQ);
+        const i = rfqs.findIndex(r=>r.id===id); if(i<0) throw new Error('RFQ not found');
+        rfqs[i] = { ...rfqs[i], ...patch };
+        write(kRFQ, rfqs);
+      }
+      async function addOffer(payload){
+        const offers = read(kOFF);
+        const id = nid();
+        offers.push({ id, created_at:new Date().toISOString(), ...payload });
+        write(kOFF, offers);
+      }
+      return { listRFQs, listOffersFor, createRFQ, updateRFQ, addOffer, isLocal:true };
+    })();
+
+    // ===== Supabase Store (live DB) =====
+    let supabase; let supabaseStore;
+    if(HAS_SUPABASE){
+      const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+      supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      supabaseStore = {
+        async listRFQs(){
+          const { data, error } = await supabase.from('rfqs').select('*').order('created_at',{ascending:false}).limit(5000);
+          if(error) throw error; return data || [];
+        },
+        async listOffersFor(ids){
+          const map = new Map(ids.map(id=>[id,[]]));
+          if(ids.length===0) return map;
+          const { data, error } = await supabase.from('offers').select('*').in('rfq_id', ids).order('price',{ascending:true});
+          if(error) throw error;
+          (data||[]).forEach(o=>{ if(map.has(o.rfq_id)) map.get(o.rfq_id).push(o); });
+          return map;
+        },
+        async createRFQ(payload){
+          const { data, error } = await supabase.from('rfqs').insert(payload).select().single();
+          if(error) throw error; return data;
+        },
+        async updateRFQ(id, patch){
+          const { error } = await supabase.from('rfqs').update(patch).eq('id', id); if(error) throw error;
+        },
+        async addOffer(payload){
+          const { error } = await supabase.from('offers').insert(payload); if(error) throw error;
+        },
+        isLocal:false
+      };
+    }
+
+    store = HAS_SUPABASE ? supabaseStore : localStore;
 
     // === State ===
-    let allRFQs = []; // full list from DB
+    let allRFQs = []; // full list from store
     let offersByRFQ = new Map(); // rfq_id -> Offer[]
     let activeSalesTab = 'All';
 
@@ -244,10 +350,13 @@
     const targetPriceEl = document.getElementById('targetPrice');
     const rfqNotesEl = document.getElementById('rfqNotes');
     const rfqHint = document.getElementById('rfqHint');
+    const priorityEl = document.getElementById('priority');
+    const currencyEl = document.getElementById('currency');
 
     const searchEl = document.getElementById('search');
     const statusFilterEl = document.getElementById('statusFilter');
     const sortByEl = document.getElementById('sortBy');
+    const salesFilterEl = document.getElementById('salesFilter');
 
     const offerModal = document.getElementById('offerModal');
     const offerForm = document.getElementById('offerForm');
@@ -263,6 +372,8 @@
       tabsEl.innerHTML = '';
       const names = new Set(["All", ...DEFAULT_SALESPEOPLE]);
       allRFQs.forEach(r => names.add(r.salesperson));
+      // Sales filter dropdown options
+      salesFilterEl.innerHTML = '<option value="All">All salespeople</option>' + [...names].filter(n=>n!=='All').map(n=>`<option value="${n}">${n}</option>`).join('');
       [...names].forEach(name => {
         const el = document.createElement('div');
         el.className = 'tab' + (name === activeSalesTab ? ' active' : '');
@@ -278,11 +389,20 @@
       return offers.slice().sort((a,b)=> (a.price - b.price) || (b.confidence - a.confidence))[0];
     }
 
+    function coverage(offers, need){
+      const sum = (offers||[]).reduce((t,o)=> t + (o.qty_offer||0), 0);
+      const pct = Math.max(0, Math.min(100, Math.round((sum/Math.max(need,1))*100)));
+      return { sum, pct };
+    }
+
     function renderList(){
       buildTabs();
       let rfqs = allRFQs.slice();
       // filter by tab
       if(activeSalesTab !== 'All') rfqs = rfqs.filter(r => r.salesperson === activeSalesTab);
+
+      // Salesperson dropdown filter (works with tabs)
+      if(salesFilterEl.value && salesFilterEl.value !== 'All') rfqs = rfqs.filter(r => r.salesperson === salesFilterEl.value);
 
       // search
       const q = (searchEl.value||'').trim().toLowerCase();
@@ -309,6 +429,7 @@
         const al = A&&A.lead_time!=null?A.lead_time:Infinity, bl = B&&B.lead_time!=null?B.lead_time:Infinity;
         return al - bl;
       });
+      if(sortBy === 'priority') rfqs.sort((a,b)=> prScore(b.priority) - prScore(a.priority));
 
       // render
       rfqListEl.innerHTML = '';
@@ -325,6 +446,7 @@
       rfqs.forEach(r => {
         const offers = r.offers;
         const bo = bestOffer(offers);
+        const cov = coverage(offers, r.quantity);
         const card = document.createElement('div');
         card.className = 'rfq';
         card.innerHTML = `
@@ -336,6 +458,7 @@
                 <span class="badge">Created: ${new Date(r.created_at).toLocaleString()}</span>
                 ${r.target_price ? `<span class="badge">Target: ${fmtMoney(r.target_price, r.currency||'USD')}</span>`:''}
                 <span class="status ${r.status}">${r.status}</span>
+                <span class="priority ${r.priority}">Priority: ${cap(r.priority)}</span>
               </div>
             </div>
             <div class="actions">
@@ -345,7 +468,12 @@
             </div>
           </div>
           <div class="offer-list">
-            ${bo? `<div class="offer-best"><strong>Best:</strong> ${bo.vendor} — ${fmtMoney(bo.price, bo.currency)} / ${bo.qty_available||'—'} pcs <span class="chip conf" data-level="${bo.confidence}">Conf ${bo.confidence}</span> ${bo.lead_time!=null?`<span class="chip">${bo.lead_time}d</span>`:''}</div>` : `<div class="muted">No offers yet.</div>`}
+            <div style="display:flex;align-items:center;gap:10px;margin:6px 0 10px">
+              <div style="min-width:120px" class="muted">Coverage</div>
+              <div class="coverage" style="flex:1"><i style="width:${cov.pct}%"></i></div>
+              <div class="muted" style="width:120px;text-align:right">${cov.sum}/${r.quantity}</div>
+            </div>
+            ${bo? `<div class="offer-best"><strong>Best:</strong> ${bo.vendor} — ${fmtMoney(bo.price, bo.currency)} / ${bo.qty_offer||'—'} pcs <span class="chip conf" data-level="${bo.confidence}">Conf ${bo.confidence}</span> ${bo.lead_time!=null?`<span class="chip">${bo.lead_time}d</span>`:''}</div>` : `<div class="muted">No offers yet.</div>`}
             ${offers.map(o=>offerRow(o)).join('')}
           </div>
         `;
@@ -365,7 +493,7 @@
             <strong>${o.vendor}</strong>
             <span class="chip">${o.location||'—'}</span>
             <span class="chip">${fmtMoney(o.price, o.currency)}</span>
-            ${o.qty_available!=null?`<span class="chip">Qty ${o.qty_available}</span>`:''}
+            ${o.qty_offer!=null?`<span class="chip">Qty ${o.qty_offer}</span>`:''}
             ${o.moq!=null?`<span class="chip">MOQ ${o.moq}</span>`:''}
             ${o.lead_time!=null?`<span class="chip">${o.lead_time}d</span>`:''}
             <span class="chip conf" data-level="${o.confidence}">Conf ${o.confidence}</span>
@@ -376,6 +504,9 @@
           </div>
         </div>`
     }
+
+    function prScore(p){ return {low:1, normal:2, high:3, urgent:4}[p]||0; }
+    function cap(s){ return (s||'').charAt(0).toUpperCase()+s.slice(1); }
 
     function fmtMoney(v, cur){
       try{ return new Intl.NumberFormat(undefined,{style:'currency',currency:cur||'USD'}).format(v); }
@@ -388,37 +519,16 @@
 
     // === Data IO ===
     async function loadRFQs(){
-      const { data, error } = await supabase
-        .from('rfqs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5000);
-      if(error){ console.error(error); toast('Load RFQs failed'); return; }
-      allRFQs = data || [];
-      await loadOffersFor(allRFQs.map(r=>r.id));
-      renderList();
-    }
-
-    async function loadOffersFor(ids){
-      offersByRFQ = new Map(ids.map(id => [id, []]));
-      if(ids.length === 0) return;
-      const { data, error } = await supabase
-        .from('offers')
-        .select('*')
-        .in('rfq_id', ids)
-        .order('price', { ascending: true });
-      if(error){ console.error(error); toast('Load offers failed'); return; }
-      (data||[]).forEach(o => {
-        if(!offersByRFQ.has(o.rfq_id)) offersByRFQ.set(o.rfq_id, []);
-        offersByRFQ.get(o.rfq_id).push(o);
-      });
+      try{
+        allRFQs = await store.listRFQs();
+        offersByRFQ = await store.listOffersFor(allRFQs.map(r=>r.id));
+        renderList();
+      }catch(e){ console.error(e); toast('Load failed'); }
     }
 
     async function updateRFQStatus(id, status){
-      const { error } = await supabase.from('rfqs').update({ status }).eq('id', id);
-      if(error){ console.error(error); toast('Update failed'); return; }
-      toast(`RFQ ${status}`);
-      loadRFQs();
+      try{ await store.updateRFQ(id, { status }); toast(`RFQ ${status}`); loadRFQs(); }
+      catch(e){ console.error(e); toast('Update failed'); }
     }
 
     // === Events ===
@@ -428,23 +538,25 @@
       const part_number = partNumberEl.value.trim();
       const quantity = parseInt(quantityEl.value,10);
       const target_price = targetPriceEl.value ? parseFloat(targetPriceEl.value) : null;
+      const priority = (priorityEl.value||'normal');
+      const currency = currencyEl.value||'USD';
       if(!salesperson || !part_number || !quantity){ toast('Please fill required fields'); return; }
       rfqHint.textContent = 'Saving…';
-      const { data, error } = await supabase.from('rfqs').insert({
-        salesperson, part_number, quantity, target_price, notes: rfqNotesEl.value || null, status:'open', currency:'USD'
-      }).select().single();
-      rfqHint.textContent = '';
-      if(error){ console.error(error); toast('Create failed'); return; }
-      toast('RFQ created');
-      rfqForm.reset();
-      // Switch to salesperson tab so they immediately see it
-      activeSalesTab = salesperson;
-      await loadRFQs();
+      try{
+        const rfq = await store.createRFQ({ salesperson, part_number, quantity, target_price, priority, notes: rfqNotesEl.value || null, status:'open', currency });
+        rfqHint.textContent = '';
+        toast('RFQ created');
+        rfqForm.reset();
+        // Switch to salesperson tab so they immediately see it
+        activeSalesTab = rfq.salesperson;
+        await loadRFQs();
+      }catch(e){ console.error(e); rfqHint.textContent = ''; toast('Create failed'); }
     });
 
     searchEl.addEventListener('input', renderList);
     statusFilterEl.addEventListener('change', renderList);
     sortByEl.addEventListener('change', renderList);
+    salesFilterEl.addEventListener('change', renderList);
 
     // Offers modal
     function openOfferModal(rfq_id){
@@ -464,18 +576,16 @@
         vendor: document.getElementById('vendor').value.trim(),
         location: document.getElementById('location').value.trim() || null,
         price: parseFloat(document.getElementById('price').value),
-        currency: document.getElementById('currency').value,
-        qty_available: valInt(document.getElementById('qty_available').value),
+        currency: document.getElementById('offer_currency').value,
+        qty_offer: valInt(document.getElementById('qty_offer').value),
         moq: valInt(document.getElementById('moq').value),
         lead_time: valInt(document.getElementById('lead_time').value),
         confidence: parseInt(document.getElementById('confidence').value,10),
         comments: document.getElementById('offerNotes').value || null,
       };
       if(!payload.vendor || isNaN(payload.price)){ toast('Vendor and Price required'); return; }
-      const { error } = await supabase.from('offers').insert(payload);
-      if(error){ console.error(error); toast('Save offer failed'); return; }
-      toast('Offer saved');
-      await loadRFQs();
+      try{ await store.addOffer(payload); toast('Offer saved'); await loadRFQs(); }
+      catch(e){ console.error(e); toast('Save offer failed'); }
     }
 
     function valInt(v){ const n = parseInt(v,10); return isNaN(n) ? null : n; }
@@ -485,13 +595,13 @@
       const btn = e.target.closest('[data-act="select-offer"]');
       if(!btn) return;
       const offerId = btn.getAttribute('data-offer-id');
-      // Mark the RFQ as ordered and store selected_offer_id
       const offer = findOffer(offerId);
       if(!offer){ toast('Offer not found'); return; }
-      const { error } = await supabase.from('rfqs').update({ status:'ordered', selected_offer_id: offer.id }).eq('id', offer.rfq_id);
-      if(error){ console.error(error); toast('Select offer failed'); return; }
-      toast('Offer selected & RFQ ordered');
-      loadRFQs();
+      try{
+        await store.updateRFQ(offer.rfq_id, { status:'ordered', selected_offer_id: offer.id });
+        toast('Offer selected & RFQ ordered');
+        loadRFQs();
+      }catch(err){ console.error(err); toast('Select offer failed'); }
     });
 
     function findOffer(id){
@@ -502,9 +612,11 @@
       return null;
     }
 
-    // Realtime updates
-    supabase.channel('rfqs-ch').on('postgres_changes', {event:'*', schema:'public', table:'rfqs'}, loadRFQs).subscribe();
-    supabase.channel('offers-ch').on('postgres_changes', {event:'*', schema:'public', table:'offers'}, loadRFQs).subscribe();
+    // Realtime updates (Supabase only)
+    if(!store.isLocal){
+      supabase.channel('rfqs-ch').on('postgres_changes', {event:'*', schema:'public', table:'rfqs'}, loadRFQs).subscribe();
+      supabase.channel('offers-ch').on('postgres_changes', {event:'*', schema:'public', table:'offers'}, loadRFQs).subscribe();
+    }
 
     // Bootstrap
     (async function init(){
@@ -517,7 +629,7 @@
   SUPABASE — SCHEMA (SQL)
   ==========================
 
-  Run this in Supabase SQL editor.
+  Run this in Supabase SQL editor when you want to go live.
 
   -- RFQs created by Sales
   create table if not exists public.rfqs (
@@ -529,6 +641,7 @@
     target_price numeric(18,6),
     currency text default 'USD',
     notes text,
+    priority text not null default 'normal' check (priority in ('low','normal','high','urgent')),
     status text not null default 'open' check (status in ('open','ordered','closed')),
     selected_offer_id bigint
   );
@@ -542,25 +655,19 @@
     location text,
     price numeric(18,6) not null check (price >= 0),
     currency text not null default 'USD',
-    qty_available integer,
+    qty_offer integer, -- partials allowed
     moq integer,
     lead_time integer, -- days
     confidence integer not null default 3 check (confidence between 1 and 5),
     comments text
   );
 
-  -- Helpful indexes
   create index if not exists rfqs_salesperson_idx on public.rfqs (salesperson);
   create index if not exists rfqs_part_idx on public.rfqs (part_number);
   create index if not exists offers_rfq_idx on public.offers (rfq_id);
   create index if not exists offers_price_idx on public.offers (price);
 
-  -- Optional: RLS (simple allow-all for authenticated users)
-  -- alter table public.rfqs enable row level security;
-  -- alter table public.offers enable row level security;
-  -- create policy "rfqs all" on public.rfqs for all to authenticated using (true) with check (true);
-  -- create policy "offers all" on public.offers for all to authenticated using (true) with check (true);
-
   -->
 </body>
 </html>
+
