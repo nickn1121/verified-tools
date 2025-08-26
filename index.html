@@ -180,7 +180,7 @@
         </div>
       </article>
 
-      <!-- Auto IC Source Uploader (link to Action) -->
+      <!-- Auto IC Source Uploader -->
       <article class="card" data-title="auto ic source uploader normalise map dedupe">
         <div class="bubble">📤</div>
         <div class="cd-hd">
@@ -189,10 +189,7 @@
         </div>
         <p class="desc">Upload and normalise supplier stock/excess files. Cleaning, mapping and de-dupe built-in.</p>
         <div class="cd-ft">
-          <a class="btn" target="_blank"
-             href="https://github.com/nickn1121/verified-tools/actions/workflows/icsource-upload.yml">
-             Send Now
-          </a>
+          <a id="ics-send" class="btn" href="#">Send Now</a>
           <span class="tag">Data</span>
         </div>
       </article>
@@ -252,6 +249,74 @@
       const on = document.body.classList.toggle('compact');
       compactBtn.setAttribute('aria-pressed', on?'true':'false');
     });
+  </script>
+
+  <!-- Worker trigger (no design change) -->
+  <script>
+  (function () {
+    const el = document.getElementById('ics-send');
+    if (!el) return;
+
+    // >>> set to your Worker + shared token (must match Worker secret) <<<
+    const WORKER_URL = 'https://young-firefly-7d18.nick-north.workers.dev/';
+    const UI_SHARED_TOKEN = 'icsource-7d4f2a9d81-Prod';
+    // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+    function flash(label, ms = 2000) {
+      const old = el.textContent;
+      el.textContent = label;
+      setTimeout(() => (el.textContent = old), ms);
+    }
+
+    async function trigger(dryRun) {
+      el.style.pointerEvents = 'none';
+      const oldLabel = el.textContent;
+      el.textContent = dryRun ? 'Generating…' : 'Sending…';
+
+      try {
+        const res = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${UI_SHARED_TOKEN}`
+          },
+          body: JSON.stringify({ dryRun })
+        });
+
+        if (!res.ok) {
+          const txt = await res.text();
+          alert(`Failed to trigger upload:\n${res.status} ${txt}`);
+          flash('Try again', 2200);
+          return;
+        }
+
+        if (dryRun) {
+          alert('CSV generation started (dry run). Check Actions → artifact "verified_inventory".');
+          flash('✓ Started (dry)', 2200);
+        } else {
+          alert('Live upload started. Check Actions for status (look for "✅ Upload complete").');
+          flash('✓ Started', 2200);
+        }
+
+        // If you prefer to open the workflow page automatically, uncomment:
+        // window.open('https://github.com/nickn1121/verified-tools/actions/workflows/icsource-upload.yml', '_blank');
+
+      } catch (err) {
+        alert('Network error: ' + (err?.message || err));
+        flash('Try again', 2200);
+      } finally {
+        el.style.pointerEvents = '';
+        el.textContent = oldLabel;
+      }
+    }
+
+    // OK = Dry Run (CSV only) • Cancel = Live upload
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const dry = confirm('Dry run?\nOK = Dry Run (CSV only)\nCancel = Live Upload to IC Source');
+      trigger(dry);
+    });
+  })();
   </script>
 
   <style>
