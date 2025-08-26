@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>IC Source Upload Logs</title>
+  <link rel="icon" href="data:;base64,iVBORw0KGgo="/>
+  <style>
+    body{margin:0;font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell;background:#f7f8fc;color:#1e2330}
+    .wrap{max-width:1100px;margin:26px auto;padding:0 20px}
+    h1{margin:0 0 16px}
+    .muted{color:#6d7486}
+    .controls{display:flex;gap:10px;margin:8px 0 16px}
+    table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e8eaf3;border-radius:12px;overflow:hidden;box-shadow:0 12px 30px rgba(5,10,30,.08)}
+    th,td{padding:10px 12px;border-bottom:1px solid #e8eaf3;text-align:left;font-size:13px}
+    th{background:#f1f2f7;font-weight:700}
+    .ok{color:#17803d;font-weight:700}
+    .err{color:#c21a1a;font-weight:700}
+    .pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid #e8eaf3;background:#fff;font-size:12px}
+    a.btn{display:inline-flex;align-items:center;padding:8px 12px;border-radius:10px;border:1px solid #e0e2ee;background:#fff;text-decoration:none;font-weight:700;color:#3b2eca}
+    a.btn:hover{box-shadow:0 4px 12px rgba(5,10,30,.08)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="controls">
+      <a class="btn" href="../index.html">← Back</a>
+      <span class="muted">IC Source Upload Logs</span>
+    </div>
+    <h1>Logs <span class="muted">(latest 200)</span></h1>
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th>When (UTC)</th>
+          <th>Status</th>
+          <th>Lines</th>
+          <th>Distinct</th>
+          <th>Total Qty</th>
+          <th>File</th>
+          <th>Dir</th>
+          <th>FTPS</th>
+          <th>Run</th>
+          <th>Note</th>
+        </tr>
+      </thead>
+      <tbody><tr><td colspan="10" class="muted">Loading…</td></tr></tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/+esm';
+
+    // Your Supabase project (anon key is OK here for read-only with RLS)
+    const SUPABASE_URL  = 'https://ijzroisggstqkfhpjndq.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
+
+    const supa = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession:false } });
+
+    function fmt(n){ return n==null ? '' : n.toLocaleString(); }
+
+    async function load() {
+      const tbody = document.querySelector('#tbl tbody');
+      const { data, error } = await supa
+        .from('ic_source_uploads')
+        .select('*')
+        .order('created_at', { ascending:false })
+        .limit(200);
+
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="10" class="err">Failed to load logs: ${error.message}</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="muted">No logs yet.</td></tr>`;
+        return;
+      }
+
+      const rows = data.map(r => {
+        const when = new Date(r.created_at).toISOString().replace('T',' ').replace('Z','');
+        const status = r.success ? `<span class="ok">OK</span>` : `<span class="err">ERR</span>`;
+        const run = r.run_url ? `<a class="pill" href="${r.run_url}" target="_blank" rel="noopener">Open</a>` : '';
+        const note = r.message ? String(r.message).replace(/</g,'&lt;') : '';
+        return `<tr>
+          <td>${when}</td>
+          <td>${status}</td>
+          <td>${fmt(r.line_count)}</td>
+          <td>${fmt(r.distinct_skus)}</td>
+          <td>${fmt(r.total_qty)}</td>
+          <td>${r.remote_name||''} <span class="muted">(${fmt(r.file_size)} bytes)</span></td>
+          <td>${r.remote_dir||''}</td>
+          <td>${r.ftps ? 'Yes' : 'No'}</td>
+          <td>${run}</td>
+          <td>${note}</td>
+        </tr>`;
+      }).join('');
+
+      tbody.innerHTML = rows;
+    }
+
+    load();
+  </script>
+</body>
+</html>
