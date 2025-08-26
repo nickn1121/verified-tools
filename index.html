@@ -25,7 +25,7 @@
     /* Topbar */
     .top{display:flex;align-items:center;gap:12px}
     .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
-    .dot{width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 0 0 6px rgba(111,87,233,.16)}
+    .dot{width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 0 0 6px rgba(111,87,233,16)}
     .beta{margin-left:8px;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--chip)}
     .right{margin-left:auto;display:flex;gap:10px;align-items:center}
     input.search{min-width:280px;padding:11px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;color:inherit}
@@ -117,19 +117,19 @@
           <div class="icon">DX</div>
           <div class="ttl">Document/PDF Editor</div>
         </div>
-        <p class="desc">In‑browser toolkit for whiteout, text, shapes and signatures. Ideal for quick doc tweaks.</p>
+        <p class="desc">In-browser toolkit for whiteout, text, shapes and signatures. Ideal for quick doc tweaks.</p>
         <div class="cd-ft">
           <a class="btn" href="pdf-editor/index.html">Open</a>
           <span class="tag">Utilities</span>
         </div>
       </article>
 
-      <!-- E‑Signature & Stamp -->
+      <!-- E-Signature & Stamp -->
       <article class="card" data-title="signature signer pad stamp draw resize">
         <div class="bubble">🖊️</div>
         <div class="cd-hd">
           <div class="icon">✒️</div>
-          <div class="ttl">E‑Signature & Stamp</div>
+          <div class="ttl">E-Signature & Stamp</div>
         </div>
         <p class="desc">Create/resize signatures and stamps, export on transparent background for use across docs.</p>
         <div class="cd-ft">
@@ -145,7 +145,7 @@
           <div class="icon">EX</div>
           <div class="ttl">Excess Part Checker</div>
         </div>
-        <p class="desc">Batch look‑up of MPNs against internal excess datasets. Exact or fuzzy, CSV import, clean UI.</p>
+        <p class="desc">Batch look-up of MPNs against internal excess datasets. Exact or fuzzy, CSV import, clean UI.</p>
         <div class="cd-ft">
           <a class="btn" href="excess-checker/index.html">Open</a>
           <span class="tag">Data</span>
@@ -159,7 +159,7 @@
           <div class="icon">OT</div>
           <div class="ttl">Live Order Tracker</div>
         </div>
-        <p class="desc">Track orders, view financials roll‑up (cost, testing, shipping, GP) and add internal notes.</p>
+        <p class="desc">Track orders, view financials roll-up (cost, testing, shipping, GP) and add internal notes.</p>
         <div class="cd-ft">
           <a class="btn" href="order-tracker/index.html">Open</a>
           <span class="tag">Ops</span>
@@ -180,21 +180,24 @@
         </div>
       </article>
 
-      <!-- Auto IC Source Uploader (not in repo yet) -->
-      <article class="card" data-title="auto ic source uploader normalise map dedupe" aria-disabled="true">
+      <!-- Auto IC Source Uploader (link to Action) -->
+      <article class="card" data-title="auto ic source uploader normalise map dedupe">
         <div class="bubble">📤</div>
         <div class="cd-hd">
           <div class="icon">AU</div>
           <div class="ttl">Auto IC Source Uploader</div>
         </div>
-        <p class="desc">Upload and normalise supplier stock/excess files. Cleaning, mapping and de‑dupe built‑in.</p>
+        <p class="desc">Upload and normalise supplier stock/excess files. Cleaning, mapping and de-dupe built-in.</p>
         <div class="cd-ft">
-          <button class="btn ghost" disabled>Coming soon</button>
+          <a class="btn" target="_blank"
+             href="https://github.com/nickn1121/verified-tools/actions/workflows/icsource-upload.yml">
+             Send Now
+          </a>
           <span class="tag">Data</span>
         </div>
       </article>
 
-      <!-- Company Info (not in repo yet) -->
+      <!-- Company Info (coming soon) -->
       <article class="card" aria-disabled="true" data-title="company info addresses vat bank certificates">
         <div class="bubble">🏢</div>
         <div class="cd-hd">
@@ -259,6 +262,7 @@
   </style>
 </body>
 </html>
+
 
 
 
