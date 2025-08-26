@@ -1,234 +1,186 @@
 // scripts/export-and-upload-icsource.mjs
-import fs from "fs";
-import path from "path";
 import { createClient } from "@supabase/supabase-js";
-import { stringify } from "csv-stringify/sync";
 import ftp from "basic-ftp";
+import { stringify } from "csv-stringify/sync";
+import fs from "node:fs/promises";
+import path from "node:path";
 
-/* ---------- Config from env ---------- */
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE;
-const EXCESS_TABLE = process.env.SUPABASE_EXCESS_TABLE || "excess_parts";
-const SUPABASE_PK = process.env.SUPABASE_PK || "id"; // primary key column for cursor paging
-const PAGE = Number(process.env.SUPABASE_PAGE || "1000"); // batch size
+// ----- env + small helpers -----
+const {
+  SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE,
+  SUPABASE_EXCESS_TABLE = "excess_parts",
 
-// Upload target (IC Source)
-const FTP_HOST   = process.env.ICSOURCE_FTP_HOST || "ftp.icsource.com";
-const FTP_USER   = process.env.ICSOURCE_FTP_USER;
-const FTP_PASS   = process.env.ICSOURCE_FTP_PASS;
-const FTP_SECURE = /^(1|true|yes)$/i.test(process.env.ICSOURCE_FTPS || "false"); // FTPS toggle
-const REMOTE_DIR = (process.env.ICSOURCE_REMOTE_DIR || "").trim();               // e.g. /incoming
-const REMOTE_NAME = (process.env.ICSOURCE_REMOTE_NAME || "verified_inventory.csv").trim();
+  DRY_RUN = "false",
 
-// Behaviour
-const QTY_FACTOR = Number(process.env.ICSOURCE_QTY_FACTOR || "0.8");             // 80%
-const DRY_RUN    = /^(1|true|yes)$/i.test(process.env.DRY_RUN || "false");
-const AGGREGATE  = /^(1|true|yes)$/i.test(process.env.ICSOURCE_AGGREGATE || "false"); // default OFF
+  FTP_HOST = "ftp.icsource.com",
+  FTP_USER,
+  FTP_PASS,
+  FTP_SECURE = "false",
+  FTP_DIR = "/",
 
-// Diagnostics
-const FTP_DEBUG = /^(1|true|yes)$/i.test(process.env.FTP_DEBUG || "true");
+  OUTPUT_FILE = "verified_inventory.csv",
 
-// Helpers
-const info = (...a) => console.log(...a);
-function roundQty(q) {
-  const n = Number(q) || 0;
-  return Math.max(0, Math.round(n * QTY_FACTOR));
+  GITHUB_RUN_URL = ""
+} = process.env;
+
+const isDryRun = String(DRY_RUN).toLowerCase() === "true";
+const outDir = "out";
+const outFile = path.join(outDir, OUTPUT_FILE);
+
+function must(name, value) {
+  if (!value) throw new Error(`Missing required env: ${name}`);
+  return value;
 }
 
-/* ---------- Supabase logger ---------- */
-async function logToSupabase(payload) {
-  try {
-    const supa = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
-      auth: { persistSession: false }
-    });
-    await supa.from("ic_source_uploads").insert([payload]);
-  } catch (e) {
-    console.error("Log insert failed:", e?.message || e);
-  }
-}
+// Validate required env
+must("SUPABASE_URL", SUPABASE_URL);
+must("SUPABASE_SERVICE_ROLE", SUPABASE_SERVICE_ROLE);
+must("FTP_USER", FTP_USER);
+must("FTP_PASS", FTP_PASS);
 
-/* ---------- Fetch ALL rows with cursor pagination on SUPABASE_PK ---------- */
-async function fetchAllRaw() {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
-    auth: { persistSession: false }
-  });
+// ----- Supabase client -----
+const supa = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
+  auth: { persistSession: false }
+});
 
-  let all = [];
-  let last = null;
-  let totalCount = null;
+// ----- CSV columns (do NOT aggregate; 80% already applied in DB or we send as-is) -----
+const HEADERS = [
+  "part_number",
+  "quantity",
+  "vendor",
+  "batch_id",
+  "uploaded_by",
+  "created_on_utc"
+];
 
+// adjust if your table uses different names
+const SELECT = `
+  id, part_number, quantity, vendor, batch_id, uploaded_by, created_on_utc
+`;
+
+// ----- main -----
+(async () => {
+  console.log(`Dry run: ${isDryRun}`);
+  console.log(`Table: ${SUPABASE_EXCESS_TABLE}`);
+  console.log(`Output: ${outFile}`);
+  await fs.mkdir(outDir, { recursive: true });
+
+  // Cursor paging on id
+  let lastId = 0;
+  const pageSize = 1000;
+  let total = 0;
+
+  const rows = [];
+
+  console.log(`Cursor paging on column: id (page=${pageSize})`);
   while (true) {
-    let q = supabase
-      .from(EXCESS_TABLE)
-      .select(`${SUPABASE_PK}, part_number, quantity`, { count: "exact" })
-      .order(SUPABASE_PK, { ascending: true })
-      .limit(PAGE);
+    const { data, error } = await supa
+      .from(SUPABASE_EXCESS_TABLE)
+      .select(SELECT)
+      .gt("id", lastId)
+      .order("id", { ascending: true })
+      .limit(pageSize);
 
-    if (last !== null) q = q.gt(SUPABASE_PK, last);
-
-    const { data, error, count } = await q;
-    if (error) throw error;
-    if (totalCount === null && typeof count === "number") totalCount = count;
+    if (error) throw new Error(`Supabase fetch error: ${error.message}`);
 
     if (!data || data.length === 0) break;
 
-    all.push(...data);
-    last = data[data.length - 1][SUPABASE_PK];
-    info(`Fetched ${all.length}/${totalCount ?? "?"} rows so far…`);
+    for (const r of data) rows.push(r);
 
-    if (data.length < PAGE) break;
+    total += data.length;
+    lastId = data[data.length - 1].id;
+
+    console.log(`Fetched ${total} rows so far…`);
+    if (data.length < pageSize) break;
   }
 
-  return all;
-}
+  // Build CSV (no aggregation)
+  const records = rows.map((r) => [
+    r.part_number ?? "",
+    r.quantity ?? 0,
+    r.vendor ?? "",
+    r.batch_id ?? "",
+    r.uploaded_by ?? "",
+    r.created_on_utc ?? ""
+  ]);
 
-/* ---------- Build rows (aggregation toggle) ---------- */
-function buildRows(raw) {
-  const usable = raw.filter(
-    r =>
-      r &&
-      r.part_number &&
-      String(r.part_number).trim() !== "" &&
-      Number(r.quantity) > 0
+  const csv = stringify([HEADERS, ...records], { bom: true });
+  await fs.writeFile(outFile, csv);
+  console.log(`CSV written: ${outFile}`);
+  console.log(
+    `Export: ${records.length} lines, distinct SKUs ${new Set(
+      records.map((x) => x[0])
+    ).size}, total qty ${records.reduce((a, x) => a + Number(x[1] || 0), 0)}`
   );
 
-  if (!AGGREGATE) {
-    // export every row (no de-dup)
-    const rows = [];
-    let total = 0;
-    for (const r of usable) {
-      const pn = String(r.part_number).trim();
-      const q  = roundQty(r.quantity);
-      if (q > 0) {
-        rows.push({ part_number: pn, quantity: q });
-        total += q;
+  // ----- FTP upload -----
+  if (!isDryRun) {
+    console.log(`Connecting to ${FTP_HOST} (secure=${FTP_SECURE})…`);
+    const client = new ftp.Client();
+    client.ftp.verbose = true;
+    try {
+      await client.access({
+        host: FTP_HOST,
+        user: FTP_USER,
+        password: FTP_PASS,
+        secure: String(FTP_SECURE).toLowerCase() === "true"
+      });
+
+      console.log(`Remote folder (PWD): ${await client.pwd()}`);
+      if (FTP_DIR && FTP_DIR !== "/") {
+        await client.ensureDir(FTP_DIR);
+        await client.cd(FTP_DIR);
+        console.log(`Changed to remote dir: ${FTP_DIR}`);
       }
+
+      // list before
+      console.log(`Remote listing BEFORE upload:`);
+      try {
+        console.log(await client.list());
+      } catch {}
+
+      await client.uploadFrom(outFile, OUTPUT_FILE);
+      console.log(`✅ Uploaded ${OUTPUT_FILE}`);
+
+      // list after
+      console.log(`Remote listing AFTER upload:`);
+      try {
+        console.log(await client.list());
+      } catch {}
+    } finally {
+      client.close();
     }
-    const distinct = new Set(rows.map(r => r.part_number)).size;
-    info(`Export (NO aggregation): ${rows.length} lines, distinct SKUs ${distinct}, total qty ${total}`);
-    return rows;
+  } else {
+    console.log(`DRY_RUN is true — FTP upload skipped.`);
   }
 
-  // aggregated (group by part_number)
-  const map = new Map();
-  for (const r of usable) {
-    const pn = String(r.part_number).trim();
-    const q  = roundQty(r.quantity);
-    if (q > 0) map.set(pn, (map.get(pn) || 0) + q);
-  }
-  const rows = Array.from(map, ([part_number, quantity]) => ({ part_number, quantity }));
-  const total = rows.reduce((s, r) => s + r.quantity, 0);
-  info(`Aggregated ${rows.length} SKUs (80% adj). Total qty ${total}`);
-  return rows;
-}
-
-/* ---------- Write CSV ---------- */
-function writeCsv(rows) {
-  const csv = stringify(rows, { header: true, columns: ["part_number", "quantity"] });
-  const outDir = path.join(process.cwd(), "out");
-  fs.mkdirSync(outDir, { recursive: true });
-  const tmp = path.join(outDir, "verified_inventory.csv");
-  fs.writeFileSync(tmp, csv);
-  return tmp;
-}
-
-/* ---------- Upload via FTP/FTPS (with diagnostics) ---------- */
-async function uploadCsv(localPath) {
-  const client = new ftp.Client(FTP_DEBUG ? 0 : 10_000);
-  if (FTP_DEBUG) client.ftp.verbose = true;
-
+  // ----- log to table (non-blocking) -----
   try {
-    info(`Connecting to ${FTP_HOST} (secure=${FTP_SECURE ? "FTPS" : "FTP"})…`);
-    await client.access({ host: FTP_HOST, user: FTP_USER, password: FTP_PASS, secure: FTP_SECURE });
-
-    // Show current working directory (server may change on ensureDir)
-    let pwd = await client.pwd();
-    info(`Connected. Server PWD: ${pwd}`);
-
-    if (REMOTE_DIR) {
-      info(`Ensuring/changing to remote dir: ${REMOTE_DIR}`);
-      await client.ensureDir(REMOTE_DIR);
-      pwd = await client.pwd();
-      info(`Server PWD after cd: ${pwd}`);
-    }
-
-    info("Remote listing BEFORE upload:");
-    const before = await client.list();
-    before.forEach(e => info(` • ${e.name}  ${e.size ?? ""}`));
-
-    info(`Uploading: ${path.basename(localPath)}  ->  ${REMOTE_NAME}`);
-    await client.uploadFrom(localPath, REMOTE_NAME);
-
-    info("Remote listing AFTER upload:");
-    const after = await client.list();
-    after.forEach(e => info(` • ${e.name}  ${e.size ?? ""}`));
-
-    const found = after.find(e => e.name === REMOTE_NAME);
-    if (found) info(`✅ Upload confirmed on server: ${REMOTE_NAME} (${found.size ?? "unknown"} bytes)`);
-    else info("⚠️ Uploaded file not found in listing (server may immediately move ingested files).");
-  } finally {
-    client.close();
-  }
-}
-
-/* ---------- Main ---------- */
-(async () => {
-  try {
-    console.log(`Dry run: ${DRY_RUN}`);
-    console.log(`Aggregation: ${AGGREGATE ? "ON (group by part_number)" : "OFF (each row exported)"}`);
-    console.log(`Cursor paging on column: ${SUPABASE_PK} (page=${PAGE})`);
-
-    const raw    = await fetchAllRaw();
-    const rows   = buildRows(raw);
-    const csvPath = writeCsv(rows);
-
-    // Build GitHub run URL for convenience in the log table
-    const runUrl =
-      process.env.GITHUB_SERVER_URL &&
-      process.env.GITHUB_REPOSITORY &&
-      process.env.GITHUB_RUN_ID
-        ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
-        : null;
-
-    const meta = {
-      run_id: process.env.GITHUB_RUN_ID || null,
-      run_url: runUrl,
-      dry_run: DRY_RUN,
-      aggregate: AGGREGATE,
-      line_count: rows.length,
-      distinct_skus: new Set(rows.map(r => r.part_number)).size,
-      total_qty: rows.reduce((s, r) => s + r.quantity, 0),
-      file_size: fs.statSync(csvPath).size,
-      remote_name: REMOTE_NAME,
-      remote_dir: REMOTE_DIR || "/",
-      ftps: FTP_SECURE
+    const details = {
+      run_url: GITHUB_RUN_URL || null,
+      dry_run: isDryRun,
+      rows: records.length,
+      distinct_skus: new Set(records.map((x) => x[0])).size,
+      file: OUTPUT_FILE,
+      ts: new Date().toISOString()
     };
-
-    if (DRY_RUN) {
-      await logToSupabase({ ...meta, success: true, message: "Dry run (CSV only)" });
-      info(`CSV ready at: ${csvPath}`);
-      return;
+    const { error: logErr } = await supa.from("auto_ic_logs").insert([details]);
+    if (logErr) {
+      console.warn(`(non-blocking) log insert failed: ${logErr.message}`);
+    } else {
+      console.log(`Log row inserted into auto_ic_logs`);
     }
-
-    await uploadCsv(csvPath);
-    await logToSupabase({ ...meta, success: true, message: "OK" });
-  } catch (err) {
-    console.error("FATAL:", err?.stack || err);
-    // Best-effort failure log
-    await logToSupabase({
-      run_id: process.env.GITHUB_RUN_ID || null,
-      run_url:
-        process.env.GITHUB_SERVER_URL &&
-        process.env.GITHUB_REPOSITORY &&
-        process.env.GITHUB_RUN_ID
-          ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
-          : null,
-      success: false,
-      message: String(err?.message || err)
-    });
-    process.exit(1);
+  } catch (e) {
+    console.warn(`(non-blocking) log insert exception: ${e.message}`);
   }
-})();
+
+  console.log("Done.");
+})().catch((err) => {
+  console.error("FATAL:", err);
+  process.exit(1);
+});
+
 
 
 
