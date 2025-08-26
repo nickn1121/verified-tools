@@ -15,10 +15,15 @@
 
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0;font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,"Apple Color Emoji","Segoe UI Emoji";background:
-      radial-gradient(900px 420px at -10% -10%, rgba(111,87,233,.08), transparent 40%),
-      radial-gradient(700px 360px at 110% 0%, rgba(59,46,202,.06), transparent 40%),
-      var(--bg);color:var(--ink)}
+    body{
+      margin:0;
+      font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,"Apple Color Emoji","Segoe UI Emoji";
+      background:
+        radial-gradient(900px 420px at -10% -10%, rgba(111,87,233,.08), transparent 40%),
+        radial-gradient(700px 360px at 110% 0%, rgba(59,46,202,.06), transparent 40%),
+        var(--bg);
+      color:var(--ink)
+    }
 
     .wrap{max-width:1200px;margin:0 auto;padding:26px}
 
@@ -251,27 +256,26 @@
     });
   </script>
 
-  <!-- Worker trigger (no design change) -->
+  <!-- Worker trigger (one-click LIVE send; no design change) -->
   <script>
   (function () {
     const el = document.getElementById('ics-send');
     if (!el) return;
 
-    // >>> set to your Worker + shared token (must match Worker secret) <<<
+    // Your Worker + shared token (must match Worker secret)
     const WORKER_URL = 'https://young-firefly-7d18.nick-north.workers.dev/';
     const UI_SHARED_TOKEN = 'icsource-7d4f2a9d81-Prod';
-    // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-    function flash(label, ms = 2000) {
+    function setLabel(tempLabel, ms=2000){
       const old = el.textContent;
-      el.textContent = label;
-      setTimeout(() => (el.textContent = old), ms);
+      el.textContent = tempLabel;
+      setTimeout(()=> el.textContent = old, ms);
     }
 
-    async function trigger(dryRun) {
+    async function sendLive() {
       el.style.pointerEvents = 'none';
-      const oldLabel = el.textContent;
-      el.textContent = dryRun ? 'Generating…' : 'Sending…';
+      const old = el.textContent;
+      el.textContent = 'Sending…';
 
       try {
         const res = await fetch(WORKER_URL, {
@@ -280,41 +284,34 @@
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${UI_SHARED_TOKEN}`
           },
-          body: JSON.stringify({ dryRun })
+          body: '{}' // worker sets dry_run=false internally
         });
 
         if (!res.ok) {
           const txt = await res.text();
           alert(`Failed to trigger upload:\n${res.status} ${txt}`);
-          flash('Try again', 2200);
+          el.textContent = old;
           return;
         }
 
-        if (dryRun) {
-          alert('CSV generation started (dry run). Check Actions → artifact "verified_inventory".');
-          flash('✓ Started (dry)', 2200);
-        } else {
-          alert('Live upload started. Check Actions for status (look for "✅ Upload complete").');
-          flash('✓ Started', 2200);
-        }
-
-        // If you prefer to open the workflow page automatically, uncomment:
+        // Accepted by GitHub; upload will happen in the Action
+        el.textContent = '✓ Sent';
+        setTimeout(()=> el.textContent = old, 2000);
+        // Optionally open the workflow page automatically:
         // window.open('https://github.com/nickn1121/verified-tools/actions/workflows/icsource-upload.yml', '_blank');
 
       } catch (err) {
         alert('Network error: ' + (err?.message || err));
-        flash('Try again', 2200);
+        el.textContent = old;
       } finally {
         el.style.pointerEvents = '';
-        el.textContent = oldLabel;
       }
     }
 
-    // OK = Dry Run (CSV only) • Cancel = Live upload
+    // One-click LIVE send
     el.addEventListener('click', (e) => {
       e.preventDefault();
-      const dry = confirm('Dry run?\nOK = Dry Run (CSV only)\nCancel = Live Upload to IC Source');
-      trigger(dry);
+      sendLive();
     });
   })();
   </script>
@@ -327,6 +324,7 @@
   </style>
 </body>
 </html>
+
 
 
 
