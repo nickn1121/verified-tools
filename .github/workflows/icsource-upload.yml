@@ -1,7 +1,7 @@
 name: Upload Excess to IC Source
 
 on:
-  # Manual trigger (kept for the UI "Send Now" button and for the Actions UI)
+  # Manual trigger (used by your "Send Now" button and Actions UI)
   workflow_dispatch:
     inputs:
       dry_run:
@@ -9,7 +9,7 @@ on:
         type: boolean
         default: false
 
-  # Scheduled trigger - every 6 hours (at minute 0) in UTC
+  # Scheduled trigger - every 6 hours (UTC)
   schedule:
     - cron: "0 */6 * * *"
 
@@ -29,11 +29,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "npm"
+          cache: 'npm'
+
+      - name: Show Node & npm env
+        run: |
+          node --version
+          npm --version
 
       - name: Install deps
         run: |
           if [ -f package-lock.json ]; then npm ci; else npm i; fi
+          # show top-level deps for quick diagnostics (won't fail the job)
+          npm ls --depth=0 || true
 
       - name: Export & (optionally) Upload
         env:
@@ -46,16 +53,21 @@ jobs:
           FTP_HOST: ftp.icsource.com
           FTP_USER: ${{ secrets.ICSOURCE_FTP_USER }}
           FTP_PASS: ${{ secrets.ICSOURCE_FTP_PASS }}
-          FTP_SECURE: "false"               # IC Source expects plain FTP
-          FTP_DIR: "/"                      # IC Source home dir
+          FTP_SECURE: "false"         # IC Source expects plain FTP
+          FTP_DIR: "/"
           OUTPUT_FILE: "verified_inventory.csv"
 
           # --- Control flags / metadata ---
-          # For manual runs, respect input. For scheduled runs, force 'false'.
-          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+          # If manually dispatched, honor the input; otherwise force false.
+          DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && 'true' || 'false' }}
           GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-        run: npm run send:icsource
+        run: |
+          mkdir -p out
+          # run the script directly with extra diagnostics
+          node --trace-uncaught scripts/export-and-upload-icsource.mjs
+          echo "--- After script, list out/ ---"
+          ls -lah out || true
 
       - name: Upload CSV as artifact (so you can download it)
         if: always()
@@ -64,4 +76,5 @@ jobs:
           name: verified_inventory
           path: out/verified_inventory.csv
           if-no-files-found: warn
+
 
