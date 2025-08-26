@@ -15,15 +15,10 @@
 
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{
-      margin:0;
-      font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,"Apple Color Emoji","Segoe UI Emoji";
-      background:
-        radial-gradient(900px 420px at -10% -10%, rgba(111,87,233,.08), transparent 40%),
-        radial-gradient(700px 360px at 110% 0%, rgba(59,46,202,.06), transparent 40%),
-        var(--bg);
-      color:var(--ink)
-    }
+    body{margin:0;font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,"Apple Color Emoji","Segoe UI Emoji";background:
+      radial-gradient(900px 420px at -10% -10%, rgba(111,87,233,.08), transparent 40%),
+      radial-gradient(700px 360px at 110% 0%, rgba(59,46,202,.06), transparent 40%),
+      var(--bg);color:var(--ink)}
 
     .wrap{max-width:1200px;margin:0 auto;padding:26px}
 
@@ -57,6 +52,11 @@
 
     /* Helper */
     .hidden{display:none}
+
+    /* Compact mode tweaks */
+    .compact .card{border-radius:14px}
+    .compact .icon{width:34px;height:34px;border-radius:10px}
+    .compact .cd-ft{padding:10px 16px}
   </style>
 </head>
 <body>
@@ -70,51 +70,6 @@
     </div>
 
     <div id="cards" class="grid">
-      <!-- Purchasing Requests -->
-      <article class="card" data-title="purchasing requests rfq vendor offers buy price">
-        <div class="bubble">🛒</div>
-        <div class="cd-hd">
-          <div class="icon">PR</div>
-          <div>
-            <div class="ttl">Purchasing Requests</div>
-            <div class="tag">New</div>
-          </div>
-        </div>
-        <p class="desc">Sales submit part + qty. Purchasing logs vendor offers (price, lead, confidence, partials) with realtime triage by salesperson.</p>
-        <div class="cd-ft">
-          <a class="btn" href="purchasing/index.html">Open</a>
-          <span class="tag">RFQs • Vendors • Realtime</span>
-        </div>
-      </article>
-
-      <!-- Certificate of Conformance -->
-      <article class="card" data-title="certificate of conformance coc quality">
-        <div class="bubble">📜</div>
-        <div class="cd-hd">
-          <div class="icon">COC</div>
-          <div class="ttl">Certificate of Conformance</div>
-        </div>
-        <p class="desc">Generate, sign and export CoCs to Verified’s format. Includes signature scaling and print-ready layout.</p>
-        <div class="cd-ft">
-          <a class="btn" href="coc.index.html">Open</a>
-          <span class="tag">Document</span>
-        </div>
-      </article>
-
-      <!-- Commercial Invoice Generator -->
-      <article class="card" data-title="commercial invoice ci shipping customs coo">
-        <div class="bubble">📦</div>
-        <div class="cd-hd">
-          <div class="icon">CI</div>
-          <div class="ttl">Commercial Invoice Generator</div>
-        </div>
-        <p class="desc">Create official, modern CIs with optional COO. Save templates and export to PDF for couriers.</p>
-        <div class="cd-ft">
-          <a class="btn" href="commercial-invoice/index.html">Open</a>
-          <span class="tag">Logistics</span>
-        </div>
-      </article>
-
       <!-- Document/PDF Editor -->
       <article class="card" data-title="document pdf editor annotate whiteout tools">
         <div class="bubble">🧰</div>
@@ -194,7 +149,8 @@
         </div>
         <p class="desc">Upload and normalise supplier stock/excess files. Cleaning, mapping and de-dupe built-in.</p>
         <div class="cd-ft">
-          <a id="ics-send" class="btn" href="#">Send Now</a>
+          <button id="sendNowBtn" class="btn">Send Now</button>
+          <a class="btn ghost" href="auto-ic/logs.html">Logs</a>
           <span class="tag">Data</span>
         </div>
       </article>
@@ -254,76 +210,51 @@
       const on = document.body.classList.toggle('compact');
       compactBtn.setAttribute('aria-pressed', on?'true':'false');
     });
-  </script>
 
-  <!-- Worker trigger (one-click LIVE send; no design change) -->
-  <script>
-  (function () {
-    const el = document.getElementById('ics-send');
-    if (!el) return;
-
-    // Your Worker + shared token (must match Worker secret)
+    // === Auto IC: trigger Cloudflare Worker ===
     const WORKER_URL = 'https://young-firefly-7d18.nick-north.workers.dev/';
-    const UI_SHARED_TOKEN = 'icsource-7d4f2a9d81-Prod';
+    const UI_SHARED_TOKEN = 'icsource-7d4f2a9d81-Prod'; // the shared UI token you set in the Worker
 
-    function setLabel(tempLabel, ms=2000){
-      const old = el.textContent;
-      el.textContent = tempLabel;
-      setTimeout(()=> el.textContent = old, ms);
-    }
+    const sendBtn = document.getElementById('sendNowBtn');
+    if (sendBtn) {
+      sendBtn.addEventListener('click', async () => {
+        if (!confirm('Send inventory to IC Source now?')) return;
 
-    async function sendLive() {
-      el.style.pointerEvents = 'none';
-      const old = el.textContent;
-      el.textContent = 'Sending…';
+        const orig = sendBtn.textContent;
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Sending…';
 
-      try {
-        const res = await fetch(WORKER_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${UI_SHARED_TOKEN}`
-          },
-          body: '{}' // worker sets dry_run=false internally
-        });
+        try {
+          const res = await fetch(WORKER_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${UI_SHARED_TOKEN}`,
+              'X-Requested-With': 've-tools'
+            },
+            body: JSON.stringify({ dry_run: false })
+          });
 
-        if (!res.ok) {
-          const txt = await res.text();
-          alert(`Failed to trigger upload:\n${res.status} ${txt}`);
-          el.textContent = old;
-          return;
+          let data = null;
+          try { data = await res.json(); } catch {}
+          if (res.ok && (data?.ok || data?.success || data?.status==='ok')) {
+            alert('Upload triggered ✅\n\nCheck Actions → "Upload Excess to IC Source" for run details.');
+          } else {
+            const msg = data?.error || `${res.status} ${res.statusText}`;
+            alert('Failed to trigger upload:\n' + msg);
+          }
+        } catch (err) {
+          alert('Network error: ' + (err?.message || err));
+        } finally {
+          sendBtn.disabled = false;
+          sendBtn.textContent = orig;
         }
-
-        // Accepted by GitHub; upload will happen in the Action
-        el.textContent = '✓ Sent';
-        setTimeout(()=> el.textContent = old, 2000);
-        // Optionally open the workflow page automatically:
-        // window.open('https://github.com/nickn1121/verified-tools/actions/workflows/icsource-upload.yml', '_blank');
-
-      } catch (err) {
-        alert('Network error: ' + (err?.message || err));
-        el.textContent = old;
-      } finally {
-        el.style.pointerEvents = '';
-      }
+      });
     }
-
-    // One-click LIVE send
-    el.addEventListener('click', (e) => {
-      e.preventDefault();
-      sendLive();
-    });
-  })();
   </script>
-
-  <style>
-    /* Compact mode tweaks */
-    .compact .card{border-radius:14px}
-    .compact .icon{width:34px;height:34px;border-radius:10px}
-    .compact .cd-ft{padding:10px 16px}
-  </style>
 </body>
 </html>
+
 
 
 
