@@ -1,16 +1,26 @@
 name: Upload Excess to IC Source
 
 on:
+  # Manual trigger (kept for the UI "Send Now" button and for the Actions UI)
   workflow_dispatch:
     inputs:
       dry_run:
         description: "Generate CSV only (no FTP upload)"
         type: boolean
-        default: true
+        default: false
+
+  # Scheduled trigger - every 6 hours (at minute 0) in UTC
+  schedule:
+    - cron: "0 */6 * * *"
+
+concurrency:
+  group: ic-source-upload
+  cancel-in-progress: false
 
 jobs:
   upload:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,6 +29,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: "npm"
 
       - name: Install deps
         run: |
@@ -26,15 +37,24 @@ jobs:
 
       - name: Export & (optionally) Upload
         env:
+          # --- Supabase (server-side) ---
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
           SUPABASE_EXCESS_TABLE: ${{ vars.SUPABASE_EXCESS_TABLE || 'excess_parts' }}
-          ICSOURCE_FTP_HOST: ${{ vars.ICSOURCE_FTP_HOST || 'ftp.icsource.com' }}
-          ICSOURCE_FTP_USER: ${{ secrets.ICSOURCE_FTP_USER }}
-          ICSOURCE_FTP_PASS: ${{ secrets.ICSOURCE_FTP_PASS }}
-          ICSOURCE_FTP_DIR: ${{ vars.ICSOURCE_FTP_DIR || '/' }}
-          ICSOURCE_FILE_NAME: ${{ vars.ICSOURCE_FILE_NAME || 'verified_inventory.csv' }}
-          DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
+
+          # --- FTP to IC Source ---
+          FTP_HOST: ftp.icsource.com
+          FTP_USER: ${{ secrets.ICSOURCE_FTP_USER }}
+          FTP_PASS: ${{ secrets.ICSOURCE_FTP_PASS }}
+          FTP_SECURE: "false"               # IC Source expects plain FTP
+          FTP_DIR: "/"                      # IC Source home dir
+          OUTPUT_FILE: "verified_inventory.csv"
+
+          # --- Control flags / metadata ---
+          # For manual runs, respect input. For scheduled runs, force 'false'.
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+          GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
         run: npm run send:icsource
 
       - name: Upload CSV as artifact (so you can download it)
@@ -44,3 +64,4 @@ jobs:
           name: verified_inventory
           path: out/verified_inventory.csv
           if-no-files-found: warn
+
