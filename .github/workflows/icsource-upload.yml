@@ -1,0 +1,46 @@
+name: Upload Excess to IC Source
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Generate CSV only (no FTP upload)"
+        type: boolean
+        default: true
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm i; fi
+
+      - name: Export & (optionally) Upload
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
+          SUPABASE_EXCESS_TABLE: ${{ vars.SUPABASE_EXCESS_TABLE || 'excess_parts' }}
+          ICSOURCE_FTP_HOST: ${{ vars.ICSOURCE_FTP_HOST || 'ftp.icsource.com' }}
+          ICSOURCE_FTP_USER: ${{ secrets.ICSOURCE_FTP_USER }}
+          ICSOURCE_FTP_PASS: ${{ secrets.ICSOURCE_FTP_PASS }}
+          ICSOURCE_FTP_DIR: ${{ vars.ICSOURCE_FTP_DIR || '/' }}
+          ICSOURCE_FILE_NAME: ${{ vars.ICSOURCE_FILE_NAME || 'verified_inventory.csv' }}
+          DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
+        run: npm run send:icsource
+
+      - name: Upload CSV as artifact (so you can download it)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified_inventory
+          path: out/verified_inventory.csv
+          if-no-files-found: warn
