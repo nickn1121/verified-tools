@@ -1,21 +1,14 @@
 name: Upload Excess to IC Source
 
 on:
-  # Manual trigger (used by your "Send Now" button and Actions UI)
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Generate CSV only (no FTP upload)"
-        type: boolean
-        default: false
-
-  # Scheduled trigger - every 6 hours (UTC)
+        description: "Dry run (CSV only, no FTP upload)"
+        required: false
+        default: "false"
   schedule:
-    - cron: "0 */6 * * *"
-
-concurrency:
-  group: ic-source-upload
-  cancel-in-progress: false
+    - cron: "0 */6 * * *"  # every 6 hours
 
 jobs:
   upload:
@@ -29,36 +22,42 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          # NOTE: cache removed to avoid error when no lock file is present
 
+      # Install deps without needing a lockfile
       - name: Install deps
-        run: |
-          if [ -f package-lock.json ]; then npm ci; else npm i; fi
+        run: npm i --no-audit --no-fund
 
       - name: Export & (optionally) Upload
         env:
-          # --- Supabase (server-side) ---
+          # ---- Supabase (must exist) ----
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE: ${{ secrets.SUPABASE_SERVICE_ROLE }}
-          SUPABASE_EXCESS_TABLE: ${{ vars.SUPABASE_EXCESS_TABLE || 'excess_parts' }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}  # or your SERVICE_ROLE
 
-          # --- FTP to IC Source ---
-          FTP_HOST: ftp.icsource.com
-          FTP_USER: ${{ secrets.ICSOURCE_FTP_USER }}
-          FTP_PASS: ${{ secrets.ICSOURCE_FTP_PASS }}
-          FTP_SECURE: "false"         # IC Source expects plain FTP
-          FTP_DIR: "/"
-          OUTPUT_FILE: "verified_inventory.csv"
+          # Tables (script accepts either "excess_parts" or "public.excess_parts")
+          SUPABASE_EXCESS_TABLE: excess_parts
+          SUPABASE_LOGS_TABLE: ic_source_uploads
 
-          # --- Control flags / metadata ---
-          DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && 'true' || 'false' }}
-          GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          # Export paging & rules
+          PAGE_SIZE: "1000"
+          PAGINATE_COL: "id"
+          ADJUST_RATIO: "0.8"
+
+          # Dry run flag (read by the script)
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+
+          # ---- IC Source FTP credentials (must exist) ----
+          ICSOURCE_FTP_HOST: ftp.icsource.com
+          ICSOURCE_FTP_USER: ${{ secrets.ICSOURCE_FTP_USER }}
+          ICSOURCE_FTP_PASS: ${{ secrets.ICSOURCE_FTP_PASS }}
+          ICSOURCE_FTP_DIR: "/"
+          ICSOURCE_FTPS: "false"   # your current setup
+
         run: |
           mkdir -p out
           node scripts/export-and-upload-icsource.mjs
 
       - name: Upload CSV as artifact (so you can download it)
-        if: always()
+        if: ${{ success() && hashFiles('out/verified_inventory.csv') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: verified_inventory
