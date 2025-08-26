@@ -29,18 +29,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-
-      - name: Show Node & npm env
-        run: |
-          node --version
-          npm --version
+          # NOTE: cache removed to avoid error when no lock file is present
 
       - name: Install deps
         run: |
           if [ -f package-lock.json ]; then npm ci; else npm i; fi
-          # show top-level deps for quick diagnostics (won't fail the job)
-          npm ls --depth=0 || true
 
       - name: Export & (optionally) Upload
         env:
@@ -58,16 +51,11 @@ jobs:
           OUTPUT_FILE: "verified_inventory.csv"
 
           # --- Control flags / metadata ---
-          # If manually dispatched, honor the input; otherwise force false.
           DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && 'true' || 'false' }}
           GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
         run: |
           mkdir -p out
-          # run the script directly with extra diagnostics
-          node --trace-uncaught scripts/export-and-upload-icsource.mjs
-          echo "--- After script, list out/ ---"
-          ls -lah out || true
+          node scripts/export-and-upload-icsource.mjs
 
       - name: Upload CSV as artifact (so you can download it)
         if: always()
@@ -76,5 +64,6 @@ jobs:
           name: verified_inventory
           path: out/verified_inventory.csv
           if-no-files-found: warn
+
 
 
