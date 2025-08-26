@@ -1,9 +1,10 @@
 // scripts/export-and-upload-icsource.mjs
-// Purpose: pull excess from Supabase, write CSV (Part Number,Quantity), upload to IC Source via FTP.
+// Purpose: pull excess from Supabase, write CSV (Part Number,Quantity) with 80% qty,
+// then upload to IC Source via FTP.
 //
-// Env vars required (we'll add them in the next step via GitHub Secrets/Variables):
+// Env vars required (set as GitHub Secrets/Variables):
 // - SUPABASE_URL
-// - SUPABASE_SERVICE_ROLE  (or another key with read access)
+// - SUPABASE_SERVICE_ROLE
 // - SUPABASE_EXCESS_TABLE  (optional; defaults to "excess_parts")
 // - ICSOURCE_FTP_HOST      (optional; defaults to "ftp.icsource.com")
 // - ICSOURCE_FTP_USER
@@ -84,8 +85,13 @@ async function fetchAggregated() {
     if (from >= (count ?? from)) break;
   }
 
+  // Apply 80% rule, round to nearest whole number, never below 1 if there was stock
   return [...aggregated.entries()]
-    .map(([mpn, qty]) => ({ mpn, qty }))
+    .map(([mpn, qty]) => {
+      let adjusted = Math.round(qty * 0.8);
+      if (qty > 0 && adjusted < 1) adjusted = 1;
+      return { mpn, qty: adjusted };
+    })
     .sort((a, b) => a.mpn.localeCompare(b.mpn));
 }
 
@@ -134,7 +140,7 @@ async function uploadViaFtp(localPath) {
 (async () => {
   console.log(`Reading "${SUPABASE_EXCESS_TABLE}" from Supabase…`);
   const rows = await fetchAggregated();
-  console.log(`Aggregated ${rows.length} SKUs.`);
+  console.log(`Aggregated ${rows.length} SKUs (after 80% adjustment).`);
 
   const outDir = path.resolve("out");
   await fs.mkdir(outDir, { recursive: true });
@@ -157,8 +163,9 @@ async function uploadViaFtp(localPath) {
   const totalQty = rows.reduce((s, r) => s + r.qty, 0);
 
   console.log(`✅ Upload complete: ${remote}`);
-  console.log(`Summary: ${rows.length} SKUs, total qty ${totalQty}`);
+  console.log(`Summary (80% qty): ${rows.length} SKUs, total qty ${totalQty}`);
 })().catch((err) => {
   console.error("❌ Failed:", err?.message || err);
   process.exit(1);
 });
+
