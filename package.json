@@ -1,0 +1,12 @@
+{
+  "name": "verified-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "send:icsource": "node scripts/export-and-upload-icsource.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "basic-ftp": "^5.0.5"
+  }
+}
