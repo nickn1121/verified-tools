@@ -212,8 +212,8 @@
     });
 
     // === Auto IC: trigger Cloudflare Worker ===
-    const WORKER_URL = 'https://young-firefly-7d18.nick-north.workers.dev/';
-    const UI_SHARED_TOKEN = 'icsource-7d4f2a9d81-Prod'; // the shared UI token you set in the Worker
+    const WORKER_URL = 'https://young-firefly-7d18.nick-north.workers.dev/'; // your Worker
+    const UI_SHARED_TOKEN = 'icsource-7d4f2a9d81-Prod'; // must match Worker env UI_SHARED_TOKEN
 
     const sendBtn = document.getElementById('sendNowBtn');
     if (sendBtn) {
@@ -229,8 +229,8 @@
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${UI_SHARED_TOKEN}`,
-              'X-Requested-With': 've-tools'
+              'Authorization': `Bearer ${UI_SHARED_TOKEN}`
+              // NOTE: removed X-Requested-With to satisfy Worker CORS policy
             },
             body: JSON.stringify({ dry_run: false })
           });
@@ -254,6 +254,7 @@
   </script>
 </body>
 </html>
+
 
 
 
