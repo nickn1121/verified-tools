@@ -1,185 +1,201 @@
 // scripts/export-and-upload-icsource.mjs
-import { createClient } from "@supabase/supabase-js";
-import ftp from "basic-ftp";
-import { stringify } from "csv-stringify/sync";
-import fs from "node:fs/promises";
-import path from "node:path";
+// Export excess to CSV, (optionally) upload to IC Source via FTP, then log to Supabase.
 
-// ----- env + small helpers -----
+import fs from 'node:fs';
+import path from 'node:path';
+import { createClient } from '@supabase/supabase-js';
+import { stringify } from 'csv-stringify/sync';
+import ftp from 'basic-ftp';
+
 const {
   SUPABASE_URL,
   SUPABASE_SERVICE_ROLE,
-  SUPABASE_EXCESS_TABLE = "excess_parts",
+  SUPABASE_EXCESS_TABLE = 'excess_parts',
 
-  DRY_RUN = "false",
-
-  FTP_HOST = "ftp.icsource.com",
+  FTP_HOST,
   FTP_USER,
   FTP_PASS,
-  FTP_SECURE = "false",
-  FTP_DIR = "/",
+  FTP_SECURE = 'false',
+  FTP_DIR = '/',
+  OUTPUT_FILE = 'verified_inventory.csv',
 
-  OUTPUT_FILE = "verified_inventory.csv",
-
-  GITHUB_RUN_URL = ""
+  DRY_RUN = 'false',
+  GITHUB_RUN_URL = '',
+  GITHUB_RUN_ID = '',
 } = process.env;
 
-const isDryRun = String(DRY_RUN).toLowerCase() === "true";
-const outDir = "out";
-const outFile = path.join(outDir, OUTPUT_FILE);
-
-function must(name, value) {
-  if (!value) throw new Error(`Missing required env: ${name}`);
-  return value;
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE) {
+  console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE env vars.');
+  process.exit(1);
 }
 
-// Validate required env
-must("SUPABASE_URL", SUPABASE_URL);
-must("SUPABASE_SERVICE_ROLE", SUPABASE_SERVICE_ROLE);
-must("FTP_USER", FTP_USER);
-must("FTP_PASS", FTP_PASS);
+const isDryRun = String(DRY_RUN).toLowerCase() === 'true';
+const outDir = 'out';
+const outPath = path.join(outDir, OUTPUT_FILE);
 
-// ----- Supabase client -----
-const supa = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
-  auth: { persistSession: false }
-});
+// ---------- Helpers ----------
 
-// ----- CSV columns (do NOT aggregate; 80% already applied in DB or we send as-is) -----
-const HEADERS = [
-  "part_number",
-  "quantity",
-  "vendor",
-  "batch_id",
-  "uploaded_by",
-  "created_on_utc"
-];
+function sleep(ms) {
+  return new Promise((res) => setTimeout(res, ms));
+}
 
-// adjust if your table uses different names
-const SELECT = `
-  id, part_number, quantity, vendor, batch_id, uploaded_by, created_on_utc
-`;
+async function logWithTimeout(supabase, data, timeoutMs = 4000) {
+  // Await the insert but cap it with a timeout so job can't hang on logging
+  try {
+    const result = await Promise.race([
+      supabase.from('ic_source_uploads').insert(data).select('id').single(),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('log timeout')), timeoutMs)),
+    ]);
+    if (result && result.data && result.data.id) {
+      console.log(`Log saved (id=${result.data.id})`);
+    } else {
+      console.log('Log insert returned without id (ok).');
+    }
+  } catch (e) {
+    console.warn('Log insert failed (non-fatal):', e.message || e);
+  }
+}
 
-// ----- main -----
+async function downloadPage(supabase, lastId, pageSize) {
+  // Cursor paging by id to reliably fetch large tables
+  const q = supabase
+    .from(SUPABASE_EXCESS_TABLE)
+    .select('id, part_number, quantity', { count: 'exact' })
+    .gt('id', lastId)
+    .order('id', { ascending: true })
+    .limit(pageSize);
+
+  const { data, error } = await q;
+  if (error) throw error;
+  return data || [];
+}
+
+// ---------- Main ----------
+
 (async () => {
-  console.log(`Dry run: ${isDryRun}`);
-  console.log(`Table: ${SUPABASE_EXCESS_TABLE}`);
-  console.log(`Output: ${outFile}`);
-  await fs.mkdir(outDir, { recursive: true });
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
+    auth: { persistSession: false },
+  });
 
-  // Cursor paging on id
-  let lastId = 0;
-  const pageSize = 1000;
-  let total = 0;
+  fs.mkdirSync(outDir, { recursive: true });
+
+  console.log(`Dry run: ${isDryRun}`);
+  console.log('Aggregation: OFF (each row exported)');
+  console.log('Cursor paging on column: id (page=1000)');
 
   const rows = [];
+  const pageSize = 1000;
+  let lastId = 0;
+  let fetchedTotal = 0;
 
-  console.log(`Cursor paging on column: id (page=${pageSize})`);
+  // Fetch all rows
   while (true) {
-    const { data, error } = await supa
-      .from(SUPABASE_EXCESS_TABLE)
-      .select(SELECT)
-      .gt("id", lastId)
-      .order("id", { ascending: true })
-      .limit(pageSize);
+    const page = await downloadPage(supabase, lastId, pageSize);
+    if (!page.length) break;
+    fetchedTotal += page.length;
+    lastId = page[page.length - 1].id;
 
-    if (error) throw new Error(`Supabase fetch error: ${error.message}`);
+    if (fetchedTotal % 1000 === 0) {
+      console.log(`Fetched ${fetchedTotal}/? rows so far…`);
+    }
 
-    if (!data || data.length === 0) break;
-
-    for (const r of data) rows.push(r);
-
-    total += data.length;
-    lastId = data[data.length - 1].id;
-
-    console.log(`Fetched ${total} rows so far…`);
-    if (data.length < pageSize) break;
+    for (const r of page) {
+      // Send raw quantity (no aggregation, no 80% adjustment here)
+      const qty = Number(r.quantity || 0);
+      if (!r.part_number || qty <= 0) continue;
+      rows.push([String(r.part_number).trim(), String(qty)]);
+    }
   }
 
-  // Build CSV (no aggregation)
-  const records = rows.map((r) => [
-    r.part_number ?? "",
-    r.quantity ?? 0,
-    r.vendor ?? "",
-    r.batch_id ?? "",
-    r.uploaded_by ?? "",
-    r.created_on_utc ?? ""
-  ]);
+  const lineCount = rows.length;
+  const distinctSkus = new Set(rows.map((r) => r[0])).size;
+  const totalQty = rows.reduce((acc, r) => acc + Number(r[1]), 0);
 
-  const csv = stringify([HEADERS, ...records], { bom: true });
-  await fs.writeFile(outFile, csv);
-  console.log(`CSV written: ${outFile}`);
-  console.log(
-    `Export: ${records.length} lines, distinct SKUs ${new Set(
-      records.map((x) => x[0])
-    ).size}, total qty ${records.reduce((a, x) => a + Number(x[1] || 0), 0)}`
-  );
+  console.log(`Export (NO aggregation): ${lineCount.toLocaleString()} lines, distinct SKUs ${distinctSkus.toLocaleString()}, total qty ${totalQty.toLocaleString()}`);
 
-  // ----- FTP upload -----
+  // Write CSV
+  const csv = stringify(rows, { header: false });
+  fs.writeFileSync(outPath, csv);
+  const fileSize = fs.statSync(outPath).size;
+
+  // Upload to FTP unless dry-run
+  let ftpNote = 'OK';
+  let ftpSecure = String(FTP_SECURE).toLowerCase() === 'true';
+  let ftpDir = FTP_DIR || '/';
+
   if (!isDryRun) {
-    console.log(`Connecting to ${FTP_HOST} (secure=${FTP_SECURE})…`);
+    console.log(`Connecting to ${FTP_HOST} (secure=${ftpSecure ? 'FTPS' : 'FTP'})…`);
     const client = new ftp.Client();
-    client.ftp.verbose = true;
+    client.ftp.verbose = false;
+
     try {
       await client.access({
         host: FTP_HOST,
         user: FTP_USER,
         password: FTP_PASS,
-        secure: String(FTP_SECURE).toLowerCase() === "true"
+        secure: ftpSecure,
       });
 
-      console.log(`Remote folder (PWD): ${await client.pwd()}`);
-      if (FTP_DIR && FTP_DIR !== "/") {
-        await client.ensureDir(FTP_DIR);
-        await client.cd(FTP_DIR);
-        console.log(`Changed to remote dir: ${FTP_DIR}`);
+      // Confirm present working directory
+      const pwd = await client.pwd();
+      console.log(`Connected. Server PWD: ${pwd}`);
+
+      if (ftpDir && ftpDir !== '/') {
+        await client.cd(ftpDir);
       }
 
-      // list before
-      console.log(`Remote listing BEFORE upload:`);
+      // Debug: list before
       try {
-        console.log(await client.list());
-      } catch {}
+        const listBefore = await client.list();
+        console.log('Remote listing BEFORE upload:');
+        listBefore.forEach((x) => console.log(` • ${x.name}  ${x.size}`));
+      } catch (_) {}
 
-      await client.uploadFrom(outFile, OUTPUT_FILE);
-      console.log(`✅ Uploaded ${OUTPUT_FILE}`);
+      console.log(`Uploading: ${OUTPUT_FILE}  ->  ${OUTPUT_FILE}`);
+      await client.uploadFrom(outPath, OUTPUT_FILE);
 
-      // list after
-      console.log(`Remote listing AFTER upload:`);
+      // Debug: list after
       try {
-        console.log(await client.list());
-      } catch {}
-    } finally {
-      client.close();
+        const listAfter = await client.list();
+        const found = listAfter.find((x) => x.name === OUTPUT_FILE);
+        if (found) {
+          console.log(`✅ Upload confirmed on server: ${OUTPUT_FILE} (${found.size} bytes)`);
+        }
+      } catch (_) {}
+
+      await client.close();
+    } catch (e) {
+      ftpNote = `FTP failed: ${e.message || e}`;
+      console.warn(ftpNote);
+      try { await client.close(); } catch {}
     }
   } else {
-    console.log(`DRY_RUN is true — FTP upload skipped.`);
+    ftpNote = 'Dry run (no FTP upload)';
   }
 
-  // ----- log to table (non-blocking) -----
-  try {
-    const details = {
-      run_url: GITHUB_RUN_URL || null,
-      dry_run: isDryRun,
-      rows: records.length,
-      distinct_skus: new Set(records.map((x) => x[0])).size,
-      file: OUTPUT_FILE,
-      ts: new Date().toISOString()
-    };
-    const { error: logErr } = await supa.from("auto_ic_logs").insert([details]);
-    if (logErr) {
-      console.warn(`(non-blocking) log insert failed: ${logErr.message}`);
-    } else {
-      console.log(`Log row inserted into auto_ic_logs`);
-    }
-  } catch (e) {
-    console.warn(`(non-blocking) log insert exception: ${e.message}`);
-  }
+  // --------- Log to Supabase (AWAITED with timeout) ---------
+  const payload = {
+    run_id: String(GITHUB_RUN_ID || Date.now()),
+    run_url: GITHUB_RUN_URL || '',
+    dry_run: isDryRun,
+    aggregate: false,
+    line_count: lineCount,
+    distinct_skus: distinctSkus,
+    total_qty: totalQty,
+    file_size: fileSize,
+    dir: ftpDir,
+    ftps: ftpSecure,
+    note: ftpNote || 'OK',
+  };
 
-  console.log("Done.");
+  await logWithTimeout(supabase, payload, 5000);
+
+  console.log('Done.');
 })().catch((err) => {
-  console.error("FATAL:", err);
+  console.error(err);
   process.exit(1);
 });
+
 
 
 
