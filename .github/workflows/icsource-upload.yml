@@ -2,11 +2,11 @@ name: Upload Excess to IC Source
 
 on:
   schedule:
-    - cron: "0 */6 * * *"   # every 6 hours
+    - cron: "0 */6 * * *"        # every 6 hours
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Dry run (generate CSV only, do not FTP)"
+        description: "Dry run (generate CSV only, no FTP)"
         type: boolean
         default: false
 
@@ -14,13 +14,12 @@ jobs:
   upload:
     runs-on: ubuntu-latest
 
-    # <-- make secrets visible to the script here
     env:
+      # Supabase + FTP secrets mapped to envs the script reads
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE }}   # map service-role to SUPABASE_KEY
+      SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE }}
       ICSOURCE_FTP_USER: ${{ secrets.ICSOURCE_FTP_USER }}
       ICSOURCE_FTP_PASS: ${{ secrets.ICSOURCE_FTP_PASS }}
-      # pass dry-run to the script as an env var (script can read DRY_RUN==='true')
       DRY_RUN: ${{ inputs.dry_run }}
 
     steps:
@@ -30,12 +29,20 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
-      # If you DO have a package-lock.json, npm ci is best.
-      # If you ever remove the lockfile, switch this line to: npm i --no-audit --no-fund
-      - name: Install deps
-        run: npm ci
+      # ---- here's the important change ----
+      - name: Install deps (lockfile if present)
+        run: |
+          set -euxo pipefail
+          if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+            echo "Lockfile found -> npm ci"
+            npm ci
+          else
+            echo "No lockfile -> npm install"
+            npm install --no-audit --no-fund
+          fi
+      # --------------------------------------
 
       - name: Export & (optionally) Upload
         run: |
@@ -49,6 +56,7 @@ jobs:
           name: verified_inventory
           path: out/verified_inventory.csv
           if-no-files-found: warn
+
 
 
 
