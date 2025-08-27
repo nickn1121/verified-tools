@@ -13,7 +13,6 @@ on:
 jobs:
   upload:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,46 +22,41 @@ jobs:
         with:
           node-version: 20
 
-      # Install deps without needing a lockfile
       - name: Install deps
         run: npm i --no-audit --no-fund
 
       - name: Export & (optionally) Upload
         env:
-          # ---- Supabase (must exist) ----
+          # ---- Supabase (server-side key recommended; anon ok for testing) ----
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}  # or your SERVICE_ROLE
-
-          # Tables (script accepts either "excess_parts" or "public.excess_parts")
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           SUPABASE_EXCESS_TABLE: excess_parts
-          SUPABASE_LOGS_TABLE: ic_source_uploads
+          SUPABASE_LOGS_TABLE:   ic_source_uploads
 
-          # Export paging & rules
+          # ---- Export behavior ----
           PAGE_SIZE: "1000"
           PAGINATE_COL: "id"
           ADJUST_RATIO: "0.8"
-
-          # Dry run flag (read by the script)
           DRY_RUN: ${{ github.event.inputs.dry_run }}
 
-          # ---- IC Source FTP credentials (must exist) ----
+          # ---- IC Source FTP ----
           ICSOURCE_FTP_HOST: ftp.icsource.com
+          ICSOURCE_FTP_DIR: "/"
+          ICSOURCE_FTPS: "false"
           ICSOURCE_FTP_USER: ${{ secrets.ICSOURCE_FTP_USER }}
           ICSOURCE_FTP_PASS: ${{ secrets.ICSOURCE_FTP_PASS }}
-          ICSOURCE_FTP_DIR: "/"
-          ICSOURCE_FTPS: "false"   # your current setup
-
         run: |
           mkdir -p out
           node scripts/export-and-upload-icsource.mjs
 
-      - name: Upload CSV as artifact (so you can download it)
+      - name: Upload CSV as artifact
         if: ${{ success() && hashFiles('out/verified_inventory.csv') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: verified_inventory
           path: out/verified_inventory.csv
           if-no-files-found: warn
+
 
 
 
