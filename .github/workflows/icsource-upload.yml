@@ -1,18 +1,28 @@
 name: Upload Excess to IC Source
 
 on:
+  schedule:
+    - cron: "0 */6 * * *"   # every 6 hours
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "Dry run (CSV only, no FTP upload)"
-        required: false
-        default: "false"
-  schedule:
-    - cron: "0 */6 * * *"  # every 6 hours
+        description: "Dry run (generate CSV only, do not FTP)"
+        type: boolean
+        default: false
 
 jobs:
   upload:
     runs-on: ubuntu-latest
+
+    # <-- make secrets visible to the script here
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE }}   # map service-role to SUPABASE_KEY
+      ICSOURCE_FTP_USER: ${{ secrets.ICSOURCE_FTP_USER }}
+      ICSOURCE_FTP_PASS: ${{ secrets.ICSOURCE_FTP_PASS }}
+      # pass dry-run to the script as an env var (script can read DRY_RUN==='true')
+      DRY_RUN: ${{ inputs.dry_run }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,42 +30,26 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
 
+      # If you DO have a package-lock.json, npm ci is best.
+      # If you ever remove the lockfile, switch this line to: npm i --no-audit --no-fund
       - name: Install deps
-        run: npm i --no-audit --no-fund
+        run: npm ci
 
       - name: Export & (optionally) Upload
-        env:
-          # ---- Supabase (server-side key recommended; anon ok for testing) ----
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          SUPABASE_EXCESS_TABLE: excess_parts
-          SUPABASE_LOGS_TABLE:   ic_source_uploads
-
-          # ---- Export behavior ----
-          PAGE_SIZE: "1000"
-          PAGINATE_COL: "id"
-          ADJUST_RATIO: "0.8"
-          DRY_RUN: ${{ github.event.inputs.dry_run }}
-
-          # ---- IC Source FTP ----
-          ICSOURCE_FTP_HOST: ftp.icsource.com
-          ICSOURCE_FTP_DIR: "/"
-          ICSOURCE_FTPS: "false"
-          ICSOURCE_FTP_USER: ${{ secrets.ICSOURCE_FTP_USER }}
-          ICSOURCE_FTP_PASS: ${{ secrets.ICSOURCE_FTP_PASS }}
         run: |
           mkdir -p out
           node scripts/export-and-upload-icsource.mjs
 
-      - name: Upload CSV as artifact
-        if: ${{ success() && hashFiles('out/verified_inventory.csv') != '' }}
+      - name: Upload CSV as artifact (so you can download it)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: verified_inventory
           path: out/verified_inventory.csv
           if-no-files-found: warn
+
 
 
 
