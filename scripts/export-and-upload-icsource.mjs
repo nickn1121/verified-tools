@@ -1,280 +1,158 @@
 // scripts/export-and-upload-icsource.mjs
-// ------------------------------------------------------
-// Export excess inventory from Supabase -> CSV -> upload to IC Source (FTP)
-// and write a log row into Supabase (ic_source_uploads).
-// ------------------------------------------------------
+// 1) Read from Supabase (paged)
+// 2) build CSV with 80% qty
+// 3) (optional) upload to IC Source FTP
+// 4) insert log row into public.ic_source_uploads
 
-import fs from 'node:fs';
-import path from 'node:path';
-import process from 'node:process';
-import { createClient } from '@supabase/supabase-js';
-import ftp from 'basic-ftp';
-import { stringify } from 'csv-stringify';
+import { createClient } from "@supabase/supabase-js";
+import { stringify } from "csv-stringify/sync";
+import fs from "node:fs";
+import path from "node:path";
+import ftp from "basic-ftp";
 
-// ---------- helpers ----------
-const bool = (v, d = false) => {
-  if (v === undefined || v === null || v === '') return d;
-  const s = String(v).trim().toLowerCase();
-  return ['1', 'true', 'yes', 'y', 'on'].includes(s);
-};
+const env = (k, d = undefined) => (process.env[k] ?? d);
 
-const toNumber = (v, d = 0) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : d;
-};
+const SUPABASE_URL  = env("SUPABASE_URL");
+const SUPABASE_KEY  = env("SUPABASE_KEY");
+const EXCESS_TABLE  = (env("SUPABASE_EXCESS_TABLE","excess_parts")).replace(/^public\./,"");
+const LOGS_TABLE    = (env("SUPABASE_LOGS_TABLE","ic_source_uploads")).replace(/^public\./,"");
 
-// Build a GitHub run URL if running inside Actions
-function githubRunURL() {
-  const repo = process.env.GITHUB_REPOSITORY;
-  const runId = process.env.GITHUB_RUN_ID;
-  const server = process.env.GITHUB_SERVER_URL || 'https://github.com';
-  if (repo && runId) return `${server}/${repo}/actions/runs/${runId}`;
-  return null;
-}
+const PAGE_SIZE     = parseInt(env("PAGE_SIZE","1000"),10);
+const PAGINATE_COL  = env("PAGINATE_COL","id");
+const ADJUST_RATIO  = parseFloat(env("ADJUST_RATIO","0.8"));
+const DRY_RUN       = String(env("DRY_RUN","false")).toLowerCase()==="true";
 
-// ---------- configuration from env ----------
-const SUPABASE_URL  = process.env.SUPABASE_URL;
-const SUPABASE_KEY  = process.env.SUPABASE_KEY || process.env.SUPABASE_SERVICE_ROLE; // either works
+const FTP_HOST = env("ICSOURCE_FTP_HOST","ftp.icsource.com");
+const FTP_USER = env("ICSOURCE_FTP_USER");
+const FTP_PASS = env("ICSOURCE_FTP_PASS");
+const FTP_DIR  = env("ICSOURCE_FTP_DIR","/");
+const FTP_SSL  = String(env("ICSOURCE_FTPS","false")).toLowerCase()==="true";
 
-// tables (accept "excess_parts" OR "public.excess_parts")
-const RAW_EXCESS_TABLE = process.env.SUPABASE_EXCESS_TABLE || 'excess_parts';
-let EXCESS_SCHEMA = 'public';
-let EXCESS_TABLE  = RAW_EXCESS_TABLE;
-if (RAW_EXCESS_TABLE.includes('.')) {
-  const [s, ...rest] = RAW_EXCESS_TABLE.split('.');
-  EXCESS_SCHEMA = s || 'public';
-  EXCESS_TABLE  = rest.join('.') || 'excess_parts';
-}
-
-const RAW_LOGS_TABLE = process.env.SUPABASE_LOGS_TABLE || 'ic_source_uploads';
-let LOGS_SCHEMA = 'public';
-let LOGS_TABLE  = RAW_LOGS_TABLE;
-if (RAW_LOGS_TABLE.includes('.')) {
-  const [s, ...rest] = RAW_LOGS_TABLE.split('.');
-  LOGS_SCHEMA = s || 'public';
-  LOGS_TABLE  = rest.join('.') || 'ic_source_uploads';
-}
-
-// pagination
-const PAGE_SIZE     = toNumber(process.env.PAGE_SIZE, 1000);
-const PAGINATE_COL  = process.env.PAGINATE_COL || 'id';
-
-// 80% qty adjustment (set ADJUST_RATIO=1 to disable)
-const ADJUST_RATIO  = toNumber(process.env.ADJUST_RATIO, 0.80);
-
-// dry-run (CSV only) – can be passed by GH Actions input `dry_run`
-const DRY_RUN = bool(process.env.INPUT_DRY_RUN ?? process.env.DRY_RUN, false);
-
-// IC Source FTP
-const FTP_HOST = process.env.ICSOURCE_FTP_HOST || 'ftp.icsource.com';
-const FTP_USER = process.env.ICSOURCE_FTP_USER;
-const FTP_PASS = process.env.ICSOURCE_FTP_PASS;
-const FTP_DIR  = process.env.ICSOURCE_FTP_DIR || '/';
-const FTP_SECURE = bool(process.env.ICSOURCE_FTPS, false); // false in your current setup
-
-// output file
-const OUT_DIR  = 'out';
-const OUT_FILE = path.join(OUT_DIR, 'verified_inventory.csv');
-
-// ---------- sanity checks ----------
 if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error('Supabase URL or KEY missing. Set SUPABASE_URL and SUPABASE_KEY (or SUPABASE_SERVICE_ROLE).');
-  process.exit(1);
+  throw new Error("SUPABASE_URL / SUPABASE_KEY missing");
 }
 
-if (!DRY_RUN && (!FTP_USER || !FTP_PASS)) {
-  console.error('FTP credentials missing. Set ICSOURCE_FTP_USER and ICSOURCE_FTP_PASS.');
-  process.exit(1);
-}
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+const OUT_DIR  = "out";
+const OUT_FILE = path.join(OUT_DIR, "verified_inventory.csv");
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
-// ---------- supabase client ----------
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { persistSession: false }
-});
+function roundInt(n){ return Math.max(0, Math.round(n)); }
 
-// small helper to pick schema
-const fromParts = (client, schema, table) =>
-  (schema ? client.schema(schema).from(table) : client.from(table));
-
-// ---------- export -> CSV ----------
-async function exportToCSV() {
-  console.log(`Dry run: ${DRY_RUN ? 'true' : 'false'}`);
-  console.log(`Aggregation: OFF (each row exported)`);
-  console.log(`Cursor paging on column: ${PAGINATE_COL} (page=${PAGE_SIZE})`);
-
-  let lastId = null;
-  let totalLines = 0;
-  let totalQty   = 0;
-  const distinct = new Set();
-
-  // stream CSV
-  const ws = fs.createWriteStream(OUT_FILE, { encoding: 'utf8' });
-  const csv = stringify({
-    header: true,
-    columns: ['part_number', 'quantity', 'vendor'],
-  });
-  csv.pipe(ws);
-
+async function* fetchPaged() {
+  // cursor paging on PAGINATE_COL
+  let last = null;
   while (true) {
-    let q = fromParts(sb, EXCESS_SCHEMA, EXCESS_TABLE)
-      .select(`id, part_number, quantity, vendor`)
-      .order(PAGINATE_COL, { ascending: true })
-      .limit(PAGE_SIZE);
-
-    if (lastId != null) {
-      q = q.gt(PAGINATE_COL, lastId);
-    }
-
+    let q = supabase.from(EXCESS_TABLE).select("*").order(PAGINATE_COL, { ascending: true }).limit(PAGE_SIZE);
+    if (last !== null) q = q.gt(PAGINATE_COL, last);
     const { data, error } = await q;
     if (error) throw new Error(`Supabase fetch error: ${error.message}`);
-
-    if (!data || data.length === 0) break;
-
-    for (const row of data) {
-      lastId = row[PAGINATE_COL];
-
-      const mpn    = String(row.part_number ?? '').trim();
-      const vendor = String(row.vendor ?? '').trim();
-      const rawQty = toNumber(row.quantity, 0);
-      const adjQty = Math.round(rawQty * ADJUST_RATIO);
-
-      if (!mpn || adjQty <= 0) continue;
-
-      csv.write([mpn, adjQty, vendor]);
-      totalLines += 1;
-      totalQty   += adjQty;
-      distinct.add(mpn);
-    }
-
-    console.log(`Fetched ${lastId ?? '?'} rows so far…`);
-  }
-
-  csv.end();
-  await new Promise((r) => ws.on('finish', r));
-
-  const stats = fs.statSync(OUT_FILE);
-  const result = {
-    lines: totalLines,
-    distinct: distinct.size,
-    totalQty,
-    fileSize: stats.size,
-  };
-
-  console.log(`Export (NO aggregation): ${result.lines} lines, distinct SKUs ${result.distinct}, total qty ${result.totalQty}`);
-  return result;
-}
-
-// ---------- FTP upload ----------
-async function uploadToICSource() {
-  const client = new ftp.Client(0);
-  client.ftp.verbose = false;
-  try {
-    console.log(`Connecting to ${FTP_HOST} (secure=${FTP_SECURE ? 'FTPS' : 'FTP'})…`);
-    await client.access({
-      host: FTP_HOST,
-      user: FTP_USER,
-      password: FTP_PASS,
-      secure: FTP_SECURE,
-    });
-
-    const pwd = await client.pwd();
-    console.log(`Connected. Server PWD: ${pwd}`);
-
-    if (FTP_DIR && FTP_DIR !== '/' && FTP_DIR !== '.') {
-      await client.ensureDir(FTP_DIR);
-    }
-
-    // pre list
-    const before = await client.list();
-    console.log('Remote listing BEFORE upload:');
-    for (const f of before) {
-      if (f.isFile) console.log(` • ${f.name}  ${f.size}`);
-    }
-
-    const remoteName = path.basename(OUT_FILE);
-    console.log(`Uploading: ${remoteName}  ->  ${remoteName}`);
-    await client.uploadFrom(OUT_FILE, remoteName);
-
-    const after = await client.list();
-    console.log('Remote listing AFTER upload:');
-    let uploadedSize = null;
-    for (const f of after) {
-      if (f.isFile) {
-        console.log(` • ${f.name}  ${f.size}`);
-        if (f.name === remoteName) uploadedSize = f.size;
-      }
-    }
-
-    if (uploadedSize == null) {
-      throw new Error('Upload appears to be missing on remote.');
-    }
-
-    console.log(`✅ Upload confirmed on server: ${remoteName} (${uploadedSize} bytes)`);
-    return { remoteDir: FTP_DIR || '/', remoteName, uploadedSize, ftps: FTP_SECURE };
-  } finally {
-    client.close();
+    if (!data || data.length===0) break;
+    last = data[data.length-1][PAGINATE_COL];
+    yield data;
   }
 }
 
-// ---------- Write log row ----------
-async function writeLog({ ok, msg, exportStats, ftpInfo }) {
-  const runUrl = githubRunURL();
-  const runId  = process.env.GITHUB_RUN_ID || null;
-
-  const row = {
-    run_id: runId,
-    run_url: runUrl,
-    dry_run: DRY_RUN,
-    aggregate: false,
-    line_count: exportStats?.lines ?? null,
-    distinct_skus: exportStats?.distinct ?? null,
-    total_qty: exportStats?.totalQty ?? null,
-    file_size: exportStats?.fileSize ?? null,
-    remote_name: ftpInfo?.remoteName ?? null,
-    remote_dir: ftpInfo?.remoteDir ?? null,
-    ftps: ftpInfo?.ftps ?? false,
-    success: ok,
-    message: msg || (ok ? 'OK' : 'ERR'),
+function rowToCsv(r){
+  const qty = Math.max(0, r.quantity ?? 0);
+  const adj = roundInt(qty * ADJUST_RATIO);
+  return {
+    part_number: r.part_number ?? "",
+    vendor: r.vendor ?? "",
+    quantity: adj,
   };
-
-  const { error } = await fromParts(sb, LOGS_SCHEMA, LOGS_TABLE).insert(row).select('id, created_at').single();
-  if (error) throw new Error(`log insert failed: ${error.message}`);
 }
 
-// ---------- main ----------
 (async () => {
-  try {
-    // 1) Export CSV
-    const exportStats = await exportToCSV();
+  console.log("Dry run:", DRY_RUN);
+  console.log("Aggregation: OFF (each row exported)");
+  console.log(`Cursor paging on column: ${PAGINATE_COL} (page=${PAGE_SIZE})`);
 
-    // 2) Upload (unless dry run)
-    let ftpInfo = null;
-    if (!DRY_RUN) {
-      ftpInfo = await uploadToICSource();
-    } else {
-      console.log('Dry run: skipping FTP upload.');
+  let totalLines=0, totalQty=0, parts=[];
+  for await (const page of fetchPaged()) {
+    totalLines += page.length;
+    if (totalLines % 1000 === 0) console.log(`Fetched ${totalLines}/? rows so far…`);
+    for (const r of page) {
+      const csvRow = rowToCsv(r);
+      parts.push(csvRow);
+      totalQty += csvRow.quantity;
     }
-
-    // 3) Log success
-    console.log('Writing log to Supabase…');
-    await writeLog({ ok: true, msg: 'OK', exportStats, ftpInfo });
-    console.log('Log saved (ok).');
-    console.log('Done.');
-    process.exit(0);
-  } catch (err) {
-    console.error(err?.stack || err?.message || String(err));
-    // try to log error row
-    try {
-      await writeLog({ ok: false, msg: String(err?.message || err), exportStats: null, ftpInfo: null });
-      console.log('Error row written.');
-    } catch (e2) {
-      console.error('Failed to write error log:', e2?.message || e2);
-    }
-    process.exit(1);
   }
-})();
+
+  // Write CSV
+  const csv = stringify(parts, { header:true, columns:["part_number","vendor","quantity"] });
+  fs.writeFileSync(OUT_FILE, csv, "utf8");
+  const csvBytes = fs.statSync(OUT_FILE).size;
+
+  console.log(`Export (NO aggregation): ${parts.length} lines, distinct SKUs ${new Set(parts.map(x=>x.part_number)).size}, total qty ${totalQty}`);
+
+  // Upload to IC Source
+  let remoteName = "verified_inventory.csv";
+  let remoteDir = FTP_DIR;
+  let ok = true, message="OK";
+
+  if (!DRY_RUN) {
+    if (!FTP_USER || !FTP_PASS) throw new Error("FTP credentials missing");
+    const client = new ftp.Client();
+    client.ftp.verbose = false;
+    try {
+      await client.access({ host: FTP_HOST, user: FTP_USER, password: FTP_PASS, secure: FTP_SSL });
+      console.log("Connected. Server PWD:", await client.pwd());
+      const listBefore = await client.list(remoteDir);
+      const existing = listBefore.find(f=>f.name===remoteName);
+      if (existing) console.log("Remote listing BEFORE upload:\n •", existing.name, existing.size);
+
+      await client.cd(remoteDir);
+      await client.uploadFrom(OUT_FILE, remoteName);
+
+      const listAfter = await client.list(remoteDir);
+      const now = listAfter.find(f=>f.name===remoteName);
+      if (!now) throw new Error("Upload verification failed (not found)");
+      console.log("✅ Upload confirmed on server:", `${remoteName} (${now.size} bytes)`);
+      await client.close();
+    } catch (e) {
+      ok=false; message = e.message || String(e);
+      try { await client.close(); } catch {}
+    }
+  }
+
+  // Log to Supabase
+  try {
+    const runUrl = process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID
+      ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+      : null;
+
+    const insert = {
+      run_id: process.env.GITHUB_RUN_ID || null,
+      run_url: runUrl,
+      dry_run: DRY_RUN,
+      aggregate: false,
+      line_count: parts.length,
+      distinct_skus: new Set(parts.map(x=>x.part_number)).size,
+      total_qty: totalQty,
+      file_size: csvBytes,
+      remote_name: remoteName,
+      remote_dir: remoteDir,
+      ftps: FTP_SSL,
+      success: ok,
+      message
+    };
+
+    console.log("Writing log to Supabase…");
+    const { data, error } = await supabase.from(LOGS_TABLE).insert(insert).select().single();
+    if (error) throw error;
+    console.log(`Log saved (id=${data.id}, at=${data.created_at})`);
+  } catch (e) {
+    console.log(`Log insert returned without id (ok). ${e.message || e}`);
+  }
+
+  console.log("Done.");
+})().catch(e => {
+  console.error(e);
+  process.exit(1);
+});
+
 
 
 
