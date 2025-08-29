@@ -24,6 +24,8 @@
         <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Verified Electronics</h1>
       </div>
       <div class="flex items-center gap-2">
+        <!-- NEW: Back button -->
+        <a href="https://tools.verifiedelectronics.com" class="px-3 py-2 rounded-xl bg-white shadow-sm ring-1 ring-slate-200 text-sm hover:bg-slate-50">← Back to Tools</a>
         <label class="inline-flex items-center gap-2 cursor-pointer">
           <input type="file" id="logoFile" accept="image/*" class="hidden" />
           <span class="px-3 py-2 rounded-xl bg-white shadow-sm ring-1 ring-slate-200 text-sm hover:bg-slate-50">Upload Logo</span>
@@ -127,6 +129,11 @@
               <option>DDP</option>
             </select>
           </div>
+        </div>
+        <!-- NEW: Payment Terms -->
+        <div class="mt-3">
+          <label class="block text-sm mb-1">Payment Terms</label>
+          <input id="paymentTerms" class="w-full border rounded-lg px-3 py-2" placeholder="e.g., NET 30" />
         </div>
       </div>
     </section>
@@ -332,8 +339,13 @@
     $('generateBtn').addEventListener('click', ()=>{
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ unit:'pt', format:'a4' });
-      const left=40, right=555;
+
+      // Margins and rulers
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const left=40, right=pageWidth-40; // 40pt margins
+      const contentWidth = right - left;
       const aline = y => doc.line(left,y,right,y);
+
       const currency = ($('currency').value||'USD').toUpperCase();
       const docType = $('docType').value;
 
@@ -349,6 +361,7 @@
       const poNumber = $('poNumber').value;
       const salesperson = $('salesperson').value;
       const incoterms = $('incoterms').value;
+      const paymentTerms = $('paymentTerms').value; // NEW
       const leadTime = $('leadTime').value;
       const cooHts = $('cooHts').value;
       const shipping = nf($('shipping').value);
@@ -367,12 +380,13 @@
       if (poNumber) doc.text(`Reference / PO: ${poNumber}`, right, 86, {align:'right'});
       if (sellerVat) doc.text(`VAT / Tax ID: ${sellerVat}`, right, 100, {align:'right'});
 
-      // Seller / Buyer blocks (multi-line support)
+      // Seller / Buyer blocks
       let y=132;
       doc.setFont('helvetica','bold'); doc.text('Seller', left, y);
       doc.text('Buyer', 300, y);
       doc.setFont('helvetica','normal');
       y+=14; doc.text(sellerName||'-', left, y); doc.text(buyerCompany||'-', 300, y);
+
       const sLines = (sellerAddress||'-').split('\n'); sLines.forEach((line,i)=> doc.text(line, left, y+12*(i+1)));
       const bLines = (buyerContact||'-').split('\n'); bLines.forEach((line,i)=> doc.text(line, 300, y+12*(i+1)));
       y += 12 * (Math.max(sLines.length, bLines.length) + 2);
@@ -381,7 +395,15 @@
       // Commercial Terms + addresses
       doc.setFont('helvetica','bold'); doc.text('Commercial Terms', left, y);
       doc.setFont('helvetica','normal');
-      doc.text(`Currency: ${currency}   Incoterms: ${incoterms||'-'}   Salesperson: ${salesperson||'-'}`, left, y+14);
+
+      const termsLine = [
+        `Currency: ${currency}`,
+        `Incoterms: ${incoterms||'-'}`,
+        `Salesperson: ${salesperson||'-'}`,
+        `Payment Terms: ${paymentTerms || '-'}`
+      ].join('   ');
+      doc.text(termsLine, left, y+14);
+
       doc.setFont('helvetica','bold'); doc.text('Bill To', left, y+38);
       doc.setFont('helvetica','normal'); (billTo||'-').split('\n').forEach((l,i)=> doc.text(l, left, y+52+12*i));
       doc.setFont('helvetica','bold'); doc.text('Ship To', 300, y+38);
@@ -393,21 +415,26 @@
       const body = items.length ? items.map((it,i)=>[
         i+1, it.part, it.desc||'', it.date||'', it.qty, money(it.unit, currency), it.vatPct? it.vatPct.toFixed(2):'0', money(it.ext, currency)
       ]) : [['','','','','','','','']];
+
+      // Column widths tuned to exactly fit contentWidth (515pt at 40pt margins on A4):
+      // 20 + 95 + 140 + 55 + 50 + 65 + 40 + 50 = 515
       doc.autoTable({
         startY: tableY,
         head,
         body,
-        styles:{fontSize:9, cellPadding:6},
-        headStyles:{fillColor:[30,64,175]},
+        styles:{fontSize:9, cellPadding:6, overflow:'linebreak'},
+        headStyles:{fillColor:[30,64,175], halign:'left'},
+        margin: { left, right: pageWidth - right },
+        tableWidth: contentWidth,
         columnStyles:{
-          0:{cellWidth:24, halign:'right'},
-          1:{cellWidth:110},
-          2:{cellWidth:150},
-          3:{cellWidth:70},
-          4:{cellWidth:40, halign:'right'},
-          5:{cellWidth:70, halign:'right'},
-          6:{cellWidth:50, halign:'center'},
-          7:{cellWidth:80, halign:'right'}
+          0:{cellWidth:20, halign:'right'},
+          1:{cellWidth:95},
+          2:{cellWidth:140},   // description wraps
+          3:{cellWidth:55},
+          4:{cellWidth:50, halign:'right'},
+          5:{cellWidth:65, halign:'right'},
+          6:{cellWidth:40, halign:'center'},
+          7:{cellWidth:50, halign:'right'}
         },
         didDrawPage: function () {
           const pageCount = doc.getNumberOfPages();
@@ -429,11 +456,11 @@
       // Optional extra sections
       let blockY = after + 120;
       if (leadTime) { doc.setFont('helvetica','bold'); doc.text('Lead Time / Delivery', left, blockY);
-        doc.setFont('helvetica','normal'); doc.text(leadTime, left, blockY+14); blockY += 34; }
+        doc.setFont('helvetica','normal'); doc.text(leadTime, left, blockY+14, {maxWidth: contentWidth}); blockY += 34; }
       if (cooHts) { doc.setFont('helvetica','bold'); doc.text('COO/HTS', left, blockY);
-        doc.setFont('helvetica','normal'); doc.text(cooHts, left, blockY+14); blockY += 34; }
+        doc.setFont('helvetica','normal'); doc.text(cooHts, left, blockY+14, {maxWidth: contentWidth}); blockY += 34; }
       if (notes)  { doc.setFont('helvetica','bold'); doc.text('Notes', left, blockY);
-        doc.setFont('helvetica','normal'); doc.text(notes, left, blockY+14, {maxWidth: right-left}); blockY += 54; }
+        doc.setFont('helvetica','normal'); doc.text(notes, left, blockY+14, {maxWidth: contentWidth}); blockY += 54; }
 
       // Signatures for SO
       if (docType==='so') {
@@ -452,3 +479,4 @@
   </script>
 </body>
 </html>
+
