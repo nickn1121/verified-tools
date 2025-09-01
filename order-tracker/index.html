@@ -14,12 +14,12 @@
 <!-- Supabase v2 -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // ✅ Your live Supabase project (inlined, like your existing file)
+  // ✅ Your live Supabase project
   const SUPABASE_URL = 'https://ijzroisggstqkfhpjndq.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // (Optional) auto-inject auth headers for any direct fetch to your Supabase URL
+  // Optional: inject auth headers into any direct fetch to your Supabase REST
   (function(){
     const realFetch = window.fetch.bind(window);
     window.fetch = (input, init = {}) => {
@@ -28,7 +28,7 @@
         const h = new Headers(init.headers || {});
         if (!h.has('apikey')) h.set('apikey', SUPABASE_ANON_KEY);
         if (!h.has('Authorization')) h.set('Authorization', `Bearer ${SUPABASE_ANON_KEY}`);
-        init = { ...init, headers: h }; // ← important: spread correctly
+        init = { ...init, headers: h };
       }
       return realFetch(input, init);
     };
@@ -160,7 +160,7 @@
       </div>
 
       <div class="md:col-span-2">
-        <label class="block text-sm text-gray-600 mb-1">Product (e.g., 1 × Item name)</label>
+        <label class="block text-sm text-gray-600 mb-1">Product</label>
         <input id="f_product" class="w-full rounded-lg border-gray-300" />
       </div>
 
@@ -210,6 +210,7 @@
   let ORDERS = [];
   const state = { q:'', page:1, pageSize:25 };
   let currentId = null; // null => new order
+  let usingCreatedAt = true; // will flip to false if server has `date` instead
 
   // ---------- Helpers ----------
   function nowLocalInputValue(d=new Date()){
@@ -260,12 +261,11 @@
     return [arr.slice(start,start+size), start+1, Math.min(arr.length,start+size)];
   }
 
-  // ---------- DB Shape ----------
-  // Using a simple single table "orders" with columns below.
+  // Map for whichever date column exists
   function rowToObj(r){
     return {
       id: r.id,
-      date: r.date,
+      date: r.created_at || r.date,  // normalize to .date
       status: r.status,
       product: r.product,
       sku: r.sku,
@@ -278,9 +278,8 @@
     };
   }
   function objToRow(o){
-    return {
+    const base = {
       id: o.id,
-      date: o.date,
       status: o.status,
       product: o.product,
       sku: o.sku,
@@ -291,15 +290,41 @@
       tracking: o.tracking,
       picked: !!o.picked
     };
+    // write the right column back
+    if(usingCreatedAt){
+      base.created_at = o.date;
+    } else {
+      base.date = o.date;
+    }
+    return base;
   }
 
   // ---------- CRUD ----------
   async function loadOrders(){
-    const { data, error } = await sb
-      .from('orders')
-      .select('id,date,status,product,sku,customer_name,customer_email,customer_phone,courier,tracking,picked')
-      .order('date',{ ascending:false });
-    if(error){ console.error(error); alert('Failed to load orders'); return; }
+    // Try created_at first
+    let query = sb.from('orders')
+      .select('id,created_at,status,product,sku,customer_name,customer_email,customer_phone,courier,tracking,picked')
+      .order('created_at',{ ascending:false });
+
+    let { data, error } = await query;
+    if(error){
+      console.warn('created_at query failed — retrying with date', error);
+      // Retry with date
+      usingCreatedAt = false;
+      const retry = await sb.from('orders')
+        .select('id,date,status,product,sku,customer_name,customer_email,customer_phone,courier,tracking,picked')
+        .order('date',{ ascending:false });
+      data = retry.data; error = retry.error;
+    } else {
+      usingCreatedAt = true;
+    }
+
+    if(error){
+      console.error('Supabase error:', error);
+      alert('Failed to load orders');
+      return;
+    }
+
     ORDERS = (data||[]).map(rowToObj);
     state.page = 1;
     render();
@@ -308,17 +333,19 @@
   async function upsertOrder(o){
     const row = objToRow(o);
     const { error } = await sb.from('orders').upsert(row, { onConflict: 'id' });
-    if(error){ console.error(error); alert('Save failed'); return false; }
+    if(error){ console.error('Save failed:', error); alert('Save failed'); return false; }
     return true;
   }
 
   async function deleteOrder(id){
     const { error } = await sb.from('orders').delete().eq('id', id);
-    if(error){ console.error(error); alert('Delete failed'); return false; }
+    if(error){ console.error('Delete failed:', error); alert('Delete failed'); return false; }
     return true;
   }
 
   // ---------- Render ----------
+  function fmtDateCellForRow(o){ return fmtDateCell(o.date); }
+
   function render(){
     const tbody = document.getElementById('tbody');
     const q = document.getElementById('search').value.trim();
@@ -336,7 +363,7 @@
 
     tbody.innerHTML = rows.map(o => `
       <tr class="hover:bg-gray-50">
-        <td class="px-4 py-3 text-sm text-gray-700">${fmtDateCell(o.date)}</td>
+        <td class="px-4 py-3 text-sm text-gray-700">${fmtDateCellForRow(o)}</td>
         <td class="px-4 py-3">${statusChip(o.status)}</td>
         <td class="px-4 py-3">
           <div class="text-sm font-medium">${o.product||''}</div>
@@ -394,7 +421,6 @@
     document.getElementById('f_tracking').value = o.tracking || '';
     document.getElementById('btnDelete').classList.remove('hidden');
   }
-
   function openModal(id=null){
     if(id){
       const o = ORDERS.find(x=>x.id===id);
@@ -454,16 +480,12 @@
     }
   });
 
-  document.getElementById('search').addEventListener('input', ()=>{
-    state.page = 1; render();
-  });
+  document.getElementById('search').addEventListener('input', ()=>{ state.page = 1; render(); });
   document.getElementById('pageSize').addEventListener('change', e=>{
     state.pageSize = parseInt(e.target.value,10)||25;
     state.page = 1; render();
   });
-  document.getElementById('prevPage').addEventListener('click', ()=>{
-    state.page = Math.max(1, state.page-1); render();
-  });
+  document.getElementById('prevPage').addEventListener('click', ()=>{ state.page = Math.max(1, state.page-1); render(); });
   document.getElementById('nextPage').addEventListener('click', ()=>{
     const q = document.getElementById('search').value.trim();
     const total = ORDERS.filter(o=>matchesQuery(o,q)).length;
@@ -472,7 +494,6 @@
   });
 
   document.getElementById('btnExport').addEventListener('click', ()=>{
-    // quick CSV export of current view
     const q = document.getElementById('search').value.trim();
     const filtered = ORDERS.filter(o=>matchesQuery(o,q));
     const headers = ['id','date','status','product','sku','customer_name','customer_email','customer_phone','courier','tracking','picked'];
@@ -489,12 +510,36 @@
   });
 
   // ---------- Init ----------
+  document.getElementById('f_date').value = nowLocalInputValue();
   loadOrders();
 </script>
 
 <!--
-Run this once if you need the table:
+If you need a table, run ONE of these in Supabase SQL (public schema).
 
+Option A (uses created_at):
+-------------------------------------
+create table if not exists public.orders (
+  id text primary key,
+  created_at timestamptz not null default now(),
+  status text,
+  product text,
+  sku text,
+  customer_name text,
+  customer_email text,
+  customer_phone text,
+  courier text,
+  tracking text,
+  picked boolean not null default false
+);
+alter table public.orders enable row level security;
+create policy "orders select" on public.orders for select using (true);
+create policy "orders insert" on public.orders for insert with check (true);
+create policy "orders update" on public.orders for update using (true) with check (true);
+create policy "orders delete" on public.orders for delete using (true);
+
+Option B (uses date):
+-------------------------------------
 create table if not exists public.orders (
   id text primary key,
   date timestamptz not null default now(),
@@ -517,5 +562,6 @@ create policy "orders delete" on public.orders for delete using (true);
 
 </body>
 </html>
+
 
 
