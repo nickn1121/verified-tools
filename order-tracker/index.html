@@ -1,442 +1,521 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Orders • Verified Tools</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Orders • Verified Tools</title>
 
-  <!-- Tailwind (CDN) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = { theme:{ extend:{ colors:{ verified:{ purple:'#673ab7' } } } } }
-  </script>
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme:{ extend:{ colors:{ verified:{ purple:'#673ab7' } } } } }
+</script>
 
-  <!-- Supabase client (v2) with your live credentials -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const SUPABASE_URL = 'https://ijzroisggstqkfhpjndq.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
-    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<!-- Supabase v2 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ✅ Your live Supabase project (inlined, like your existing file)
+  const SUPABASE_URL = 'https://ijzroisggstqkfhpjndq.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Add auth headers automatically to any direct fetch hitting your Supabase REST (optional convenience)
-    (function(){
-      const realFetch = window.fetch.bind(window);
-      window.fetch = (input, init = {}) => {
-        const url = typeof input === 'string' ? input : (input?.url || '');
-        if (url.startsWith(SUPABASE_URL)) {
-          const h = new Headers(init.headers || {});
-          if (!h.has('apikey')) h.set('apikey', SUPABASE_ANON_KEY);
-          if (!h.has('Authorization')) h.set('Authorization', `Bearer ${SUPABASE_ANON_KEY}`);
-          init = { ...init, headers: h };
-        }
-        return realFetch(input, init);
-      };
-    })();
-  </script>
+  // (Optional) auto-inject auth headers for any direct fetch to your Supabase URL
+  (function(){
+    const realFetch = window.fetch.bind(window);
+    window.fetch = (input, init = {}) => {
+      const url = typeof input === 'string' ? input : (input?.url || '');
+      if (url.startsWith(SUPABASE_URL)) {
+        const h = new Headers(init.headers || {});
+        if (!h.has('apikey')) h.set('apikey', SUPABASE_ANON_KEY);
+        if (!h.has('Authorization')) h.set('Authorization', `Bearer ${SUPABASE_ANON_KEY}`);
+        init = { ...init, headers: h }; // ← important: spread correctly
+      }
+      return realFetch(input, init);
+    };
+  })();
+</script>
 
-  <style>
-    .chip { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium; }
-    .chip-blue { @apply bg-blue-100 text-blue-700; }
-    .chip-green { @apply bg-green-100 text-green-700; }
-    .chip-amber { @apply bg-amber-100 text-amber-700; }
-    .chip-yellow { @apply bg-yellow-100 text-yellow-800; }
-    .chip-gray { @apply bg-gray-100 text-gray-700; }
+<style>
+  .chip { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium; }
+  .chip-blue { @apply bg-blue-100 text-blue-700; }
+  .chip-green { @apply bg-green-100 text-green-700; }
+  .chip-amber { @apply bg-amber-100 text-amber-700; }
+  .chip-yellow { @apply bg-yellow-100 text-yellow-800; }
+  .chip-gray { @apply bg-gray-100 text-gray-700; }
 
-    .btn { @apply inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50; }
-    .btn-primary { @apply border-transparent bg-verified-purple text-white hover:bg-purple-700; }
-    .btn-ghost { @apply border-transparent bg-transparent text-gray-700 hover:bg-gray-100; }
-    .btn-mini { @apply px-2 py-1 text-xs rounded-lg; }
+  .btn { @apply inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50; }
+  .btn-primary { @apply border-transparent bg-verified-purple text-white hover:bg-purple-700; }
+  .btn-ghost { @apply border-transparent bg-transparent text-gray-700 hover:bg-gray-100; }
+  .btn-mini { @apply px-2 py-1 text-xs rounded-lg; }
 
-    .card { @apply bg-white border border-gray-200 rounded-2xl shadow-sm; }
-    .icon { width: 18px; height: 18px; }
+  .card { @apply bg-white border border-gray-200 rounded-2xl shadow-sm; }
+  .icon { width: 18px; height: 18px; }
 
-    .modal-backdrop { @apply fixed inset-0 bg-black/40 hidden; }
-    .modal { @apply fixed inset-0 z-50 hidden items-center justify-center p-4; }
-    .modal.open, .modal-backdrop.open { display:flex; }
-  </style>
+  .modal-backdrop { @apply fixed inset-0 bg-black/40 hidden; }
+  .modal { @apply fixed inset-0 z-50 hidden items-center justify-center p-4; }
+  .modal.open, .modal-backdrop.open { display:flex; }
+</style>
 </head>
 <body class="bg-gray-50 text-gray-900">
-  <div class="min-h-screen flex">
+<div class="min-h-screen flex">
 
-    <!-- Sidebar -->
-    <aside class="hidden md:flex w-16 flex-col items-center gap-4 py-6 bg-white border-r border-gray-200">
-      <a href="https://tools.verifiedelectronics.com" class="w-9 h-9 rounded-xl bg-verified-purple text-white grid place-items-center font-bold" title="Back to Tools">V</a>
-      <nav class="flex flex-col items-center gap-3 text-gray-500">
-        <a class="p-2 rounded-lg bg-gray-100 text-verified-purple" title="Orders">
-          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/></svg>
-        </a>
-      </nav>
-    </aside>
+  <!-- Sidebar -->
+  <aside class="hidden md:flex w-16 flex-col items-center gap-4 py-6 bg-white border-r border-gray-200">
+    <a href="https://tools.verifiedelectronics.com" class="w-9 h-9 rounded-xl bg-verified-purple text-white grid place-items-center font-bold" title="Back to Tools">V</a>
+    <nav class="flex flex-col items-center gap-3 text-gray-500">
+      <a class="p-2 rounded-lg bg-gray-100 text-verified-purple" title="Orders">
+        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/></svg>
+      </a>
+    </nav>
+  </aside>
 
-    <!-- Main -->
-    <main class="flex-1 p-4 md:p-8">
-      <!-- Topbar -->
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
-        <h1 class="text-2xl font-semibold tracking-tight">Orders</h1>
-        <div class="flex flex-wrap items-center gap-2">
-          <button class="btn" id="btnFilter">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M3 5h18l-7 8v6l-4-2v-4L3 5z"/></svg>
-            Filter
-          </button>
-          <div class="relative">
-            <input id="search" class="w-72 md:w-96 rounded-xl border-gray-300 focus:ring-verified-purple focus:border-verified-purple px-3 py-2 text-sm" placeholder="Search order, customer, email, postcode, SKU or tracking…" />
-            <button class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500" tabindex="-1">
-              <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 110-14 7 7 0 010 14z"/></svg>
-            </button>
-          </div>
-          <button class="btn" id="btnImport">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 4v16h16M4 8h16M9 12h6"/></svg>
-            Import
-          </button>
-          <button class="btn" id="btnExport">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
-            Export
-          </button>
-          <button class="btn btn-primary" id="btnNew">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            New
+  <!-- Main -->
+  <main class="flex-1 p-4 md:p-8">
+    <!-- Topbar -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+      <h1 class="text-2xl font-semibold tracking-tight">Orders</h1>
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="relative">
+          <input id="search" class="w-72 md:w-96 rounded-xl border-gray-300 focus:ring-verified-purple focus:border-verified-purple px-3 py-2 text-sm" placeholder="Search order, customer, email, SKU or tracking…" />
+          <button class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500" tabindex="-1">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 110-14 7 7 0 010 14z"/></svg>
           </button>
         </div>
-      </div>
-
-      <!-- Tabs -->
-      <div class="mb-4 overflow-x-auto">
-        <div class="inline-flex gap-2">
-          <button data-tab="all" class="tab chip chip-gray">All</button>
-          <button data-tab="payment" class="tab chip chip-amber">Payment required</button>
-          <button data-tab="ready" class="tab chip chip-green">Ready to ship</button>
-          <button data-tab="john" class="tab chip chip-gray">John’s view</button>
-          <button data-tab="dan" class="tab chip chip-gray">Dan’s view</button>
-          <button data-tab="nextday" class="tab chip chip-blue">Next Day Delivery</button>
-        </div>
-      </div>
-
-      <!-- Table -->
-      <div class="card overflow-hidden">
-        <div class="px-4 sm:px-6 py-3 flex items-center justify-between border-b">
-          <div class="text-sm text-gray-600"><span id="visibleCount">0</span> out of <span id="totalCount">0</span> orders</div>
-          <div class="flex items-center gap-2">
-            <button class="btn">Actions</button>
-            <button class="btn">Sort</button>
-            <button class="btn">Columns</button>
-            <div class="hidden md:flex items-center gap-1">
-              <button id="prevPage" class="btn btn-ghost" title="Prev">◀</button>
-              <span id="pageInfo" class="text-sm text-gray-600">1 / 1</span>
-              <button id="nextPage" class="btn btn-ghost" title="Next">▶</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500"><input type="checkbox" /></th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Date</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Status</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Product</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Customer</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Delivery method</th>
-                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Picked</th>
-                <th class="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody id="tbody" class="divide-y divide-gray-100 bg-white"></tbody>
-          </table>
-        </div>
-
-        <div class="px-4 sm:px-6 py-3 flex items-center justify-between border-t bg-gray-50">
-          <div class="text-xs text-gray-500">Showing <span id="rangeInfo">1–10</span></div>
-          <div class="flex items-center gap-2">
-            <label class="text-xs text-gray-500">Rows</label>
-            <select id="pageSize" class="rounded-lg border-gray-300 text-sm">
-              <option>10</option>
-              <option selected>25</option>
-              <option>50</option>
-              <option>100</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <!-- Modal Backdrop -->
-  <div id="backdrop" class="modal-backdrop"></div>
-
-  <!-- View Modal -->
-  <div id="viewModal" class="modal">
-    <div class="card w-full max-w-3xl p-6 relative">
-      <button id="closeModal" class="absolute right-3 top-3 btn btn-ghost btn-mini">✕</button>
-      <div class="flex items-start justify-between gap-6">
-        <div>
-          <h2 id="vmTitle" class="text-xl font-semibold mb-1">Order</h2>
-          <div id="vmDate" class="text-sm text-gray-500"></div>
-        </div>
-        <div id="vmStatus" class="chip chip-gray">Status</div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        <div>
-          <div class="font-medium text-gray-900 mb-2">Product</div>
-          <div class="text-sm" id="vmProduct"></div>
-          <div class="text-xs text-gray-500" id="vmSku"></div>
-        </div>
-
-        <div>
-          <div class="font-medium text-gray-900 mb-2">Customer</div>
-          <div class="text-sm" id="vmCustomer"></div>
-          <div class="text-xs text-gray-500" id="vmContact"></div>
-        </div>
-
-        <div class="md:col-span-2">
-          <div class="font-medium text-gray-900 mb-2">Delivery</div>
-          <div id="vmDelivery" class="text-sm"></div>
-          <div id="vmTracking" class="mt-2"></div>
-        </div>
-      </div>
-
-      <div class="mt-6 flex items-center justify-end gap-2">
-        <button class="btn" id="btnPrint">Print</button>
-        <button class="btn btn-primary" id="btnComplete">Mark as Completed</button>
+        <button class="btn" id="btnExport" type="button">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
+          Export CSV
+        </button>
+        <button class="btn btn-primary" id="btnNew" type="button">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          New Order
+        </button>
       </div>
     </div>
+
+    <!-- Table -->
+    <div class="card overflow-hidden">
+      <div class="px-4 sm:px-6 py-3 flex items-center justify-between border-b">
+        <div class="text-sm text-gray-600"><span id="visibleCount">0</span> of <span id="totalCount">0</span> orders</div>
+        <div class="hidden md:flex items-center gap-1">
+          <button id="prevPage" class="btn btn-ghost" title="Prev">◀</button>
+          <span id="pageInfo" class="text-sm text-gray-600">1 / 1</span>
+          <button id="nextPage" class="btn btn-ghost" title="Next">▶</button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Date</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Status</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Product</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Customer</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Delivery</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Picked</th>
+              <th class="px-4 py-3"></th>
+            </tr>
+          </thead>
+          <tbody id="tbody" class="divide-y divide-gray-100 bg-white"></tbody>
+        </table>
+      </div>
+
+      <div class="px-4 sm:px-6 py-3 flex items-center justify-between border-t bg-gray-50">
+        <div class="text-xs text-gray-500">Showing <span id="rangeInfo">0–0</span></div>
+        <div class="flex items-center gap-2">
+          <label class="text-xs text-gray-500">Rows</label>
+          <select id="pageSize" class="rounded-lg border-gray-300 text-sm">
+            <option>10</option>
+            <option selected>25</option>
+            <option>50</option>
+            <option>100</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Backdrop + Modal -->
+<div id="backdrop" class="modal-backdrop"></div>
+<div id="orderModal" class="modal">
+  <div class="card w-full max-w-3xl p-6 relative">
+    <button id="closeModal" class="absolute right-3 top-3 btn btn-ghost btn-mini">✕</button>
+    <h2 class="text-xl font-semibold mb-4" id="modalTitle">New Order</h2>
+
+    <form id="orderForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Status</label>
+        <select id="f_status" class="w-full rounded-lg border-gray-300">
+          <option>Payment required</option>
+          <option>Ready to ship</option>
+          <option>Waiting for stock</option>
+          <option>Shipped</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Date/Time</label>
+        <input id="f_date" type="datetime-local" class="w-full rounded-lg border-gray-300" />
+      </div>
+
+      <div class="md:col-span-2">
+        <label class="block text-sm text-gray-600 mb-1">Product (e.g., 1 × Item name)</label>
+        <input id="f_product" class="w-full rounded-lg border-gray-300" />
+      </div>
+
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">SKU</label>
+        <input id="f_sku" class="w-full rounded-lg border-gray-300" />
+      </div>
+
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Picked</label>
+        <input id="f_picked" type="checkbox" class="align-middle" />
+      </div>
+
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Customer name</label>
+        <input id="f_cust_name" class="w-full rounded-lg border-gray-300" />
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Customer email</label>
+        <input id="f_cust_email" type="email" class="w-full rounded-lg border-gray-300" />
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Customer phone</label>
+        <input id="f_cust_phone" class="w-full rounded-lg border-gray-300" />
+      </div>
+
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Courier</label>
+        <input id="f_courier" class="w-full rounded-lg border-gray-300" placeholder="UPS / FedEx / DHL / USPS / Other" />
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm text-gray-600 mb-1">Tracking number</label>
+        <input id="f_tracking" class="w-full rounded-lg border-gray-300" />
+        <div class="text-xs text-gray-500 mt-1">Tracking link generated automatically.</div>
+      </div>
+
+      <div class="md:col-span-2 mt-2 flex items-center justify-end gap-2">
+        <button type="button" id="btnDelete" class="btn">Delete</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
   </div>
+</div>
 
-  <script>
-    // ====== State ======
-    let ORDERS = [];
-    const state = { q:'', tab:'all', page:1, pageSize:25 };
-    let currentOrder = null;
+<script>
+  // ---------- State ----------
+  let ORDERS = [];
+  const state = { q:'', page:1, pageSize:25 };
+  let currentId = null; // null => new order
 
-    // ====== Mapping helpers (DB <-> UI) ======
-    // Adjust these if your column names differ.
-    function mapFromRow(r){
-      return {
-        id: r.id,
-        date: r.date,
-        status: r.status,
-        product: r.product,
-        sku: r.sku,
-        customer: { name:r.customer_name, email:r.customer_email, phone:r.customer_phone },
-        courier: r.courier,
-        tracking: r.tracking,
-        picked: !!r.picked
-      };
+  // ---------- Helpers ----------
+  function nowLocalInputValue(d=new Date()){
+    const pad = n => String(n).padStart(2,'0');
+    const yyyy=d.getFullYear(), mm=pad(d.getMonth()+1), dd=pad(d.getDate());
+    const hh=pad(d.getHours()), mi=pad(d.getMinutes());
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+  }
+  function fmtDateCell(iso){
+    if(!iso) return '';
+    const d = new Date(iso);
+    const dd = d.toLocaleDateString(undefined,{day:'2-digit',month:'2-digit',year:'2-digit'});
+    const tm = d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+    return `${dd}<br><span class="text-xs text-gray-500">${tm}</span>`;
+  }
+  function statusChip(s){
+    const v = (s||'').toLowerCase();
+    let c='chip-gray';
+    if(v.includes('shipped')) c='chip-blue';
+    else if(v.includes('ready')) c='chip-green';
+    else if(v.includes('payment')) c='chip-amber';
+    else if(v.includes('waiting')) c='chip-yellow';
+    return `<span class="chip ${c}">${s||''}</span>`;
+  }
+  function carrierBadge(courier){
+    const c=(courier||'').toLowerCase();
+    const map = { ups:'UPS', fedex:'FedEx', dhl:'DHL', usps:'USPS' };
+    return `<span class="chip chip-gray">${map[c] || courier || '—'}</span>`;
+  }
+  function trackingLink(courier,num){
+    const n=(num||'').trim(); if(!n) return '';
+    const c=(courier||'').toLowerCase();
+    const map={
+      ups:`https://www.ups.com/track?tracknum=${encodeURIComponent(n)}`,
+      fedex:`https://www.fedex.com/fedextrack/?trknbr=${encodeURIComponent(n)}`,
+      dhl:`https://www.dhl.com/global-en/home/tracking.html?tracking-id=${encodeURIComponent(n)}`,
+      usps:`https://tools.usps.com/go/TrackConfirmAction?tLabels=${encodeURIComponent(n)}`
+    };
+    return map[c] || `https://www.17track.net/en/track?nums=${encodeURIComponent(n)}`;
+  }
+  function matchesQuery(o,q){
+    if(!q) return true;
+    const hay=[o.id,o.status,o.product,o.sku,o.customer_name,o.customer_email,o.customer_phone,o.courier,o.tracking].join(' ').toLowerCase();
+    return hay.includes(q.toLowerCase());
+  }
+  function paginate(arr, page, size){
+    const start=(page-1)*size;
+    return [arr.slice(start,start+size), start+1, Math.min(arr.length,start+size)];
+  }
+
+  // ---------- DB Shape ----------
+  // Using a simple single table "orders" with columns below.
+  function rowToObj(r){
+    return {
+      id: r.id,
+      date: r.date,
+      status: r.status,
+      product: r.product,
+      sku: r.sku,
+      customer_name: r.customer_name,
+      customer_email: r.customer_email,
+      customer_phone: r.customer_phone,
+      courier: r.courier,
+      tracking: r.tracking,
+      picked: !!r.picked
+    };
+  }
+  function objToRow(o){
+    return {
+      id: o.id,
+      date: o.date,
+      status: o.status,
+      product: o.product,
+      sku: o.sku,
+      customer_name: o.customer_name,
+      customer_email: o.customer_email,
+      customer_phone: o.customer_phone,
+      courier: o.courier,
+      tracking: o.tracking,
+      picked: !!o.picked
+    };
+  }
+
+  // ---------- CRUD ----------
+  async function loadOrders(){
+    const { data, error } = await sb
+      .from('orders')
+      .select('id,date,status,product,sku,customer_name,customer_email,customer_phone,courier,tracking,picked')
+      .order('date',{ ascending:false });
+    if(error){ console.error(error); alert('Failed to load orders'); return; }
+    ORDERS = (data||[]).map(rowToObj);
+    state.page = 1;
+    render();
+  }
+
+  async function upsertOrder(o){
+    const row = objToRow(o);
+    const { error } = await sb.from('orders').upsert(row, { onConflict: 'id' });
+    if(error){ console.error(error); alert('Save failed'); return false; }
+    return true;
+  }
+
+  async function deleteOrder(id){
+    const { error } = await sb.from('orders').delete().eq('id', id);
+    if(error){ console.error(error); alert('Delete failed'); return false; }
+    return true;
+  }
+
+  // ---------- Render ----------
+  function render(){
+    const tbody = document.getElementById('tbody');
+    const q = document.getElementById('search').value.trim();
+    const filtered = ORDERS.filter(o => matchesQuery(o,q));
+
+    const total = filtered.length;
+    const pages = Math.max(1, Math.ceil(total / state.pageSize));
+    if(state.page > pages) state.page = pages;
+    const [rows,start,end] = paginate(filtered, state.page, state.pageSize);
+
+    document.getElementById('totalCount').textContent = String(ORDERS.length);
+    document.getElementById('visibleCount').textContent = String(rows.length);
+    document.getElementById('pageInfo').textContent = `${state.page} / ${pages}`;
+    document.getElementById('rangeInfo').textContent = `${total?start:0}–${end}`;
+
+    tbody.innerHTML = rows.map(o => `
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-3 text-sm text-gray-700">${fmtDateCell(o.date)}</td>
+        <td class="px-4 py-3">${statusChip(o.status)}</td>
+        <td class="px-4 py-3">
+          <div class="text-sm font-medium">${o.product||''}</div>
+          <div class="text-xs text-gray-500">SKU: ${o.sku||''}</div>
+        </td>
+        <td class="px-4 py-3">
+          <div class="text-sm font-medium">${o.customer_name||''}</div>
+          <div class="text-xs text-gray-500">${o.customer_email||''}</div>
+          <div class="text-xs text-gray-500">${o.customer_phone||''}</div>
+        </td>
+        <td class="px-4 py-3">
+          <div class="flex items-center gap-2">
+            ${carrierBadge(o.courier)}
+            ${o.tracking ? `<a class="text-xs underline text-verified-purple" target="_blank" href="${trackingLink(o.courier,o.tracking)}">Track</a>` : ''}
+          </div>
+        </td>
+        <td class="px-4 py-3">
+          <input type="checkbox" ${o.picked?'checked':''} onchange="onTogglePicked('${o.id}', this.checked)" />
+        </td>
+        <td class="px-4 py-3 text-right">
+          <button class="btn btn-mini" onclick="openModal('${o.id}')">Edit</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // ---------- Modal ----------
+  function clearForm(){
+    currentId = null;
+    document.getElementById('modalTitle').textContent = 'New Order';
+    document.getElementById('f_status').value = 'Payment required';
+    document.getElementById('f_date').value = nowLocalInputValue();
+    document.getElementById('f_product').value = '';
+    document.getElementById('f_sku').value = '';
+    document.getElementById('f_picked').checked = false;
+    document.getElementById('f_cust_name').value = '';
+    document.getElementById('f_cust_email').value = '';
+    document.getElementById('f_cust_phone').value = '';
+    document.getElementById('f_courier').value = '';
+    document.getElementById('f_tracking').value = '';
+    document.getElementById('btnDelete').classList.add('hidden');
+  }
+  function fillForm(o){
+    currentId = o.id;
+    document.getElementById('modalTitle').textContent = `Edit Order ${o.id}`;
+    document.getElementById('f_status').value = o.status || 'Payment required';
+    document.getElementById('f_date').value = o.date ? new Date(o.date).toISOString().slice(0,16) : nowLocalInputValue();
+    document.getElementById('f_product').value = o.product || '';
+    document.getElementById('f_sku').value = o.sku || '';
+    document.getElementById('f_picked').checked = !!o.picked;
+    document.getElementById('f_cust_name').value = o.customer_name || '';
+    document.getElementById('f_cust_email').value = o.customer_email || '';
+    document.getElementById('f_cust_phone').value = o.customer_phone || '';
+    document.getElementById('f_courier').value = o.courier || '';
+    document.getElementById('f_tracking').value = o.tracking || '';
+    document.getElementById('btnDelete').classList.remove('hidden');
+  }
+
+  function openModal(id=null){
+    if(id){
+      const o = ORDERS.find(x=>x.id===id);
+      if(o) fillForm(o);
+    } else {
+      clearForm();
     }
-    function mapToRow(o){
-      return {
-        id:o.id, date:o.date, status:o.status, product:o.product, sku:o.sku,
-        customer_name:o.customer?.name ?? null,
-        customer_email:o.customer?.email ?? null,
-        customer_phone:o.customer?.phone ?? null,
-        courier:o.courier ?? null, tracking:o.tracking ?? null, picked:!!o.picked
-      };
-    }
+    document.getElementById('backdrop').classList.add('open');
+    document.getElementById('orderModal').classList.add('open');
+  }
+  function closeModal(){
+    document.getElementById('backdrop').classList.remove('open');
+    document.getElementById('orderModal').classList.remove('open');
+  }
 
-    // ====== DB ops ======
-    async function loadOrders(){
-      const { data, error } = await sb
-        .from('orders')
-        .select('id,date,status,product,sku,customer_name,customer_email,customer_phone,courier,tracking,picked')
-        .order('date',{ascending:false});
-      if(error){ console.error(error); alert('Failed to load orders'); return; }
-      ORDERS = (data||[]).map(mapFromRow);
-      state.page = 1;
+  // ---------- Event handlers ----------
+  window.onTogglePicked = async (id, val)=>{
+    const o = ORDERS.find(x=>x.id===id);
+    if(!o) return;
+    o.picked = !!val;
+    if(await upsertOrder(o)) render();
+  };
+
+  document.getElementById('btnNew').addEventListener('click', ()=> openModal(null));
+  document.getElementById('closeModal').addEventListener('click', closeModal);
+  document.getElementById('backdrop').addEventListener('click', closeModal);
+
+  document.getElementById('orderForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const payload = {
+      id: currentId || crypto.randomUUID(),
+      date: new Date(document.getElementById('f_date').value).toISOString(),
+      status: document.getElementById('f_status').value,
+      product: document.getElementById('f_product').value,
+      sku: document.getElementById('f_sku').value,
+      customer_name: document.getElementById('f_cust_name').value,
+      customer_email: document.getElementById('f_cust_email').value,
+      customer_phone: document.getElementById('f_cust_phone').value,
+      courier: document.getElementById('f_courier').value,
+      tracking: document.getElementById('f_tracking').value,
+      picked: document.getElementById('f_picked').checked
+    };
+    if(await upsertOrder(payload)){
+      const idx = ORDERS.findIndex(x=>x.id===payload.id);
+      if(idx>-1) ORDERS[idx]=payload; else ORDERS.unshift(payload);
       render();
+      closeModal();
     }
-    async function saveOrder(o){
-      const row = mapToRow(o);
-      const { error } = await sb.from('orders').upsert(row, { onConflict:'id' });
-      if(error){ console.error(error); alert('Save failed'); return false; }
-      return true;
+  });
+
+  document.getElementById('btnDelete').addEventListener('click', async ()=>{
+    if(!currentId) return;
+    if(!confirm('Delete this order?')) return;
+    if(await deleteOrder(currentId)){
+      ORDERS = ORDERS.filter(x=>x.id!==currentId);
+      render(); closeModal();
     }
-    async function createOrder(partial){
-      const newOrder = {
-        id: partial.id || crypto.randomUUID(),
-        date: new Date().toISOString(),
-        status: partial.status || 'Payment required',
-        product: partial.product || '',
-        sku: partial.sku || '',
-        customer: partial.customer || { name:'', email:'', phone:'' },
-        courier: partial.courier || '',
-        tracking: partial.tracking || '',
-        picked: false
-      };
-      if(await saveOrder(newOrder)){
-        ORDERS.unshift(newOrder);
-        render();
-      }
-    }
+  });
 
-    // ====== UI helpers ======
-    function fmtDate(iso){
-      const d = new Date(iso);
-      const dd = d.toLocaleDateString(undefined,{day:'2-digit',month:'2-digit',year:'2-digit'}).replace(/\//g,'/');
-      const tm = d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      return { date: dd, time: tm };
-    }
-    function statusChip(status){
-      const s = (status||'').toLowerCase();
-      let cls = 'chip-gray';
-      if(s.includes('shipped')) cls='chip-blue';
-      else if(s.includes('ready')) cls='chip-green';
-      else if(s.includes('payment')) cls='chip-amber';
-      else if(s.includes('waiting')) cls='chip-yellow';
-      return `<span class="chip ${cls}">${status||''}</span>`;
-    }
-    function carrierLogo(courier){
-      const c = (courier||'').toLowerCase();
-      const map = { ups:'UPS', fedex:'FedEx', dhl:'DHL', usps:'USPS' };
-      return `<span class="chip chip-gray">${map[c] || courier || '—'}</span>`;
-    }
-    function trackingLink(courier, num){
-      const n = (num||'').trim(); if(!n) return '';
-      const c = (courier||'').toLowerCase();
-      const map = {
-        ups:`https://www.ups.com/track?tracknum=${encodeURIComponent(n)}`,
-        fedex:`https://www.fedex.com/fedextrack/?trknbr=${encodeURIComponent(n)}`,
-        dhl:`https://www.dhl.com/global-en/home/tracking.html?tracking-id=${encodeURIComponent(n)}`,
-        usps:`https://tools.usps.com/go/TrackConfirmAction?tLabels=${encodeURIComponent(n)}`
-      };
-      return map[c] || `https://www.17track.net/en/track?nums=${encodeURIComponent(n)}`;
-    }
-    function matchesTab(o){
-      switch(state.tab){
-        case 'payment': return /payment/i.test(o.status);
-        case 'ready': return /ready to ship/i.test(o.status);
-        case 'john': return true;     // customise your saved views here
-        case 'dan': return true;      // customise your saved views here
-        case 'nextday': return true;  // customise SLA rule here
-        default: return true;
-      }
-    }
-    function matchesQuery(o, q){
-      if(!q) return true;
-      const hay = [o.id,o.product,o.sku,o.customer?.name,o.customer?.email,o.customer?.phone,o.courier,o.tracking,o.status].join(' ').toLowerCase();
-      return hay.includes(q.toLowerCase());
-    }
-    function paginate(arr, page, pageSize){
-      const start = (page-1)*pageSize;
-      return [arr.slice(start, start+pageSize), start+1, Math.min(arr.length, start+pageSize)];
-    }
+  document.getElementById('search').addEventListener('input', ()=>{
+    state.page = 1; render();
+  });
+  document.getElementById('pageSize').addEventListener('change', e=>{
+    state.pageSize = parseInt(e.target.value,10)||25;
+    state.page = 1; render();
+  });
+  document.getElementById('prevPage').addEventListener('click', ()=>{
+    state.page = Math.max(1, state.page-1); render();
+  });
+  document.getElementById('nextPage').addEventListener('click', ()=>{
+    const q = document.getElementById('search').value.trim();
+    const total = ORDERS.filter(o=>matchesQuery(o,q)).length;
+    const pages = Math.max(1, Math.ceil(total/state.pageSize));
+    state.page = Math.min(pages, state.page+1); render();
+  });
 
-    // ====== Render ======
-    function render(){
-      const tbody = document.getElementById('tbody');
-      const filtered = ORDERS.filter(o => matchesTab(o) && matchesQuery(o, state.q));
-      const total = filtered.length;
-      const pages = Math.max(1, Math.ceil(total/state.pageSize));
-      if(state.page>pages) state.page=pages;
-      const [rows,start,end] = paginate(filtered, state.page, state.pageSize);
+  document.getElementById('btnExport').addEventListener('click', ()=>{
+    // quick CSV export of current view
+    const q = document.getElementById('search').value.trim();
+    const filtered = ORDERS.filter(o=>matchesQuery(o,q));
+    const headers = ['id','date','status','product','sku','customer_name','customer_email','customer_phone','courier','tracking','picked'];
+    const csv = [headers.join(',')].concat(filtered.map(o=>headers.map(h=>{
+      const v = o[h] ?? '';
+      const s = String(v).replace(/"/g,'""');
+      return `"${s}"`;
+    }).join(','))).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'orders.csv';
+    a.click();
+  });
 
-      document.getElementById('totalCount').textContent = String(ORDERS.length);
-      document.getElementById('visibleCount').textContent = String(rows.length);
-      document.getElementById('pageInfo').textContent = `${state.page} / ${pages}`;
-      document.getElementById('rangeInfo').textContent = `${total?start:0}–${end}`;
+  // ---------- Init ----------
+  loadOrders();
+</script>
 
-      tbody.innerHTML = rows.map(o=>{
-        const dt = fmtDate(o.date);
-        return `
-          <tr class="hover:bg-gray-50">
-            <td class="px-4 py-3"><input type="checkbox" /></td>
-            <td class="px-4 py-3 text-sm text-gray-700">${dt.date}<br><span class="text-xs text-gray-500">${dt.time}</span></td>
-            <td class="px-4 py-3">${statusChip(o.status)}</td>
-            <td class="px-4 py-3">
-              <div class="text-sm font-medium">${o.product||''}</div>
-              <div class="text-xs text-gray-500">SKU: ${o.sku||''}</div>
-            </td>
-            <td class="px-4 py-3">
-              <div class="text-sm font-medium">${o.customer?.name||''}</div>
-              <div class="text-xs text-gray-500">${o.customer?.email||''}</div>
-            </td>
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-2">
-                ${carrierLogo(o.courier)}
-                ${o.tracking?`<a target="_blank" class="text-xs underline text-verified-purple" href="${trackingLink(o.courier,o.tracking)}">Track</a>`:''}
-              </div>
-            </td>
-            <td class="px-4 py-3">
-              <input type="checkbox" ${o.picked?'checked':''} onchange="togglePicked('${o.id}', this.checked)" />
-            </td>
-            <td class="px-4 py-3 text-right">
-              <button class="btn btn-mini" onclick='openView(${JSON.stringify(o)})'>View</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
+<!--
+Run this once if you need the table:
 
-    // ====== Modal ======
-    function openView(order){
-      currentOrder = order;
-      const modal = document.getElementById('viewModal');
-      const backdrop = document.getElementById('backdrop');
-      document.getElementById('vmTitle').textContent = order.id;
-      const dt = fmtDate(order.date);
-      document.getElementById('vmDate').textContent = `${dt.date} • ${dt.time}`;
+create table if not exists public.orders (
+  id text primary key,
+  date timestamptz not null default now(),
+  status text,
+  product text,
+  sku text,
+  customer_name text,
+  customer_email text,
+  customer_phone text,
+  courier text,
+  tracking text,
+  picked boolean not null default false
+);
+alter table public.orders enable row level security;
+create policy "orders select" on public.orders for select using (true);
+create policy "orders insert" on public.orders for insert with check (true);
+create policy "orders update" on public.orders for update using (true) with check (true);
+create policy "orders delete" on public.orders for delete using (true);
+-->
 
-      const status = document.getElementById('vmStatus');
-      status.className = 'chip ' + (statusChip(order.status).match(/chip-\w+/)?.[0] || 'chip-gray');
-      status.textContent = order.status;
-
-      document.getElementById('vmProduct').textContent = order.product||'';
-      document.getElementById('vmSku').textContent = `SKU: ${order.sku||''}`;
-
-      document.getElementById('vmCustomer').textContent = order.customer?.name || '';
-      document.getElementById('vmContact').textContent = [order.customer?.email, order.customer?.phone].filter(Boolean).join(' • ');
-
-      document.getElementById('vmDelivery').innerHTML = `<div class="flex items-center gap-2">${carrierLogo(order.courier)}<span class="text-sm text-gray-600">${order.courier||''}</span></div>`;
-      document.getElementById('vmTracking').innerHTML = order.tracking
-        ? `<div class="flex items-center gap-2"><span class="text-sm text-gray-600">Tracking:</span><code class="text-xs bg-gray-100 px-2 py-1 rounded">${order.tracking}</code><a class="btn btn-mini" target="_blank" href="${trackingLink(order.courier, order.tracking)}">Open tracking</a></div>`
-        : `<span class="text-sm text-gray-500">No tracking number.</span>`;
-
-      modal.classList.add('open'); backdrop.classList.add('open');
-    }
-    function closeView(){
-      document.getElementById('viewModal').classList.remove('open');
-      document.getElementById('backdrop').classList.remove('open');
-    }
-
-    // ====== Inline actions ======
-    async function togglePicked(id, val){
-      const o = ORDERS.find(x => x.id===id); if(!o) return;
-      o.picked = !!val;
-      await saveOrder(o);
-    }
-    window.togglePicked = togglePicked; // expose for inline handler
-
-    async function markCompleted(){
-      if(!currentOrder) return;
-      currentOrder.status = 'Shipped';
-      if(await saveOrder(currentOrder)){
-        const idx = ORDERS.findIndex(x=>x.id===currentOrder.id);
-        if(idx>-1) ORDERS[idx] = {...currentOrder};
-        render(); closeView();
-      }
-    }
-
-    // ====== Events ======
-    document.getElementById('closeModal').addEventListener('click', closeView);
-    document.getElementById('backdrop').addEventListener('click', closeView);
-    document.getElementById('btnComplete').addEventListener('click', markCompleted);
-    document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
-
-    document.getElementById('search').addEventListener('input', e=>{ state.q=e.target.value; state.page=1; render(); });
-    document.querySelectorAll('.tab').forEach(b=> b.addEventListener('click', ()=>{ state.tab=b.dataset.tab; state.page=1; render(); }));
-    document.getElementById('pageSize').addEventListener('change', e=>{ state.pageSize=parseInt(e.target.value,10); state.page=1; render(); });
-    document.getElementById('prevPage').addEventListener('click', ()=>{ state.page=Math.max(1,state.page-1); render(); });
-    document.getElementById('nextPage').addEventListener('click', ()=>{
-      const filtered = ORDERS.filter(o => matchesTab(o) && matchesQuery(o, state.q));
-      const pages = Math.max(1, Math.ceil(filtered.length/state.pageSize));
-      state.page = Math.min(pages, state.page+1);
-      render();
-    });
-    document.getElementById('btnNew').addEventListener('click', ()=> createOrder({ product:'1 × Item name', sku:'itemname' }));
-
-    // ====== Init ======
-    loadOrders();
-  </script>
 </body>
 </html>
+
 
