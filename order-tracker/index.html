@@ -1,944 +1,442 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Live Order Tracking — Verified Electronics</title>
-<link rel="icon" href="data:;base64,iVBORw0KGgo="/>
-<style>
-  :root{
-    --brand:#6f57e9; --ink:#1e2330; --muted:#6d7486;
-    --bg:#f6f7fb; --card:#fff; --line:#e9e9ef;
-    --green:#12a274; --purple:#3b2eca;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{margin:0;font:15px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
-  .wrap{max-width:1600px;margin:22px auto;padding:0 16px}
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Orders • Verified Tools</title>
 
-  header{
-    display:flex;align-items:center;gap:16px;padding:16px 18px;border:1px solid var(--line);
-    border-radius:16px;background:radial-gradient(1100px 220px at 160px -60px, rgba(111,87,233,.15), transparent 60%), #fff;
-    box-shadow:0 8px 26px rgba(111,87,233,.08), 0 1px 0 rgba(0,0,0,.04);
-  }
-  header img{height:42px}
-  h1{font-size:26px;margin:0;font-weight:800}
-  .sub{color:var(--muted);margin-top:2px}
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme:{ extend:{ colors:{ verified:{ purple:'#673ab7' } } } } }
+  </script>
 
-  .toolbar{display:grid;grid-template-columns:1fr 190px 170px 170px auto auto;gap:10px;margin:16px 0}
-  .input,.select,.btn, textarea{height:36px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:0 12px;font:inherit}
-  .input{width:100%}
-  textarea{height:auto;padding:10px 12px;resize:vertical}
-  .select{appearance:none;padding-right:28px;background-image:
-    linear-gradient(45deg, transparent 50%, #869 50%),
-    linear-gradient(135deg, #869 50%, transparent 50%);background-position:calc(100% - 16px) calc(50% - 2px), calc(100% - 10px) calc(50% - 2px);
-    background-size:6px 6px, 6px 6px;background-repeat:no-repeat}
-  .btn{background:#f7f5ff;color:var(--purple);border-color:#ece8ff;font-weight:700;cursor:pointer}
-  .btn:hover{background:#eee8ff}
-  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
-  .btn.primary:hover{filter:brightness(.97)}
-  .btn.ghost{background:#fff}
+  <!-- Supabase client (v2) with your live credentials -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://ijzroisggstqkfhpjndq.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  .table-card{border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden}
-  .table-wrap{overflow:auto}
-  table{width:100%;border-collapse:collapse;min-width:1200px}
-  thead th{position:sticky;top:0;background:#fafaff;border-bottom:1px solid var(--line);
-    text-align:left;font-size:13px;color:#4a4f64;padding:10px}
-  tbody td{border-bottom:1px solid var(--line);padding:10px;vertical-align:top}
-  tbody tr:hover{background:#fcfbff}
-  .mono{font-variant-numeric:tabular-nums}
-  .muted{color:var(--muted)}
-  .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #e6f2ec;padding:2px 8px;border-radius:999px;background:#f0fbf7;color:var(--green);font-weight:700}
-  .chip{display:inline-block;border-radius:999px;padding:2px 8px;border:1px solid #eee;background:#fafafa;font-size:12px;color:#5d6480}
-  .actions{display:flex;gap:8px;flex-wrap:wrap}
-  .link{color:#362dc7;text-decoration:none}
-  .link:hover{text-decoration:underline}
+    // Add auth headers automatically to any direct fetch hitting your Supabase REST (optional convenience)
+    (function(){
+      const realFetch = window.fetch.bind(window);
+      window.fetch = (input, init = {}) => {
+        const url = typeof input === 'string' ? input : (input?.url || '');
+        if (url.startsWith(SUPABASE_URL)) {
+          const h = new Headers(init.headers || {});
+          if (!h.has('apikey')) h.set('apikey', SUPABASE_ANON_KEY);
+          if (!h.has('Authorization')) h.set('Authorization', `Bearer ${SUPABASE_ANON_KEY}`);
+          init = { ...init, headers: h };
+        }
+        return realFetch(input, init);
+      };
+    })();
+  </script>
 
-  /* inline edit */
-  .ie{display:inline-flex;align-items:center;gap:6px}
-  .ie button{border:0;background:transparent;color:#6d6fe5;cursor:pointer;padding:0 4px;border-radius:6px}
-  .ie button:hover{background:#f0efff}
-  .ie select{display:none;height:28px;border-radius:8px}
-  .ie.editing select{display:inline-block}
-  .ie.editing .chip{display:none}
+  <style>
+    .chip { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium; }
+    .chip-blue { @apply bg-blue-100 text-blue-700; }
+    .chip-green { @apply bg-green-100 text-green-700; }
+    .chip-amber { @apply bg-amber-100 text-amber-700; }
+    .chip-yellow { @apply bg-yellow-100 text-yellow-800; }
+    .chip-gray { @apply bg-gray-100 text-gray-700; }
 
-  dialog{border:0;padding:0;margin:0 auto;max-width:1400px;width:98vw}
-  dialog::backdrop{background:rgba(17,17,33,.35)}
-  .modal{display:flex;flex-direction:column;max-height:92vh;border-radius:18px;overflow:hidden;background:#fff}
-  .modal header{position:sticky;top:0;z-index:2;border-bottom:1px solid var(--line);border-radius:18px 18px 0 0;background:#fff}
-  .modal .head{padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
-  .content{padding:14px;overflow:auto;max-height:calc(92vh - 48px);overscroll-behavior:contain}
+    .btn { @apply inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50; }
+    .btn-primary { @apply border-transparent bg-verified-purple text-white hover:bg-purple-700; }
+    .btn-ghost { @apply border-transparent bg-transparent text-gray-700 hover:bg-gray-100; }
+    .btn-mini { @apply px-2 py-1 text-xs rounded-lg; }
 
-  .grid2,.grid3{gap:10px}
-  .grid2{display:grid;grid-template-columns:1fr 1fr}
-  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr}
-  .section{margin:14px 0 6px;font-weight:800;color:#262b3a}
-  .note{font-size:12px;color:var(--muted);margin-bottom:4px}
-  .mini{height:32px}
-  .row{display:flex;gap:8px;align-items:center}
+    .card { @apply bg-white border border-gray-200 rounded-2xl shadow-sm; }
+    .icon { width: 18px; height: 18px; }
 
-  .tbl{width:100%;border-collapse:collapse;table-layout:fixed}
-  .tbl th,.tbl td{border:1px solid #ececf3;padding:8px;text-align:left;white-space:nowrap}
-  .tbl th{background:#fafaff}
-  .hscroll{overflow:auto;border:1px solid #ececf3;border-radius:12px;background:#fff}
-  .hscroll table{min-width:1100px}
-  .right{display:flex;justify-content:flex-end;gap:8px;margin:10px 0 2px}
-
-  /* View / Summary cards */
-  .summary{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
-  .card{border:1px solid var(--line);border-radius:12px;background:#fff}
-  .card h3{margin:0;padding:8px 10px;border-bottom:1px solid var(--line);background:#fafaff;font-size:15px}
-  .card .pad{padding:10px}
-  .kv{display:grid;grid-template-columns:170px 1fr;gap:6px 10px}
-  @media (max-width:1200px){.summary{grid-template-columns:1fr}}
-  @media (max-width:900px){.grid3{grid-template-columns:1fr 1fr}}
-  @media (max-width:680px){.grid2,.grid3{grid-template-columns:1fr}}
-</style>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const SUPABASE_URL = 'https://ijzroisggstqkfhpjndq.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  /* add apikey/authorization to any direct fetch to Supabase REST */
-  (function(){
-    const realFetch = window.fetch.bind(window);
-    window.fetch = (input, init = {}) => {
-      const url = typeof input === 'string' ? input : input?.url || '';
-      if (url.startsWith(SUPABASE_URL)) {
-        const h = new Headers(init.headers || {});
-        if (!h.has('apikey')) h.set('apikey', SUPABASE_ANON_KEY);
-        if (!h.has('Authorization')) h.set('Authorization', `Bearer ${SUPABASE_ANON_KEY}`);
-        init = { ...init, headers: h };
-      }
-      return realFetch(input, init);
-    };
-  })();
-</script>
+    .modal-backdrop { @apply fixed inset-0 bg-black/40 hidden; }
+    .modal { @apply fixed inset-0 z-50 hidden items-center justify-center p-4; }
+    .modal.open, .modal-backdrop.open { display:flex; }
+  </style>
 </head>
-<body>
-  <div class="wrap">
-    <header>
-      <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified">
-      <div>
-        <h1>Order Tracker</h1>
-        <div class="sub">Multi-part orders with date codes, priority, requested-by date, tests, multi-leg shipping costs, partial shipments, files & GP.</div>
+<body class="bg-gray-50 text-gray-900">
+  <div class="min-h-screen flex">
+
+    <!-- Sidebar -->
+    <aside class="hidden md:flex w-16 flex-col items-center gap-4 py-6 bg-white border-r border-gray-200">
+      <a href="https://tools.verifiedelectronics.com" class="w-9 h-9 rounded-xl bg-verified-purple text-white grid place-items-center font-bold" title="Back to Tools">V</a>
+      <nav class="flex flex-col items-center gap-3 text-gray-500">
+        <a class="p-2 rounded-lg bg-gray-100 text-verified-purple" title="Orders">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/></svg>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 p-4 md:p-8">
+      <!-- Topbar -->
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+        <h1 class="text-2xl font-semibold tracking-tight">Orders</h1>
+        <div class="flex flex-wrap items-center gap-2">
+          <button class="btn" id="btnFilter">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M3 5h18l-7 8v6l-4-2v-4L3 5z"/></svg>
+            Filter
+          </button>
+          <div class="relative">
+            <input id="search" class="w-72 md:w-96 rounded-xl border-gray-300 focus:ring-verified-purple focus:border-verified-purple px-3 py-2 text-sm" placeholder="Search order, customer, email, postcode, SKU or tracking…" />
+            <button class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500" tabindex="-1">
+              <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 110-14 7 7 0 010 14z"/></svg>
+            </button>
+          </div>
+          <button class="btn" id="btnImport">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 4v16h16M4 8h16M9 12h6"/></svg>
+            Import
+          </button>
+          <button class="btn" id="btnExport">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
+            Export
+          </button>
+          <button class="btn btn-primary" id="btnNew">
+            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            New
+          </button>
+        </div>
       </div>
-    </header>
 
-    <div class="toolbar">
-      <input id="q" class="input" placeholder="Search: customer, part number, order id..."/>
-      <select id="fltSales" class="select"><option value="">All salespeople</option></select>
-      <select id="fltStatus" class="select"><option value="">All status</option><option>New</option><option>Open</option><option>Closed</option></select>
-      <select id="fltPriority" class="select"><option value="">All priorities</option><option>High</option><option>Normal</option><option>Low</option></select>
-      <button id="btnNew" class="btn" type="button" onclick="openModal(null)">+ New Order</button>
-      <button id="btnCsv" class="btn ghost" type="button">Export CSV</button>
-    </div>
+      <!-- Tabs -->
+      <div class="mb-4 overflow-x-auto">
+        <div class="inline-flex gap-2">
+          <button data-tab="all" class="tab chip chip-gray">All</button>
+          <button data-tab="payment" class="tab chip chip-amber">Payment required</button>
+          <button data-tab="ready" class="tab chip chip-green">Ready to ship</button>
+          <button data-tab="john" class="tab chip chip-gray">John’s view</button>
+          <button data-tab="dan" class="tab chip chip-gray">Dan’s view</button>
+          <button data-tab="nextday" class="tab chip chip-blue">Next Day Delivery</button>
+        </div>
+      </div>
 
-    <div class="table-card">
-      <div class="table-wrap">
-        <table id="tbl">
-          <thead>
-            <tr>
-              <th>View</th>
-              <th>Customer</th>
-              <th>Part(s)</th>
-              <th>Sales</th>
-              <th>Total Qty</th>
-              <th>Avg Unit $</th>
-              <th>Sell</th>
-              <th>GP</th>
-              <th>Priority</th>
-              <th>Status</th>
-              <th>Order Date</th>
-              <th>Requested by</th>
-              <th>Age</th>
-              <th>Tests</th>
-              <th>Vendor</th>
-              <th>Incoterm</th>
-              <th>Terms</th>
-              <th>Shipped</th>
-              <th>Invoiced</th>
-              <th>Files</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
+      <!-- Table -->
+      <div class="card overflow-hidden">
+        <div class="px-4 sm:px-6 py-3 flex items-center justify-between border-b">
+          <div class="text-sm text-gray-600"><span id="visibleCount">0</span> out of <span id="totalCount">0</span> orders</div>
+          <div class="flex items-center gap-2">
+            <button class="btn">Actions</button>
+            <button class="btn">Sort</button>
+            <button class="btn">Columns</button>
+            <div class="hidden md:flex items-center gap-1">
+              <button id="prevPage" class="btn btn-ghost" title="Prev">◀</button>
+              <span id="pageInfo" class="text-sm text-gray-600">1 / 1</span>
+              <button id="nextPage" class="btn btn-ghost" title="Next">▶</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500"><input type="checkbox" /></th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Date</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Status</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Product</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Customer</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Delivery method</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500">Picked</th>
+                <th class="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody id="tbody" class="divide-y divide-gray-100 bg-white"></tbody>
+          </table>
+        </div>
+
+        <div class="px-4 sm:px-6 py-3 flex items-center justify-between border-t bg-gray-50">
+          <div class="text-xs text-gray-500">Showing <span id="rangeInfo">1–10</span></div>
+          <div class="flex items-center gap-2">
+            <label class="text-xs text-gray-500">Rows</label>
+            <select id="pageSize" class="rounded-lg border-gray-300 text-sm">
+              <option>10</option>
+              <option selected>25</option>
+              <option>50</option>
+              <option>100</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Backdrop -->
+  <div id="backdrop" class="modal-backdrop"></div>
+
+  <!-- View Modal -->
+  <div id="viewModal" class="modal">
+    <div class="card w-full max-w-3xl p-6 relative">
+      <button id="closeModal" class="absolute right-3 top-3 btn btn-ghost btn-mini">✕</button>
+      <div class="flex items-start justify-between gap-6">
+        <div>
+          <h2 id="vmTitle" class="text-xl font-semibold mb-1">Order</h2>
+          <div id="vmDate" class="text-sm text-gray-500"></div>
+        </div>
+        <div id="vmStatus" class="chip chip-gray">Status</div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <div>
+          <div class="font-medium text-gray-900 mb-2">Product</div>
+          <div class="text-sm" id="vmProduct"></div>
+          <div class="text-xs text-gray-500" id="vmSku"></div>
+        </div>
+
+        <div>
+          <div class="font-medium text-gray-900 mb-2">Customer</div>
+          <div class="text-sm" id="vmCustomer"></div>
+          <div class="text-xs text-gray-500" id="vmContact"></div>
+        </div>
+
+        <div class="md:col-span-2">
+          <div class="font-medium text-gray-900 mb-2">Delivery</div>
+          <div id="vmDelivery" class="text-sm"></div>
+          <div id="vmTracking" class="mt-2"></div>
+        </div>
+      </div>
+
+      <div class="mt-6 flex items-center justify-end gap-2">
+        <button class="btn" id="btnPrint">Print</button>
+        <button class="btn btn-primary" id="btnComplete">Mark as Completed</button>
       </div>
     </div>
   </div>
 
-  <!-- EDIT / NEW MODAL -->
-  <dialog id="dlg">
-    <div class="modal">
-      <header><div class="head"><strong id="dlgTitle">New Order</strong><button id="btnClose" class="btn ghost mini" type="button">✕</button></div></header>
-      <div class="content">
-        <input type="hidden" id="orderId"/>
+  <script>
+    // ====== State ======
+    let ORDERS = [];
+    const state = { q:'', tab:'all', page:1, pageSize:25 };
+    let currentOrder = null;
 
-        <div class="section">SALES — what Sales enters</div>
-        <div class="grid3">
-          <div><div class="note">Salesperson</div><select id="salesperson" class="select mini"></select></div>
-          <div><div class="note">Customer</div><input id="customer" class="input mini"/></div>
-          <div><div class="note">Priority</div><select id="priority" class="select mini"><option>High</option><option selected>Normal</option><option>Low</option></select></div>
-
-          <div><div class="note">Status</div><select id="status" class="select mini"><option>New</option><option>Open</option><option>Closed</option></select></div>
-          <div><div class="note">Order Date</div><input id="order_date" type="date" class="input mini"/></div>
-          <div><div class="note">Requested by</div><input id="requested_by" type="date" class="input mini"/></div>
-
-          <div>
-            <div class="note">Payment Terms</div>
-            <div class="row">
-              <select id="payment_terms" class="select mini" style="flex:1">
-                <option>Net 5</option><option>Net 10</option><option>Net 15</option><option>Net 20</option>
-                <option>Net 30</option><option>Net 40</option><option>Net 50</option><option>Net 60</option><option>Net 90</option>
-                <option value="Other">Other…</option>
-              </select>
-              <input id="payment_terms_other" class="input mini" placeholder="If Other…" style="flex:1;display:none"/>
-            </div>
-          </div>
-          <div>
-            <div class="note">Payment Method</div>
-            <div class="row">
-              <select id="payment_method" class="select mini" style="flex:1">
-                <option>Bank Transfer</option><option>Credit Card</option><option>PayPal</option>
-                <option value="Other">Other…</option>
-              </select>
-              <input id="payment_method_other" class="input mini" placeholder="If Other…" style="flex:1;display:none"/>
-            </div>
-          </div>
-          <div>
-            <div class="note">Incoterm</div>
-            <div class="row">
-              <select id="incoterm" class="select mini" style="flex:1">
-                <option>DAP</option><option>DDP</option><option>EXW</option><option>CIP</option><option>FOB</option>
-                <option value="Other">Other…</option>
-              </select>
-              <input id="incoterm_other" class="input mini" placeholder="If Other…" style="flex:1;display:none"/>
-            </div>
-          </div>
-
-          <div><div class="note">Invoice Date</div><input id="invoice_date" type="date" class="input mini"/></div>
-          <div><div class="note">Due Date</div><input id="due_date" type="date" class="input mini"/></div>
-          <div>
-            <div class="note">Currency</div>
-            <select id="currency" class="select mini">
-              <option value="USD" selected>USD ($)</option>
-              <option value="GBP">GBP (£)</option>
-              <option value="EUR">EUR (€)</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="section">Testing — requirements & center</div>
-        <div class="row" id="testsLine" style="flex-wrap:wrap;gap:14px">
-          <label><input type="checkbox" value="No test" id="tNone"> No test</label>
-          <label><input type="checkbox" value="EVI"> EVI</label>
-          <label><input type="checkbox" value="Solderability"> Solderability</label>
-          <label><input type="checkbox" value="Electrical"> Electrical</label>
-          <label><input type="checkbox" value="Other" id="tOther"> Other</label>
-          <input id="tests_other" class="input mini" placeholder="Describe other test…" style="max-width:340px"/>
-          <div style="flex:1"></div>
-          <div style="min-width:240px">
-            <div class="note">Test Center</div>
-            <select id="test_center" class="select mini" style="min-width:240px">
-              <option>GETs HK</option><option>GETs Shenzhen</option><option>GETs US</option>
-              <option>White Horse US</option><option>White Horse China</option><option>White Horse EU</option>
-              <option value="Other">Other…</option>
-            </select>
-          </div>
-          <div style="min-width:280px">
-            <div class="note">Customer PO (file)</div>
-            <input id="file_po" type="file" class="input mini" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"/>
-          </div>
-        </div>
-
-        <div class="section">Line Items — parts, date codes & pricing</div>
-        <div class="hscroll">
-          <table class="tbl" id="itemsTbl">
-            <thead><tr>
-              <th style="width:26%">Part Number</th>
-              <th style="width:18%">Date Codes</th>
-              <th style="width:10%">Qty</th>
-              <th style="width:16%">Unit Sell</th>
-              <th style="width:16%">Unit Cost</th>
-              <th style="width:8%"></th>
-            </tr></thead>
-            <tbody id="itemsBody"></tbody>
-          </table>
-        </div>
-        <div class="right"><button id="addItem" class="btn mini" type="button">+ Add item</button></div>
-
-        <div class="section">PURCHASING — what Purchasing updates</div>
-        <div class="grid3">
-          <div>
-            <div class="note">Vendor</div>
-            <input id="vendor" class="input mini"/>
-          </div>
-          <div>
-            <div class="note">Test Report (file)</div>
-            <input id="file_test" type="file" class="input mini" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"/>
-          </div>
-          <div>
-            <div class="note">Notes</div>
-            <!-- CHANGED: textarea for notes -->
-            <textarea id="notes" rows="2" class="input mini" placeholder="Internal notes..."></textarea>
-          </div>
-        </div>
-
-        <div class="section">Shipments — legs & partials (unified)</div>
-        <div class="hscroll">
-          <table class="tbl" id="shipTbl">
-            <thead><tr>
-              <th style="width:10%">Kind</th>
-              <th style="width:12%">Date</th>
-              <th style="width:10%">Qty</th>
-              <th style="width:15%">From</th>
-              <th style="width:15%">To</th>
-              <th style="width:12%">Method</th>
-              <th style="width:10%">Ref</th>
-              <th style="width:12%">Courier</th>
-              <th style="width:16%">Tracking</th>
-              <th style="width:10%">Cost</th>
-              <th style="width:6%"></th>
-            </tr></thead>
-            <tbody id="shipBody"></tbody>
-          </table>
-        </div>
-        <div class="right"><button id="addShip" class="btn mini" type="button">+ Add shipment/leg</button></div>
-
-        <div class="grid3" style="margin-top:12px">
-          <div>
-            <div class="note">Extra shipping cost</div>
-            <input id="shipping_cost_extra" type="number" step="0.01" class="input mini mono" placeholder="0.00"/>
-          </div>
-          <div>
-            <div class="note">Test cost</div>
-            <input id="test_cost" type="number" step="0.01" class="input mini mono" placeholder="0.00"/>
-          </div>
-          <div></div>
-        </div>
-
-        <!-- CHANGED: Financial summary box -->
-        <div class="card" style="margin-top:12px">
-          <h3>Financial Summary</h3>
-          <div class="pad">
-            <div class="kv">
-              <div>Total Qty</div><div id="finQty" class="mono">0</div>
-              <div>Sell (Revenue)</div><div id="finSell" class="mono">$0.00</div>
-              <div>Item Cost</div><div id="finItemCost" class="mono">$0.00</div>
-              <div>Shipping Cost</div><div id="finShipCost" class="mono">$0.00</div>
-              <div>Test Cost</div><div id="finTestCost" class="mono">$0.00</div>
-              <div>Total Cost</div><div id="finTotalCost" class="mono">$0.00</div>
-              <div>GP</div><div id="finGP" class="mono">$0.00</div>
-              <div>GP %</div><div id="finGPPct" class="mono">0%</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="right" style="margin-top:10px">
-          <button id="btnDelete" class="btn ghost" type="button">Delete</button>
-          <button id="btnSave" class="btn primary" type="button">Save</button>
-        </div>
-      </div>
-    </div>
-  </dialog>
-
-  <!-- VIEW SUMMARY MODAL -->
-  <dialog id="viewDlg">
-    <div class="modal">
-      <header><div class="head"><strong>Order Summary</strong><button class="btn ghost mini" type="button" onclick="$('viewDlg').close()">✕</button></div></header>
-      <div class="content"><div id="viewBody" class="summary"></div></div>
-    </div>
-  </dialog>
-
-<script>
-/* ---------- helpers ---------- */
-const $ = id => document.getElementById(id);
-const SALESTEAM = ['Nick N','Dan C','Emir B','Nick K','Jake B'];
-const todayStr = () => new Date().toISOString().slice(0,10);
-const curSym = c => ({USD:'$',GBP:'£',EUR:'€'})[c||'USD'] || '$';
-const fmt = n => (n==null||isNaN(n))?'-':Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtInt = n => (n==null||isNaN(n))?'-':Number(n).toLocaleString();
-
-/* ---------- data layer ---------- */
-const supa = {
-  state:{orders:[]},
-  getOrders(){return this.state.orders;},
-
-  async loadOrders(){
-    const {data:orders, error:e0} = await supabase
-      .from('orders')
-      .select('*')
-      .order('order_date',{ascending:false,nullsFirst:true})
-      .order('created_at',{ascending:false});
-    if(e0){ console.error('orders load error', e0); this.state.orders=[]; return; }
-
-    this.state.orders = await Promise.all((orders||[]).map(async r=>{
-      const [itemsRes, legsRes, inbRes, outRes, filesRes] = await Promise.all([
-        supabase.from('order_items').select('*').eq('order_id', r.id),
-        supabase.from('ship_legs').select('*').eq('order_id', r.id),
-        supabase.from('shipments_inbound').select('*').eq('order_id', r.id),
-        supabase.from('shipments_outbound').select('*').eq('order_id', r.id),
-        supabase.from('order_files').select('*').eq('order_id', r.id)
-      ]);
-
-      const items = (itemsRes.data||[]).map(i=>({
-        part_number:i.part_number,date_codes:i.date_codes,qty:i.qty,unit_sell:i.unit_sell,unit_cost:i.unit_cost
-      }));
-      const legs = (legsRes.data||[]).map(l=>({kind:'Leg',date:'',qty:'',from:l.from_loc,to:l.to_loc,method:l.method,ref:l.ref,cost:l.cost}));
-      const inbound = (inbRes.data||[]).map(s=>({kind:'Inbound',date:s.ship_date,qty:s.qty,from:'',to:'',method:'',ref:'',courier:s.courier,tracking:s.tracking,cost:''}));
-      const outbound = (outRes.data||[]).map(s=>({kind:'Outbound',date:s.ship_date,qty:s.qty,from:'',to:'',method:'',ref:'',courier:s.courier,tracking:s.tracking,cost:''}));
-      const shipments=[...legs,...inbound,...outbound];
-
-      const files = (filesRes.data||[]).reduce((a,f)=>{a[f.kind]=f.path;return a;}, {});
-      let poUrl=null,testUrl=null;
-      if(files.po){const {data:s}=await supabase.storage.from('order-files').createSignedUrl(files.po,3600);poUrl=s?.signedUrl||null;}
-      if(files.test_report){const {data:s}=await supabase.storage.from('order-files').createSignedUrl(files.test_report,3600);testUrl=s?.signedUrl||null;}
-      window._sessionFiles ||= {}; window._sessionFiles[r.id]={poUrl,testUrl};
-
+    // ====== Mapping helpers (DB <-> UI) ======
+    // Adjust these if your column names differ.
+    function mapFromRow(r){
       return {
-        id:r.id, created_at:r.created_at,
-        salesperson:r.salesperson, customer:r.customer, priority:r.priority, status:r.status,
-        order_date:r.order_date, requested_by:r.requested_by,
-        payment_terms:r.payment_terms, payment_method:r.payment_method,
-        invoice_date:r.invoice_date, due_date:r.due_date,
-        currency:r.currency||'USD',
-        tests:r.tests||'', test_center:r.test_center||'',
-        vendor:r.vendor, incoterm:r.incoterm, notes:r.notes,
-        is_shipped:r.is_shipped ?? null, is_invoiced:r.is_invoiced ?? null,
-        shipping_cost_extra:r.shipping_cost_extra||0, test_cost:r.test_cost||0,
-        items, shipments, files
+        id: r.id,
+        date: r.date,
+        status: r.status,
+        product: r.product,
+        sku: r.sku,
+        customer: { name:r.customer_name, email:r.customer_email, phone:r.customer_phone },
+        courier: r.courier,
+        tracking: r.tracking,
+        picked: !!r.picked
       };
-    }));
-  },
-
-  async saveOrder(rec, uploads){
-    const header = {
-      id:rec.id, salesperson:rec.salesperson, customer:rec.customer,
-      priority:rec.priority, status:rec.status,
-      order_date:rec.order_date, requested_by:rec.requested_by,
-      payment_terms:rec.payment_terms, payment_method:rec.payment_method,
-      invoice_date:rec.invoice_date, due_date:rec.due_date,
-      currency:rec.currency,
-      tests:rec.tests, test_center:rec.test_center,
-      vendor:rec.vendor, incoterm:rec.incoterm,
-      shipping_cost_extra:rec.shipping_cost_extra, test_cost:rec.test_cost,
-      notes:rec.notes
-    };
-    const {data:up, error:e1} = await supabase.from('orders').upsert(header).select().single();
-    if(e1) throw e1;
-    const order_id=up.id;
-
-    await supabase.from('order_items').delete().eq('order_id',order_id);
-    await supabase.from('ship_legs').delete().eq('order_id',order_id);
-    await supabase.from('shipments_inbound').delete().eq('order_id',order_id);
-    await supabase.from('shipments_outbound').delete().eq('order_id',order_id);
-
-    if(rec.items?.length){
-      await supabase.from('order_items').insert(rec.items.map(i=>({
-        order_id, part_number:i.part_number, date_codes:i.date_codes, qty:i.qty, unit_sell:i.unit_sell, unit_cost:i.unit_cost
-      })));
     }
-    const legs = rec.shipments?.filter(s=>s.kind==='Leg')||[];
-    const inbound = rec.shipments?.filter(s=>s.kind==='Inbound')||[];
-    const outbound = rec.shipments?.filter(s=>s.kind==='Outbound')||[];
-    if(legs.length){
-      await supabase.from('ship_legs').insert(legs.map(l=>({
-        order_id, from_loc:l.from, to_loc:l.to, method:l.method, ref:l.ref, cost:Number(l.cost||0)
-      })));
-    }
-    if(inbound.length){
-      await supabase.from('shipments_inbound').insert(inbound.map(s=>({
-        order_id, ship_date:s.date||null, qty:Number(s.qty||0), courier:s.courier||null, tracking:s.tracking||null
-      })));
-    }
-    if(outbound.length){
-      await supabase.from('shipments_outbound').insert(outbound.map(s=>({
-        order_id, ship_date:s.date||null, qty:Number(s.qty||0), courier:s.courier||null, tracking:s.tracking||null
-      })));
+    function mapToRow(o){
+      return {
+        id:o.id, date:o.date, status:o.status, product:o.product, sku:o.sku,
+        customer_name:o.customer?.name ?? null,
+        customer_email:o.customer?.email ?? null,
+        customer_phone:o.customer?.phone ?? null,
+        courier:o.courier ?? null, tracking:o.tracking ?? null, picked:!!o.picked
+      };
     }
 
-    // Optional flags (update only if columns exist)
-    await this.quickUpdate(order_id, 'is_shipped', rec.is_shipped, true);
-    await this.quickUpdate(order_id, 'is_invoiced', rec.is_invoiced, true);
-
-    if(uploads?.po) await this.uploadFile(order_id,'po',uploads.po);
-    if(uploads?.test_report) await this.uploadFile(order_id,'test_report',uploads.test_report);
-  },
-
-  async uploadFile(orderId, kind, file){
-    const safe=file.name.replace(/[^a-z0-9._-]+/gi,'_');
-    const path=`orders/${orderId}/${kind}/${Date.now()}_${safe}`;
-    const {error} = await supabase.storage.from('order-files').upload(path,file,{upsert:true});
-    if(error) throw error;
-    await supabase.from('order_files').insert({order_id:orderId,kind,path});
-    const {data:s} = await supabase.storage.from('order-files').createSignedUrl(path,3600);
-    window._sessionFiles ||= {}; window._sessionFiles[orderId] ||= {};
-    if(kind==='po') window._sessionFiles[orderId].poUrl=s?.signedUrl||null;
-    if(kind==='test_report') window._sessionFiles[orderId].testUrl=s?.signedUrl||null;
-  },
-
-  async deleteOrder(id){ await supabase.from('orders').delete().eq('id',id); },
-
-  async quickUpdate(id, field, value, silentIfMissing=false){
-    try{
-      const { error } = await supabase.from('orders').update({ [field]: value }).eq('id', id);
-      if(error) throw error;
-    }catch(e){
-      if(silentIfMissing && String(e?.message||'').toLowerCase().includes('column')) return;
-      throw e;
+    // ====== DB ops ======
+    async function loadOrders(){
+      const { data, error } = await sb
+        .from('orders')
+        .select('id,date,status,product,sku,customer_name,customer_email,customer_phone,courier,tracking,picked')
+        .order('date',{ascending:false});
+      if(error){ console.error(error); alert('Failed to load orders'); return; }
+      ORDERS = (data||[]).map(mapFromRow);
+      state.page = 1;
+      render();
     }
-  },
+    async function saveOrder(o){
+      const row = mapToRow(o);
+      const { error } = await sb.from('orders').upsert(row, { onConflict:'id' });
+      if(error){ console.error(error); alert('Save failed'); return false; }
+      return true;
+    }
+    async function createOrder(partial){
+      const newOrder = {
+        id: partial.id || crypto.randomUUID(),
+        date: new Date().toISOString(),
+        status: partial.status || 'Payment required',
+        product: partial.product || '',
+        sku: partial.sku || '',
+        customer: partial.customer || { name:'', email:'', phone:'' },
+        courier: partial.courier || '',
+        tracking: partial.tracking || '',
+        picked: false
+      };
+      if(await saveOrder(newOrder)){
+        ORDERS.unshift(newOrder);
+        render();
+      }
+    }
 
-  subscribeRealtime(){
-    supabase.channel('orders-rt')
-      .on('postgres_changes',{event:'*',schema:'public',table:'orders'},async()=>{await this.loadOrders();render();})
-      .on('postgres_changes',{event:'*',schema:'public',table:'order_items'},async()=>{await this.loadOrders();render();})
-      .on('postgres_changes',{event:'*',schema:'public',table:'ship_legs'},async()=>{await this.loadOrders();render();})
-      .on('postgres_changes',{event:'*',schema:'public',table:'shipments_inbound'},async()=>{await this.loadOrders();render();})
-      .on('postgres_changes',{event:'*',schema:'public',table:'shipments_outbound'},async()=>{await this.loadOrders();render();})
-      .subscribe();
-  }
-};
+    // ====== UI helpers ======
+    function fmtDate(iso){
+      const d = new Date(iso);
+      const dd = d.toLocaleDateString(undefined,{day:'2-digit',month:'2-digit',year:'2-digit'}).replace(/\//g,'/');
+      const tm = d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+      return { date: dd, time: tm };
+    }
+    function statusChip(status){
+      const s = (status||'').toLowerCase();
+      let cls = 'chip-gray';
+      if(s.includes('shipped')) cls='chip-blue';
+      else if(s.includes('ready')) cls='chip-green';
+      else if(s.includes('payment')) cls='chip-amber';
+      else if(s.includes('waiting')) cls='chip-yellow';
+      return `<span class="chip ${cls}">${status||''}</span>`;
+    }
+    function carrierLogo(courier){
+      const c = (courier||'').toLowerCase();
+      const map = { ups:'UPS', fedex:'FedEx', dhl:'DHL', usps:'USPS' };
+      return `<span class="chip chip-gray">${map[c] || courier || '—'}</span>`;
+    }
+    function trackingLink(courier, num){
+      const n = (num||'').trim(); if(!n) return '';
+      const c = (courier||'').toLowerCase();
+      const map = {
+        ups:`https://www.ups.com/track?tracknum=${encodeURIComponent(n)}`,
+        fedex:`https://www.fedex.com/fedextrack/?trknbr=${encodeURIComponent(n)}`,
+        dhl:`https://www.dhl.com/global-en/home/tracking.html?tracking-id=${encodeURIComponent(n)}`,
+        usps:`https://tools.usps.com/go/TrackConfirmAction?tLabels=${encodeURIComponent(n)}`
+      };
+      return map[c] || `https://www.17track.net/en/track?nums=${encodeURIComponent(n)}`;
+    }
+    function matchesTab(o){
+      switch(state.tab){
+        case 'payment': return /payment/i.test(o.status);
+        case 'ready': return /ready to ship/i.test(o.status);
+        case 'john': return true;     // customise your saved views here
+        case 'dan': return true;      // customise your saved views here
+        case 'nextday': return true;  // customise SLA rule here
+        default: return true;
+      }
+    }
+    function matchesQuery(o, q){
+      if(!q) return true;
+      const hay = [o.id,o.product,o.sku,o.customer?.name,o.customer?.email,o.customer?.phone,o.courier,o.tracking,o.status].join(' ').toLowerCase();
+      return hay.includes(q.toLowerCase());
+    }
+    function paginate(arr, page, pageSize){
+      const start = (page-1)*pageSize;
+      return [arr.slice(start, start+pageSize), start+1, Math.min(arr.length, start+pageSize)];
+    }
 
-/* ---------- modal item helpers ---------- */
-function button(txt,cls,click){const b=document.createElement('button');b.textContent=txt;b.className='btn mini '+(cls||'');b.type='button';b.onclick=click;return b;}
+    // ====== Render ======
+    function render(){
+      const tbody = document.getElementById('tbody');
+      const filtered = ORDERS.filter(o => matchesTab(o) && matchesQuery(o, state.q));
+      const total = filtered.length;
+      const pages = Math.max(1, Math.ceil(total/state.pageSize));
+      if(state.page>pages) state.page=pages;
+      const [rows,start,end] = paginate(filtered, state.page, state.pageSize);
 
-function addItemRow(v={part_number:'',date_codes:'',qty:'',unit_sell:'',unit_cost:''}){
-  const tr=document.createElement('tr');
-  tr.innerHTML=`
-    <td><input class="input mini" value="${v.part_number||''}"/></td>
-    <td><input class="input mini" value="${v.date_codes||''}"/></td>
-    <td><input type="number" step="1" class="input mini mono" value="${v.qty||''}"/></td>
-    <td><input type="number" step="0.01" class="input mini mono" value="${v.unit_sell||''}"/></td>
-    <td><input type="number" step="0.01" class="input mini mono" value="${v.unit_cost||''}"/></td>
-    <td class="right"></td>`;
-  tr.lastElementChild.appendChild(button('−','ghost',()=>{ tr.remove(); recalcFinance(); }));
-  $('itemsBody').appendChild(tr);
-  recalcFinance();
-}
-function itemsFromDOM(){
-  return [...$('itemsBody').querySelectorAll('tr')].map(tr=>{
-    const [pn,dc,qty,us,uc]=[...tr.querySelectorAll('input')].map(x=>x.value.trim());
-    if(!pn) return null;
-    return {part_number:pn,date_codes:dc,qty:Number(qty||0),unit_sell:Number(us||0),unit_cost:Number(uc||0)};
-  }).filter(Boolean);
-}
+      document.getElementById('totalCount').textContent = String(ORDERS.length);
+      document.getElementById('visibleCount').textContent = String(rows.length);
+      document.getElementById('pageInfo').textContent = `${state.page} / ${pages}`;
+      document.getElementById('rangeInfo').textContent = `${total?start:0}–${end}`;
 
-function addShipRow(v={kind:'Leg',date:'',qty:'',from:'',to:'',method:'',ref:'',courier:'',tracking:'',cost:''}){
-  const tr=document.createElement('tr');
-  tr.innerHTML=`
-    <td>
-      <select class="select mini">
-        <option ${v.kind==='Leg'?'selected':''}>Leg</option>
-        <option ${v.kind==='Inbound'?'selected':''}>Inbound</option>
-        <option ${v.kind==='Outbound'?'selected':''}>Outbound</option>
-      </select>
-    </td>
-    <td><input type="date" class="input mini" value="${v.date||''}"/></td>
-    <td><input type="number" step="1" class="input mini mono" value="${v.qty||''}"/></td>
-    <td><input class="input mini" value="${v.from||''}"/></td>
-    <td><input class="input mini" value="${v.to||''}"/></td>
-    <td><input class="input mini" value="${v.method||''}"/></td>
-    <td><input class="input mini" value="${v.ref||''}"/></td>
-    <td><input class="input mini" value="${v.courier||''}"/></td>
-    <td><input class="input mini" value="${v.tracking||''}"/></td>
-    <td><input type="number" step="0.01" class="input mini mono" value="${v.cost||''}"/></td>
-    <td class="right"></td>`;
-  tr.lastElementChild.appendChild(button('−','ghost',()=>{ tr.remove(); recalcFinance(); }));
-  $('shipBody').appendChild(tr);
-  recalcFinance();
-}
-function shipsFromDOM(){
-  return [...$('shipBody').querySelectorAll('tr')].map(tr=>{
-    const [kindSel,date,qty,from,to,method,ref,courier,tracking,cost] = [
-      tr.querySelector('select').value,
-      ...[...tr.querySelectorAll('input')].map(x=>x.value.trim())
-    ];
-    if(!kindSel && !date && !qty && !from && !to && !method && !ref && !courier && !tracking && !cost) return null;
-    return {kind:kindSel,date,qty:Number(qty||0),from,to,method,ref,courier,tracking,cost:Number(cost||0)};
-  }).filter(Boolean);
-}
+      tbody.innerHTML = rows.map(o=>{
+        const dt = fmtDate(o.date);
+        return `
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-3"><input type="checkbox" /></td>
+            <td class="px-4 py-3 text-sm text-gray-700">${dt.date}<br><span class="text-xs text-gray-500">${dt.time}</span></td>
+            <td class="px-4 py-3">${statusChip(o.status)}</td>
+            <td class="px-4 py-3">
+              <div class="text-sm font-medium">${o.product||''}</div>
+              <div class="text-xs text-gray-500">SKU: ${o.sku||''}</div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="text-sm font-medium">${o.customer?.name||''}</div>
+              <div class="text-xs text-gray-500">${o.customer?.email||''}</div>
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2">
+                ${carrierLogo(o.courier)}
+                ${o.tracking?`<a target="_blank" class="text-xs underline text-verified-purple" href="${trackingLink(o.courier,o.tracking)}">Track</a>`:''}
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              <input type="checkbox" ${o.picked?'checked':''} onchange="togglePicked('${o.id}', this.checked)" />
+            </td>
+            <td class="px-4 py-3 text-right">
+              <button class="btn btn-mini" onclick='openView(${JSON.stringify(o)})'>View</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
 
-function ageDays(d){
-  if(!d) return '-';
-  const ms = Date.now() - new Date(d).getTime();
-  const days = Math.floor(ms/86400000);
-  return days<0?'-':`${days} ${days===1?'day':'days'}`;
-}
-function totals(o){
-  const revenue=(o.items||[]).reduce((s,i)=>s+(Number(i.qty||0)*Number(i.unit_sell||0)),0);
-  const qty=(o.items||[]).reduce((s,i)=>s+Number(i.qty||0),0);
-  const itemCost=(o.items||[]).reduce((s,i)=>s+(Number(i.qty||0)*Number(i.unit_cost||0)),0);
-  const legCost=(o.shipments||[]).filter(s=>s.kind==='Leg').reduce((s,l)=>s+Number(l.cost||0),0);
-  const shipCost = legCost + Number(o.shipping_cost_extra||0);
-  const testCost = Number(o.test_cost||0);
-  const cost = itemCost + shipCost + testCost;
-  const gp = revenue - cost;
-  const gpPct = revenue ? (gp/revenue)*100 : 0;
-  const avgUnit = qty ? (revenue/qty) : 0;
-  return {revenue,cost,gp,gpPct,qty,avgUnit,itemCost,shipCost,testCost};
-}
+    // ====== Modal ======
+    function openView(order){
+      currentOrder = order;
+      const modal = document.getElementById('viewModal');
+      const backdrop = document.getElementById('backdrop');
+      document.getElementById('vmTitle').textContent = order.id;
+      const dt = fmtDate(order.date);
+      document.getElementById('vmDate').textContent = `${dt.date} • ${dt.time}`;
 
-/* ---------- render list (fixed View button) ---------- */
-function makeInlineSelectCell(order, field, options){
-  const wrap = document.createElement('div'); wrap.className='ie';
-  const chip = document.createElement('span'); chip.className='chip'; chip.textContent = order[field] || '-';
-  const btn = document.createElement('button'); btn.title='Edit'; btn.textContent='✎';
-  const sel = document.createElement('select'); options.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o)});
-  sel.value = options.includes(order[field]) ? order[field] : options[0];
+      const status = document.getElementById('vmStatus');
+      status.className = 'chip ' + (statusChip(order.status).match(/chip-\w+/)?.[0] || 'chip-gray');
+      status.textContent = order.status;
 
-  const startEdit=()=>{ wrap.classList.add('editing'); sel.focus(); };
-  btn.onclick=startEdit; chip.style.cursor='pointer'; chip.onclick=startEdit;
-  sel.onchange=async()=>{ try{ await supa.quickUpdate(order.id, field, sel.value); await supa.loadOrders(); render(); }catch(e){ alert('Update failed'); console.error(e); } };
-  sel.onblur=()=>wrap.classList.remove('editing');
+      document.getElementById('vmProduct').textContent = order.product||'';
+      document.getElementById('vmSku').textContent = `SKU: ${order.sku||''}`;
 
-  wrap.append(chip, btn, sel);
-  return wrap;
-}
+      document.getElementById('vmCustomer').textContent = order.customer?.name || '';
+      document.getElementById('vmContact').textContent = [order.customer?.email, order.customer?.phone].filter(Boolean).join(' • ');
 
-function render(){
-  const q=$('q').value.toLowerCase(), sSales=$('fltSales').value, sStat=$('fltStatus').value, sPri=$('fltPriority').value;
-  const rows=supa.getOrders().filter(o=>{
-    const text=[o.customer,...(o.items||[]).map(i=>i.part_number),o.id].join(' ').toLowerCase();
-    if(q && !text.includes(q)) return false;
-    if(sSales && o.salesperson!==sSales) return false;
-    if(sStat && (o.status||'')!==sStat) return false;
-    if(sPri && (o.priority||'')!==sPri) return false;
-    return true;
-  });
+      document.getElementById('vmDelivery').innerHTML = `<div class="flex items-center gap-2">${carrierLogo(order.courier)}<span class="text-sm text-gray-600">${order.courier||''}</span></div>`;
+      document.getElementById('vmTracking').innerHTML = order.tracking
+        ? `<div class="flex items-center gap-2"><span class="text-sm text-gray-600">Tracking:</span><code class="text-xs bg-gray-100 px-2 py-1 rounded">${order.tracking}</code><a class="btn btn-mini" target="_blank" href="${trackingLink(order.courier, order.tracking)}">Open tracking</a></div>`
+        : `<span class="text-sm text-gray-500">No tracking number.</span>`;
 
-  const tb=$('tbody'); tb.innerHTML='';
+      modal.classList.add('open'); backdrop.classList.add('open');
+    }
+    function closeView(){
+      document.getElementById('viewModal').classList.remove('open');
+      document.getElementById('backdrop').classList.remove('open');
+    }
 
-  rows.forEach(o=>{
-    const {revenue,gp,gpPct,qty,avgUnit} = totals(o);
-    const parts = (o.items?.length? o.items[0].part_number+(o.items.length>1? ` +${o.items.length-1} more`: '') : '-');
-    const poUrl = window._sessionFiles?.[o.id]?.poUrl || null;
-    const testUrl = window._sessionFiles?.[o.id]?.testUrl || null;
-    const sym = curSym(o.currency);
+    // ====== Inline actions ======
+    async function togglePicked(id, val){
+      const o = ORDERS.find(x => x.id===id); if(!o) return;
+      o.picked = !!val;
+      await saveOrder(o);
+    }
+    window.togglePicked = togglePicked; // expose for inline handler
 
-    const tr=document.createElement('tr');
+    async function markCompleted(){
+      if(!currentOrder) return;
+      currentOrder.status = 'Shipped';
+      if(await saveOrder(currentOrder)){
+        const idx = ORDERS.findIndex(x=>x.id===currentOrder.id);
+        if(idx>-1) ORDERS[idx] = {...currentOrder};
+        render(); closeView();
+      }
+    }
 
-    // View
-    let td=document.createElement('td');
-    td.appendChild(button('View','ghost',()=>openView(o)));
-    tr.appendChild(td);
+    // ====== Events ======
+    document.getElementById('closeModal').addEventListener('click', closeView);
+    document.getElementById('backdrop').addEventListener('click', closeView);
+    document.getElementById('btnComplete').addEventListener('click', markCompleted);
+    document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
 
-    const cells = [
-      o.customer||'-',
-      parts,
-      o.salesperson||'-',
-      {html: `<span class="mono">${fmtInt(qty)}</span>`},
-      {html: `<span class="mono">${sym}${fmt(avgUnit)}</span>`},
-      {html: `<span class="mono">${sym}${fmt(revenue)}</span>`},
-      {html: `<span class="pill">${sym}${fmt(gp)}</span> <span class="muted mono">(${fmt(gpPct)}%)</span>`},
-      {html: `<span class="chip">${o.priority||'-'}</span>`},
-    ];
-    cells.forEach(c=>{
-      const td=document.createElement('td');
-      if(typeof c==='string') td.textContent=c;
-      else td.innerHTML=c.html;
-      tr.appendChild(td);
+    document.getElementById('search').addEventListener('input', e=>{ state.q=e.target.value; state.page=1; render(); });
+    document.querySelectorAll('.tab').forEach(b=> b.addEventListener('click', ()=>{ state.tab=b.dataset.tab; state.page=1; render(); }));
+    document.getElementById('pageSize').addEventListener('change', e=>{ state.pageSize=parseInt(e.target.value,10); state.page=1; render(); });
+    document.getElementById('prevPage').addEventListener('click', ()=>{ state.page=Math.max(1,state.page-1); render(); });
+    document.getElementById('nextPage').addEventListener('click', ()=>{
+      const filtered = ORDERS.filter(o => matchesTab(o) && matchesQuery(o, state.q));
+      const pages = Math.max(1, Math.ceil(filtered.length/state.pageSize));
+      state.page = Math.min(pages, state.page+1);
+      render();
     });
+    document.getElementById('btnNew').addEventListener('click', ()=> createOrder({ product:'1 × Item name', sku:'itemname' }));
 
-    // Inline Status
-    td=document.createElement('td'); td.appendChild(makeInlineSelectCell(o,'status',['New','Open','Closed'])); tr.appendChild(td);
-
-    // Dates, age, tests, vendor, incoterm
-    const tail = [
-      o.order_date||'-',
-      o.requested_by||'-',
-      ageDays(o.order_date),
-      o.tests||'-',
-      o.vendor||'-',
-      o.incoterm||'-'
-    ];
-    tail.forEach(val=>{ const td=document.createElement('td'); td.textContent=val; tr.appendChild(td); });
-
-    // Inline Terms
-    td=document.createElement('td'); td.appendChild(makeInlineSelectCell(o,'payment_terms',['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90'])); tr.appendChild(td);
-
-    // Shipped / Invoiced
-    const mkChk=(name,val)=>{ const c=document.createElement('input'); c.type='checkbox'; c.checked=!!val;
-      c.onchange=async()=>{ try{ await supa.quickUpdate(o.id,name,c.checked,true);}catch(e){ console.warn(e);} };
-      return c;
-    };
-    td=document.createElement('td'); td.appendChild(mkChk('is_shipped',o.is_shipped)); tr.appendChild(td);
-    td=document.createElement('td'); td.appendChild(mkChk('is_invoiced',o.is_invoiced)); tr.appendChild(td);
-
-    // Files
-    td=document.createElement('td');
-    td.innerHTML = [poUrl?`<a class="link" target="_blank" href="${poUrl}">PO</a>`:'', testUrl?`<a class="link" target="_blank" href="${testUrl}">Test</a>`:''].filter(Boolean).join(' · ')||'';
-    tr.appendChild(td);
-
-    // Actions
-    td=document.createElement('td'); td.className='actions';
-    td.appendChild(button('Edit','ghost',()=>openModal(o)));
-    td.appendChild(button('Delete','ghost',async()=>{ if(!confirm('Delete this order?'))return; await supa.deleteOrder(o.id); await supa.loadOrders(); render(); }));
-    tr.appendChild(td);
-
-    tb.appendChild(tr);
-  });
-}
-
-/* ---------- modal open/collect/save ---------- */
-let _snapshot = null;
-function snapshotRecord(rec){ const {id, ...rest}=rec||{}; return JSON.stringify(rest); }
-
-function openModal(o){
-  $('dlgTitle').textContent = o?'Edit Order':'New Order';
-  $('orderId').value = o?.id || '';
-  $('salesperson').value = o?.salesperson || SALESTEAM[0];
-  $('customer').value = o?.customer || '';
-  $('priority').value = o?.priority || 'Normal';
-  $('status').value = o?.status || 'New';
-  $('order_date').value = o?.order_date || todayStr();
-  $('requested_by').value = o?.requested_by || '';
-
-  $('payment_terms').value = (['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90'].includes(o?.payment_terms)) ? o.payment_terms : 'Other';
-  $('payment_terms_other').style.display = $('payment_terms').value==='Other' ? '' : 'none';
-  $('payment_terms_other').value = $('payment_terms').value==='Other' ? (o?.payment_terms||'') : '';
-
-  $('payment_method').value = (['Bank Transfer','Credit Card','PayPal'].includes(o?.payment_method)) ? o.payment_method : 'Other';
-  $('payment_method_other').style.display = $('payment_method').value==='Other' ? '' : 'none';
-  $('payment_method_other').value = $('payment_method').value==='Other' ? (o?.payment_method||'') : '';
-
-  $('incoterm').value = (['DAP','DDP','EXW','CIP','FOB'].includes(o?.incoterm)) ? o.incoterm : 'Other';
-  $('incoterm_other').style.display = $('incoterm').value==='Other' ? '' : 'none';
-  $('incoterm_other').value = $('incoterm').value==='Other' ? (o?.incoterm||'') : '';
-
-  $('invoice_date').value = o?.invoice_date || '';
-  $('due_date').value = o?.due_date || '';
-
-  $('currency').value = o?.currency || 'USD';
-
-  [...$('testsLine').querySelectorAll('input[type="checkbox"]')].forEach(cb=>cb.checked=false);
-  $('tests_other').value='';
-  if(o?.tests){
-    const set=new Set(o.tests.split(',').map(s=>s.trim()).filter(Boolean));
-    [...$('testsLine').querySelectorAll('input[type="checkbox"]')].forEach(cb=>cb.checked=set.has(cb.value));
-    if(set.has('Other')) $('tests_other').value = (o.tests.match(/\(Other:(.*?)\)$/)?.[1] || '');
-  }
-  $('test_center').value = (['GETs HK','GETs Shenzhen','GETs US','White Horse US','White Horse China','White Horse EU'].includes(o?.test_center)) ? o.test_center : 'Other';
-
-  $('vendor').value = o?.vendor || '';
-  $('notes').value  = o?.notes  || '';  // CHANGED: textarea
-
-  $('itemsBody').innerHTML=''; (o?.items?.length?o.items:[{}]).forEach(addItemRow);
-  $('shipBody').innerHTML=''; (o?.shipments||[]).forEach(addShipRow);
-
-  $('shipping_cost_extra').value = o?.shipping_cost_extra ?? '';
-  $('test_cost').value = o?.test_cost ?? '';
-
-  $('file_po').value=''; $('file_test').value='';
-
-  $('btnDelete').style.display = o?.id ? '' : 'none';
-
-  // After prefill, snapshot for dirty check and show
-  _snapshot = snapshotRecord(collectRecord(true));
-  $('dlg').showModal();
-  recalcFinance(); // CHANGED: compute on open
-}
-
-function collectRecord(preview=false){
-  const id = $('orderId').value || (preview ? '' : crypto.randomUUID());
-
-  const checks=[...$('testsLine').querySelectorAll('input[type="checkbox"]')];
-  const none = $('tNone').checked;
-  checks.forEach(cb=>{ if(none && cb.value!=='No test') cb.checked=false; });
-  const selected = checks.filter(cb=>cb.checked).map(cb=>cb.value);
-  if($('tOther').checked){
-    const extra = $('tests_other').value.trim();
-    if(extra) selected[selected.indexOf('Other')] = 'Other';
-  }
-  let testsStr = selected.join(', ');
-  if(selected.includes('Other')){
-    const t = $('tests_other').value.trim();
-    if(t) testsStr = testsStr.replace('Other', `Other (Other:${t})`);
-  }
-
-  const terms = $('payment_terms').value==='Other' ? $('payment_terms_other').value.trim() : $('payment_terms').value;
-  const method = $('payment_method').value==='Other' ? $('payment_method_other').value.trim() : $('payment_method').value;
-  const incot = $('incoterm').value==='Other' ? $('incoterm_other').value.trim() : $('incoterm').value;
-
-  return {
-    id,
-    salesperson:$('salesperson').value,
-    customer:$('customer').value.trim(),
-    priority:$('priority').value, status:$('status').value,
-    order_date:$('order_date').value||null,
-    requested_by:$('requested_by').value||null,
-    payment_terms:terms||null, payment_method:method||null,
-    invoice_date:$('invoice_date').value||null, due_date:$('due_date').value||null,
-    currency:$('currency').value||'USD',
-    tests:testsStr||null, test_center:$('test_center').value,
-    vendor:$('vendor').value.trim()||null, incoterm:incot||null,
-    items:itemsFromDOM(),
-    shipments:shipsFromDOM(),
-    shipping_cost_extra:Number($('shipping_cost_extra').value||0),
-    test_cost:Number($('test_cost').value||0),
-    notes:$('notes').value.trim()||null,
-    is_shipped:false,
-    is_invoiced:false
-  };
-}
-
-/* auto-due from invoice + terms */
-function autoDue(){
-  const inv=$('invoice_date').value, t=$('payment_terms').value, tother=$('payment_terms_other').value.trim();
-  const src = t==='Other'? tother : t;
-  const m = src.match(/Net\s+(\d+)/i);
-  if(inv && m){ const add=Number(m[1]||0); const d=new Date(inv); d.setDate(d.getDate()+add); $('due_date').value=d.toISOString().slice(0,10); }
-}
-$('payment_terms').addEventListener('change',()=>{ $('payment_terms_other').style.display = $('payment_terms').value==='Other' ? '' : 'none'; autoDue(); });
-$('payment_terms_other').addEventListener('input',autoDue);
-$('invoice_date').addEventListener('change',autoDue);
-$('payment_method').addEventListener('change',()=>{ $('payment_method_other').style.display = $('payment_method').value==='Other' ? '' : 'none'; });
-$('incoterm').addEventListener('change',()=>{ $('incoterm_other').style.display = $('incoterm').value==='Other' ? '' : 'none'; });
-
-/* guard against accidental close if dirty */
-function maybeCloseDialog(){
-  const nowSnap = snapshotRecord(collectRecord(true));
-  if(nowSnap!==_snapshot){
-    if(!confirm('Discard changes?')) return false;
-  }
-  $('dlg').close(); return true;
-}
-$('btnClose').onclick=()=>maybeCloseDialog();
-$('dlg').addEventListener('cancel', (e)=>{ const ok = maybeCloseDialog(); if(!ok) e.preventDefault(); });
-
-/* add rows */
-$('addItem').onclick=()=>addItemRow({});
-$('addShip').onclick=()=>addShipRow({});
-
-/* live finance summary (delegated) */
-['itemsBody','shipBody'].forEach(id=>{
-  $(id).addEventListener('input',recalcFinance);
-  $(id).addEventListener('change',recalcFinance);
-});
-['shipping_cost_extra','test_cost','currency'].forEach(id=>$(id).addEventListener('input',recalcFinance));
-['shipping_cost_extra','test_cost','currency'].forEach(id=>$(id).addEventListener('change',recalcFinance));
-
-function recalcFinance(){
-  const rec = collectRecord(true);
-  const t = totals(rec);
-  const sym = curSym(rec.currency);
-  $('finQty').textContent = fmtInt(t.qty);
-  $('finSell').textContent = sym+fmt(t.revenue);
-  $('finItemCost').textContent = sym+fmt(t.itemCost);
-  $('finShipCost').textContent = sym+fmt(t.shipCost);
-  $('finTestCost').textContent = sym+fmt(t.testCost);
-  $('finTotalCost').textContent = sym+fmt(t.cost);
-  $('finGP').textContent = sym+fmt(t.gp);
-  $('finGPPct').textContent = fmt(t.gpPct)+'%';
-}
-
-/* save / delete */
-$('btnSave').onclick=async()=>{
-  const rec=collectRecord();
-  if(!rec.customer){alert('Customer is required');return;}
-  if(!rec.items?.length){alert('Add at least one line item');return;}
-  const uploads={};
-  if($('file_po').files[0]) uploads.po = $('file_po').files[0];
-  if($('file_test').files[0]) uploads.test_report = $('file_test').files[0];
-  try{
-    await supa.saveOrder(rec,uploads);
-    await supa.loadOrders(); render(); $('dlg').close();
-  }catch(e){console.error(e); alert('Save failed. See console.');}
-};
-$('btnDelete').onclick=async()=>{
-  const id=$('orderId').value; if(!id) return;
-  if(!confirm('Delete this order?'))return;
-  await supa.deleteOrder(id); await supa.loadOrders(); render(); $('dlg').close();
-};
-
-/* filters & CSV */
-['q','fltSales','fltStatus','fltPriority'].forEach(id=>$(id).addEventListener('input',render));
-$('btnCsv').onclick=()=>{
-  const head=[...document.querySelectorAll('#tbl thead th')].map(th=>th.innerText);
-  const rows=[...document.querySelectorAll('#tbody tr')].map(tr=>[...tr.children].map(td=>td.innerText.replace(/\s+/g,' ').trim()));
-  const csv=[head,...rows].map(r=>r.map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='orders.csv'; a.click();
-};
-
-/* view summary */
-function openView(o){
-  const {revenue,gp,gpPct,qty,avgUnit,itemCost,shipCost,testCost,cost} = totals(o);
-  const sym = curSym(o.currency);
-  const files = window._sessionFiles?.[o.id]||{};
-  const partsRows = (o.items||[]).map(i=>`
-    <tr><td>${i.part_number||''}</td><td>${i.date_codes||''}</td><td class="mono">${fmtInt(i.qty)}</td>
-    <td class="mono">${sym}${fmt(i.unit_sell)}</td><td class="mono">${sym}${fmt(i.unit_cost)}</td></tr>`).join('')||'';
-  const shipRows = (o.shipments||[]).map(s=>`
-    <tr><td>${s.kind}</td><td class="mono">${s.date||''}</td><td class="mono">${fmtInt(s.qty||'')}</td>
-    <td>${s.from||''}</td><td>${s.to||''}</td><td>${s.method||''}</td><td>${s.ref||''}</td>
-    <td>${s.courier||''}</td><td>${s.tracking||''}</td><td class="mono">${s.cost? sym+fmt(s.cost):''}</td></tr>`).join('')||'';
-
-  $('viewBody').innerHTML = `
-    <div class="card"><h3>Header</h3><div class="pad"><div class="kv">
-      <div>Customer</div><div>${o.customer||'-'}</div>
-      <div>Salesperson</div><div>${o.salesperson||'-'}</div>
-      <div>Priority</div><div>${o.priority||'-'}</div>
-      <div>Status</div><div>${o.status||'-'}</div>
-      <div>Order Date</div><div>${o.order_date||'-'}</div>
-      <div>Requested by</div><div>${o.requested_by||'-'}</div>
-      <div>Incoterm</div><div>${o.incoterm||'-'}</div>
-      <div>Terms</div><div>${o.payment_terms||'-'}</div>
-      <div>Currency</div><div>${o.currency||'-'}</div>
-      <div>Vendor</div><div>${o.vendor||'-'}</div>
-      <div>Test Center</div><div>${o.test_center||'-'}</div>
-      <div>Tests</div><div>${o.tests||'-'}</div>
-      <div>Notes</div><div>${o.notes||'-'}</div>
-    </div></div></div>
-
-    <div class="card"><h3>Totals</h3><div class="pad"><div class="kv">
-      <div>Total Qty</div><div class="mono">${fmtInt(qty)}</div>
-      <div>Avg Unit</div><div class="mono">${sym}${fmt(avgUnit)}</div>
-      <div>Sell</div><div class="mono">${sym}${fmt(revenue)}</div>
-      <div>Item Cost</div><div class="mono">${sym}${fmt(itemCost)}</div>
-      <div>Shipping Cost</div><div class="mono">${sym}${fmt(shipCost)}</div>
-      <div>Test Cost</div><div class="mono">${sym}${fmt(testCost)}</div>
-      <div>Total Cost</div><div class="mono">${sym}${fmt(cost)}</div>
-      <div>GP</div><div><span class="pill">${sym}${fmt(gp)}</span> <span class="muted mono">(${fmt(gpPct)}%)</span></div>
-      <div>Files</div><div>
-        ${files.poUrl?`<a class="link" target="_blank" href="${files.poUrl}">PO</a>`:''}
-        ${files.testUrl?` · <a class="link" target="_blank" href="${files.testUrl}">Test</a>`:''}
-      </div>
-    </div></div></div>
-
-    <div class="card" style="grid-column:1 / -1"><h3>Line Items</h3>
-      <div class="pad">
-        <div class="hscroll"><table class="tbl" style="min-width:900px">
-          <thead><tr><th>Part</th><th>Date Codes</th><th>Qty</th><th>Unit Sell</th><th>Unit Cost</th></tr></thead>
-          <tbody>${partsRows||'<tr><td colspan="5" class="muted">No items</td></tr>'}</tbody>
-        </table></div>
-      </div>
-    </div>
-
-    <div class="card" style="grid-column:1 / -1"><h3>Shipments</h3>
-      <div class="pad">
-        <div class="hscroll"><table class="tbl" style="min-width:1100px">
-          <thead><tr><th>Kind</th><th>Date</th><th>Qty</th><th>From</th><th>To</th><th>Method</th><th>Ref</th><th>Courier</th><th>Tracking</th><th>Cost</th></tr></thead>
-          <tbody>${shipRows||'<tr><td colspan="10" class="muted">No shipments</td></tr>'}</tbody>
-        </table></div>
-      </div>
-    </div>
-  `;
-  $('viewDlg').showModal();
-}
-
-/* init */
-document.addEventListener('DOMContentLoaded', ()=>{
-  $('salesperson').innerHTML = SALESTEAM.map(n=>`<option>${n}</option>`).join('');
-  $('fltSales').innerHTML = `<option value="">All salespeople</option>` + SALESTEAM.map(n=>`<option>${n}</option>`).join('');
-});
-
-async function init(){
-  await supa.loadOrders(); supa.subscribeRealtime(); render();
-}
-init();
-</script>
+    // ====== Init ======
+    loadOrders();
+  </script>
 </body>
 </html>
+
