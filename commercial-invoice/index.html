@@ -8,71 +8,51 @@
 <style>
   /* ===== Verified design system ===== */
   :root{
-    --brand:#6f57e9; --brand2:#3b2eca; --ink:#131826; --muted:#6c7385;
-    --line:#e3e6ef; --bg:#f7f8fc; --paper:#ffffff;
-    --shadow:0 10px 28px rgba(24,20,68,.10);
+    --brand:#6f57e9; --brand2:#3b2eca; --ink:#121626; --muted:#6d7486;
+    --line:#e3e7f1; --bg:#f7f8fc; --paper:#ffffff;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
-  body{margin:0;background:radial-gradient(900px 420px at -10% -10%, rgba(111,87,233,.09), transparent 40%),
-                      radial-gradient(700px 360px at 110% 0%, rgba(59,46,202,.08), transparent 40%), var(--bg);
-       color:var(--ink); font:14px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font:14px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif
+  }
+  .wrap{max-width:1220px;margin:26px auto;padding:0 16px}
 
-  .wrap{max-width:1180px;margin:26px auto;padding:0 16px}
-
-  /* ===== Hero header ===== */
+  /* ===== Header with visible selector ===== */
   .hero{
-    display:grid;grid-template-columns:1fr auto;gap:16px;
-    background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:16px 18px 18px;
-    box-shadow:var(--shadow);position:relative;overflow:hidden
+    display:grid;grid-template-columns:1fr auto;gap:14px;
+    background:var(--paper);border:1px solid var(--line);border-radius:22px;
+    padding:16px 18px 18px; box-shadow:0 8px 24px rgba(30,20,90,.07); position:relative; overflow:hidden
   }
   .hero::before{
-    content:"";position:absolute;left:16px;right:16px;top:12px;height:8px;border-radius:999px;
+    content:"";position:absolute;left:18px;right:18px;top:12px;height:8px;border-radius:999px;
     background:linear-gradient(90deg,var(--brand),var(--brand2));
-    box-shadow:0 0 0 1px rgba(111,87,233,.25) inset;
   }
-  .brand{
-    display:flex;gap:14px;align-items:center;margin-top:10px
-  }
-  .logoBox{
-    width:64px;height:64px;border-radius:16px;background:#fff;display:grid;place-items:center;
-    border:1px solid var(--line);box-shadow:0 4px 12px rgba(17,16,60,.06);overflow:hidden
-  }
-  .logoBox img{max-width:56px;max-height:56px}
+  .brandRow{display:flex;gap:16px;align-items:center;margin-top:10px}
+  .logo img{height:44px} /* header logo */
   .titles h1{margin:0;font-weight:900;letter-spacing:.2px;font-size:22px}
   .titles .sub{font-size:12px;color:var(--muted)}
-
-  .heroRight{
-    display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:6px
-  }
+  .heroRight{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:4px}
   .selector{
     display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);
-    border-radius:14px;padding:8px 12px;box-shadow:0 2px 8px rgba(20,18,66,.06)
+    border-radius:14px;padding:8px 12px;box-shadow:0 2px 8px rgba(20,18,66,.05)
   }
-  .selector label{font-weight:700;color:#2a2e3a}
-  .selector select{
-    padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;font-weight:700
-  }
+  .selector label{font-weight:800}
+  .selector select{padding:9px 12px;border:1px solid var(--line);border-radius:12px;font-weight:700}
   .cta{
     border:0;border-radius:12px;padding:10px 14px;font-weight:800;color:#fff;
-    background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 18px rgba(79,63,214,.35);
-    cursor:pointer
+    background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 18px rgba(79,63,214,.35);cursor:pointer
   }
 
-  /* ===== Sections / panels ===== */
+  /* ===== Panels / Grid ===== */
   .actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
   .btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px 12px;font-weight:700;cursor:pointer}
   .btn.pill{border-radius:999px}
-  .btn.brand{background:linear-gradient(135deg,var(--brand),var(--brand2));border-color:transparent;color:#fff}
-  .ghost{background:#fff}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
   @media (max-width:980px){ .grid{grid-template-columns:1fr} }
-
-  .panel{
-    background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:14px;
-    box-shadow:0 2px 8px rgba(20,18,66,.05)
-  }
-  .panel h2{margin:0 0 10px;font-size:15px;font-weight:900;letter-spacing:.02em}
+  .panel{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 2px 8px rgba(20,18,66,.05)}
+  .panel h2{margin:0 0 10px;font-size:15px;font-weight:900}
 
   .row{display:grid;grid-template-columns:repeat(12,1fr);gap:10px}
   .field{display:flex;flex-direction:column;gap:6px}
@@ -84,25 +64,20 @@
   .k2{grid-column:span 2}.k3{grid-column:span 3}.k4{grid-column:span 4}.k5{grid-column:span 5}
   .k6{grid-column:span 6}.k7{grid-column:span 7}.k8{grid-column:span 8}.k9{grid-column:span 9}.k12{grid-column:span 12}
 
-  /* ===== Document preview ===== */
-  .doc{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}
-  .hdr{display:grid;grid-template-columns:1fr auto;gap:12px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px}
-  .hdr-left{display:flex;gap:12px;align-items:center}
-  .badge{
-    width:72px;height:72px;border-radius:16px;display:grid;place-items:center;overflow:hidden;
-    background:linear-gradient(135deg,var(--brand),var(--brand2));
-    box-shadow:0 6px 18px rgba(92,77,224,.35)
-  }
-  .badge img{max-width:60px;max-height:60px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15))}
-  .hdr-title{font-size:24px;font-weight:900;letter-spacing:.2px}
-  .hdr-meta{font-size:12px;color:#2a2f36}
-  .cap{font-size:12px;color:var(--muted);margin-bottom:6px}
+  /* ===== Document blocks ===== */
+  .doc{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px}
+  .hdrLine{display:grid;grid-template-columns:1fr auto;gap:12px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px}
+  .hdrLeft{display:flex;align-items:center;gap:14px}
+  .logoBig img{height:60px} /* big doc logo */
+  .docTitle{font-size:26px;font-weight:900;letter-spacing:.2px}
+  .docMeta{font-size:12px;color:#2d3242}
+  .cap{font-size:12px;color:#6d7486;margin-bottom:6px}
   .box{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}
   .col-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
-  table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:8px}
+  table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:10px}
   thead th{
-    background:linear-gradient(0deg,#f5f3ff,#fbfbff); color:#2f3450; font-size:12px; text-transform:uppercase; letter-spacing:.06em;
+    background:linear-gradient(0deg,#ede9ff,#fafaff); color:#2f3450; font-size:12px; text-transform:uppercase; letter-spacing:.06em;
     border-bottom:1px solid var(--line); padding:8px; text-align:left
   }
   tbody td{border-bottom:1px solid var(--line);padding:8px;vertical-align:top}
@@ -119,23 +94,22 @@
   .sigimg{max-height:80px;border:1px dashed var(--line);border-radius:10px;padding:4px}
   .muted{color:#747c93}
 
-  /* ===== Picking ticket footer strip ===== */
-  .pt-footer{
-    border-radius:12px;margin-top:14px;overflow:hidden;border:1px solid var(--line)
-  }
-  .pt-footer .bar{height:8px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
-  .pt-footer .body{padding:12px 12px 10px;background:#fbfbff}
-  .pt-footer .body strong{color:var(--brand)}
-  .pt-contact{display:flex;gap:18px;flex-wrap:wrap;color:#4a5066;font-size:13px;margin-top:6px}
-  .pt-contact a{color:var(--brand);text-decoration:none;font-weight:700}
+  /* ===== Picking Ticket footer strip ===== */
+  .ptFooter{border-radius:12px;margin-top:14px;overflow:hidden;border:1px solid var(--line)}
+  .ptFooter .bar{height:8px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+  .ptFooter .body{padding:12px;background:#fbfbff}
+  .ptFooter .body strong{color:var(--brand)}
+  .ptContact{display:flex;gap:18px;flex-wrap:wrap;color:#4a5066;font-size:13px;margin-top:6px}
+  .ptContact a{color:var(--brand);text-decoration:none;font-weight:700}
 
   /* Helpers */
   .hidden{display:none}
+  .sr-only{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
 
-  /* Print */
+  /* ===== Print: doc fills page ===== */
   @media print{
     body{background:#fff}
-    .hero,.actions,.panel.form,.only-screen{display:none !important}
+    .hero,.actions,.panel.form,.sr-only{display:none !important}
     .doc{border:none;border-radius:0;padding:0}
     thead{display:table-header-group}
     @page{size:A4;margin:14mm}
@@ -144,12 +118,10 @@
 </head>
 <body>
   <div class="wrap">
-    <!-- ===== HERO ===== -->
+    <!-- ===== Top header ===== -->
     <div class="hero">
-      <div class="brand">
-        <div class="logoBox">
-          <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified">
-        </div>
+      <div class="brandRow">
+        <div class="logo"><img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified Electronics"></div>
         <div class="titles">
           <h1>Commercial Invoice & Picking Ticket</h1>
           <div class="sub">Verified Electronics</div>
@@ -167,7 +139,7 @@
       </div>
     </div>
 
-    <!-- ===== ACTIONS ===== -->
+    <!-- ===== Actions row ===== -->
     <div class="actions">
       <!-- CI buttons -->
       <span id="ciBtns">
@@ -179,7 +151,6 @@
         </label>
         <button class="btn pill" onclick="ciLoadSample()">Load sample</button>
       </span>
-
       <!-- PT buttons -->
       <span id="ptBtns" class="hidden">
         <button class="btn pill" onclick="ptAddRow()">Add item</button>
@@ -199,81 +170,30 @@
         <section class="panel form">
           <h2>Invoice details</h2>
           <div class="row">
-            <div class="field k6">
-              <label>From (Exporter/Shipper)</label>
-              <textarea id="ci-from" placeholder="Verified Electronics Ltd&#10;Address&#10;City, Postcode, Country&#10;Tax ID/VAT / EORI"></textarea>
-            </div>
-            <div class="field k3">
-              <label>Waybill / AWB</label>
-              <input id="ci-awb" type="text" placeholder="—">
-            </div>
-            <div class="field k3">
-              <label>Shipment ID</label>
-              <input id="ci-shipmentId" type="text" placeholder="—">
-            </div>
+            <div class="field k6"><label>From (Exporter/Shipper)</label><textarea id="ci-from" placeholder="Verified Electronics Ltd&#10;Address&#10;City, Postcode, Country&#10;Tax ID/VAT / EORI"></textarea></div>
+            <div class="field k3"><label>Waybill / AWB</label><input id="ci-awb" type="text" placeholder="—"></div>
+            <div class="field k3"><label>Shipment ID</label><input id="ci-shipmentId" type="text" placeholder="—"></div>
 
-            <div class="field k6">
-              <label>Ship To</label>
-              <textarea id="ci-shipTo" placeholder="Company&#10;Address&#10;City, State/Province&#10;Postal Code, Country&#10;Tax ID/VAT"></textarea>
-            </div>
-            <div class="field k6">
-              <label>Sold To (Bill To)</label>
-              <textarea id="ci-soldTo" placeholder="Company&#10;Address&#10;City, State/Province&#10;Postal Code, Country&#10;Tax ID/VAT"></textarea>
-            </div>
+            <div class="field k6"><label>Ship To</label><textarea id="ci-shipTo" placeholder="Company&#10;Address&#10;City, State/Province&#10;Postal Code, Country&#10;Tax ID/VAT"></textarea></div>
+            <div class="field k6"><label>Sold To (Bill To)</label><textarea id="ci-soldTo" placeholder="Company&#10;Address&#10;City, State/Province&#10;Postal Code, Country&#10;Tax ID/VAT"></textarea></div>
 
-            <div class="field k3">
-              <label>Contact Name</label>
-              <input id="ci-contact" type="text">
-            </div>
-            <div class="field k3">
-              <label>Date</label>
-              <input id="ci-invDate" type="date">
-            </div>
-            <div class="field k3">
-              <label>Invoice # (Ref 1)</label>
-              <input id="ci-invNo" type="text" placeholder="VE-CI-0001">
-            </div>
-            <div class="field k3">
-              <label>PO # (Ref 2)</label>
-              <input id="ci-poNo" type="text" placeholder="PO-12345">
-            </div>
+            <div class="field k3"><label>Contact Name</label><input id="ci-contact" type="text"></div>
+            <div class="field k3"><label>Date</label><input id="ci-invDate" type="date"></div>
+            <div class="field k3"><label>Invoice # (Ref 1)</label><input id="ci-invNo" type="text" placeholder="VE-CI-0001"></div>
+            <div class="field k3"><label>PO # (Ref 2)</label><input id="ci-poNo" type="text" placeholder="PO-12345"></div>
 
-            <div class="field k3">
-              <label>Terms of Sale (Incoterm)</label>
-              <select id="ci-incoterm">
-                <option>EXW</option><option>FCA</option><option>CPT</option><option>CIP</option>
-                <option selected>DAP</option><option>DPU</option><option>DDP</option>
-              </select>
+            <div class="field k3"><label>Terms of Sale (Incoterm)</label>
+              <select id="ci-incoterm"><option>EXW</option><option>FCA</option><option>CPT</option><option>CIP</option><option selected>DAP</option><option>DPU</option><option>DDP</option></select>
             </div>
-            <div class="field k3">
-              <label>Incoterm Place</label>
-              <input id="ci-incotermPlace" type="text" placeholder="e.g., Austin, TX">
+            <div class="field k3"><label>Incoterm Place</label><input id="ci-incotermPlace" type="text" placeholder="e.g., Austin, TX"></div>
+            <div class="field k3"><label>Currency</label>
+              <select id="ci-currency" onchange="ciSync()"><option value="USD" selected>USD $</option><option value="GBP">GBP £</option><option value="EUR">EUR €</option></select>
             </div>
-            <div class="field k3">
-              <label>Currency</label>
-              <select id="ci-currency" onchange="ciSync()">
-                <option value="USD" selected>USD $</option>
-                <option value="GBP">GBP £</option>
-                <option value="EUR">EUR €</option>
-              </select>
-            </div>
-            <div class="field k3">
-              <label>Reason for Export</label>
-              <input id="ci-reason" type="text" placeholder="Sale of goods">
-            </div>
+            <div class="field k3"><label>Reason for Export</label><input id="ci-reason" type="text" placeholder="Sale of goods"></div>
 
-            <div class="field k3">
-              <label>Total Packages</label>
-              <input id="ci-packages" type="number" step="1" min="0">
-            </div>
-            <div class="field k3">
-              <label>Total Weight (kg)</label>
-              <input id="ci-weight" type="number" step="0.001" min="0">
-            </div>
-            <div class="field k6">
-              <label>Phone (optional)</label>
-              <input id="ci-phone" type="text">
-            </div>
+            <div class="field k3"><label>Total Packages</label><input id="ci-packages" type="number" step="1" min="0"></div>
+            <div class="field k3"><label>Total Weight (kg)</label><input id="ci-weight" type="number" step="0.001" min="0"></div>
+            <div class="field k6"><label>Phone (optional)</label><input id="ci-phone" type="text"></div>
           </div>
 
           <h2 style="margin-top:10px">Line items</h2>
@@ -294,10 +214,7 @@
           </table>
 
           <div class="row" style="margin-top:8px">
-            <div class="field k6">
-              <label>Additional Comments</label>
-              <textarea id="ci-comments" placeholder="Licenses, special notes, packing declaration, etc."></textarea>
-            </div>
+            <div class="field k6"><label>Additional Comments</label><textarea id="ci-comments" placeholder="Licenses, special notes, packing declaration, etc."></textarea></div>
             <div class="field k6">
               <div class="row">
                 <div class="field k6"><label>Freight</label><input id="ci-freight" type="number" step="0.01" value="0" oninput="ciSync()"></div>
@@ -318,30 +235,29 @@
 
         <!-- Preview -->
         <section class="panel">
-          <h2>Preview</h2>
+          <h2 class="sr-only">Commercial Invoice Preview</h2>
           <div id="ci-print" class="doc">
-            <div class="hdr">
-              <div class="hdr-left">
-                <div class="badge"><img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="VE"></div>
+            <div class="hdrLine">
+              <div class="hdrLeft">
+                <div class="logoBig"><img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified"></div>
                 <div>
-                  <div class="hdr-title">Commercial Invoice</div>
-                  <div class="hdr-meta">Verified Electronics · Official customs invoice</div>
+                  <div class="docTitle">Commercial Invoice</div>
+                  <div class="docMeta">Verified Electronics · Official customs invoice</div>
                 </div>
               </div>
-              <div class="hdr-meta" id="ci-metaBox"></div>
+              <div class="docMeta" id="ci-metaBox"></div>
             </div>
 
             <div class="col-2">
               <div class="box"><div class="cap">From (Exporter/Shipper)</div><div id="ci-v-from" style="white-space:pre-wrap"></div></div>
               <div class="box"><div class="cap">Waybill / Shipment</div><div id="ci-v-shipmeta"></div></div>
             </div>
-
             <div class="col-2" style="margin-top:10px">
               <div class="box"><div class="cap">Ship To</div><div id="ci-v-shipto" style="white-space:pre-wrap"></div></div>
               <div class="box"><div class="cap">Sold To (Bill To)</div><div id="ci-v-soldto" style="white-space:pre-wrap"></div></div>
             </div>
 
-            <table style="margin-top:10px">
+            <table>
               <thead><tr>
                 <th>Units</th><th>U/M</th><th>Description of Goods / Part Number</th>
                 <th>Harmonized Code</th><th>C/O</th><th class="num">Unit Value</th><th class="num">Total Value</th>
@@ -413,19 +329,19 @@
           <div class="field k6"><label>Signature / Name</label><input type="text" id="pt-signer" placeholder="Warehouse operator"></div>
         </section>
 
-        <!-- Preview -->
+        <!-- Picking Ticket Document (no 'Preview' title) -->
         <section class="panel">
-          <h2>Preview</h2>
+          <h2 class="sr-only">Picking Ticket Document</h2>
           <div id="pt-print" class="doc">
-            <div class="hdr">
-              <div class="hdr-left">
-                <div class="badge"><img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="VE"></div>
+            <div class="hdrLine">
+              <div class="hdrLeft">
+                <div class="logoBig"><img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified"></div>
                 <div>
-                  <div class="hdr-title">Picking Ticket</div>
-                  <div class="hdr-meta">Verified Electronics</div>
+                  <div class="docTitle">Picking Ticket</div>
+                  <div class="docMeta">Verified Electronics</div>
                 </div>
               </div>
-              <div class="hdr-meta" id="pt-metaBox"></div>
+              <div class="docMeta" id="pt-metaBox"></div>
             </div>
 
             <div class="col-2">
@@ -434,7 +350,7 @@
             </div>
             <div class="box" style="margin-top:10px"><div class="cap">Sold To (Bill To)</div><div id="pt-v-soldTo" style="white-space:pre-wrap"></div></div>
 
-            <table style="margin-top:10px">
+            <table>
               <thead><tr><th>#</th><th>Item</th><th class="num">Quantity</th><th>Date Code</th></tr></thead>
               <tbody id="pt-pbody"></tbody>
             </table>
@@ -446,13 +362,13 @@
               <div class="box"><span class="muted">Shipment Type:</span> <span style="font-weight:900;color:var(--brand)" id="pt-v-shipType">Full Shipment</span></div>
             </div>
 
-            <!-- Footer strip -->
-            <div class="pt-footer">
+            <!-- Thank-you footer strip -->
+            <div class="ptFooter">
               <div class="bar"></div>
               <div class="body">
                 <strong>Thank you for your order and continued business.</strong><br>
                 We appreciate your trust in Verified Electronics and look forward to serving you again.
-                <div class="pt-contact">
+                <div class="ptContact">
                   <div>📞 +1 203 299 2980</div>
                   <div>✉️ <a href="mailto:sales@verifiedelectronics.com">sales@verifiedelectronics.com</a></div>
                   <div>🌐 <a href="https://verifiedelectronics.com" target="_blank">verifiedelectronics.com</a></div>
@@ -466,7 +382,7 @@
   </div>
 
 <script>
-  /* ===== Utilities ===== */
+  /* ===== Helpers ===== */
   const $ = s => document.querySelector(s);
   const $$ = s => Array.from(document.querySelectorAll(s));
   const CUR = { USD:'$', GBP:'£', EUR:'€' };
@@ -481,13 +397,13 @@
       contact:$('#ci-contact').value, date:$('#ci-invDate').value, po:$('#ci-poNo').value
     };
   }
-  function writeSharedToPT(shared){
-    if (!$('#pt-from').value)   $('#pt-from').value   = shared.from||'';
-    if (!$('#pt-shipTo').value) $('#pt-shipTo').value = shared.shipTo||'';
-    if (!$('#pt-soldTo').value) $('#pt-soldTo').value = shared.soldTo||'';
-    if (!$('#pt-contact').value)$('#pt-contact').value= shared.contact||'';
-    if (!$('#pt-date').value)   $('#pt-date').value   = shared.date||'';
-    if (!$('#pt-poNo').value)   $('#pt-poNo').value   = shared.po||'';
+  function writeSharedToPT(s){
+    if (!$('#pt-from').value)   $('#pt-from').value   = s.from||'';
+    if (!$('#pt-shipTo').value) $('#pt-shipTo').value = s.shipTo||'';
+    if (!$('#pt-soldTo').value) $('#pt-soldTo').value = s.soldTo||'';
+    if (!$('#pt-contact').value)$('#pt-contact').value= s.contact||'';
+    if (!$('#pt-date').value)   $('#pt-date').value   = s.date||'';
+    if (!$('#pt-poNo').value)   $('#pt-poNo').value   = s.po||'';
     ptSync();
   }
   function writeSharedFromPT(){
@@ -502,17 +418,13 @@
   function switchMode(){
     const val = $('#modeSel').value;
     if (val==='ci'){
-      $('#mode-ci').classList.remove('hidden');
-      $('#ciBtns').classList.remove('hidden');
-      $('#mode-pt').classList.add('hidden');
-      $('#ptBtns').classList.add('hidden');
-      writeSharedFromPT(); // carry back if CI empty
+      $('#mode-ci').classList.remove('hidden'); $('#ciBtns').classList.remove('hidden');
+      $('#mode-pt').classList.add('hidden');    $('#ptBtns').classList.add('hidden');
+      writeSharedFromPT();
     }else{
       const shared = readSharedFromCI();
-      $('#mode-ci').classList.add('hidden');
-      $('#ciBtns').classList.add('hidden');
-      $('#mode-pt').classList.remove('hidden');
-      $('#ptBtns').classList.remove('hidden');
+      $('#mode-ci').classList.add('hidden');    $('#ciBtns').classList.add('hidden');
+      $('#mode-pt').classList.remove('hidden'); $('#ptBtns').classList.remove('hidden');
       writeSharedToPT(shared);
     }
   }
@@ -553,7 +465,7 @@
         unitValue: parseFloat(unitValue.value)||0
       };
       const total = it.units * it.unitValue;
-      tr.querySelector('.vtotal').textContent = fmt(total);
+      tr.querySelector('.vtotal').textContent = Number(total||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
       return {...it,total};
     });
   }
@@ -595,16 +507,16 @@
     list.forEach(i=>{
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${fmt(i.units)}</td>
+        <td>${Number(i.units||0).toLocaleString()}</td>
         <td>${esc(i.um)}</td>
         <td>${esc(i.desc)}</td>
         <td>${esc(i.hs)}</td>
         <td>${esc(i.coo)}</td>
-        <td class="num">${sym()} ${fmt(i.unitValue)}</td>
-        <td class="num">${sym()} ${fmt(i.total)}</td>`;
+        <td class="num">${sym()} ${Number(i.unitValue||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td class="num">${sym()} ${Number(i.total||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>`;
       pb.appendChild(tr);
     });
-    $('#ci-lineTotalCell').textContent = `Invoice Line total: ${sym()} ${fmt(goods)}`;
+    $('#ci-lineTotalCell').textContent = `Invoice Line total: ${sym()} ${Number(goods||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
 
     $('#ci-totalsBox').innerHTML = `
       <div class="trow"><span class="label">Invoice Sub-Total</span><span class="val">${sym()} ${fmt(subtotal)}</span></div>
@@ -767,13 +679,12 @@
     const d = new Date().toISOString().slice(0,10);
     $('#ci-invDate').value = d; $('#ci-issueDate').value = d;
 
-    // CI sync/carryover on any change
+    // CI inputs -> render
     $$('.form input, .form textarea, .form select').forEach(el=>{
-      el.addEventListener('input', ()=>{ ciSync(); });
-      el.addEventListener('change', ()=>{ ciSync(); });
+      el.addEventListener('input', ciSync);
+      el.addEventListener('change', ciSync);
     });
-
-    // PT inputs -> live preview
+    // PT inputs -> render
     ['#pt-orderNo','#pt-poNo','#pt-date','#pt-from','#pt-shipTo','#pt-soldTo','#pt-contact','#pt-shipType','#pt-notes','#pt-signer']
       .forEach(sel=>$(sel).addEventListener('input', ptSync));
 
@@ -783,5 +694,6 @@
 </script>
 </body>
 </html>
+
 
 
