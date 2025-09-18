@@ -6,85 +6,128 @@
 <title>Verified Electronics — Commercial Invoice & Picking Ticket</title>
 <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
 <style>
-  /* ===== Verified theme ===== */
+  /* ===== Verified design system ===== */
   :root{
-    --brand:#6f57e9; --brand2:#3b2eca;
-    --ink:#1a1d22; --muted:#666e7a; --line:#dcdfe5;
-    --bg:#f6f7fb; --paper:#ffffff;
+    --brand:#6f57e9; --brand2:#3b2eca; --ink:#131826; --muted:#6c7385;
+    --line:#e3e6ef; --bg:#f7f8fc; --paper:#ffffff;
+    --shadow:0 10px 28px rgba(24,20,68,.10);
   }
   *{box-sizing:border-box}
   html,body{height:100%}
-  body{margin:0;background:var(--bg);color:var(--ink);
-       font:14px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif}
-  .wrap{max-width:1100px;margin:28px auto;padding:0 16px}
+  body{margin:0;background:radial-gradient(900px 420px at -10% -10%, rgba(111,87,233,.09), transparent 40%),
+                      radial-gradient(700px 360px at 110% 0%, rgba(59,46,202,.08), transparent 40%), var(--bg);
+       color:var(--ink); font:14px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif}
 
-  /* Top */
-  .topbar{display:flex;align-items:center;gap:12px;background:var(--paper);
-    border:1px solid var(--line);border-radius:14px;padding:14px 16px;
-    box-shadow:0 2px 14px rgba(0,0,0,.04)}
-  .badge{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;
-         background:#efeafd;box-shadow:inset 0 0 0 1px #e3ddfb}
-  .badge img{max-width:28px;max-height:28px}
-  .brandgrad{height:6px;border-radius:8px;background:linear-gradient(90deg,var(--brand),var(--brand2));margin-bottom:10px}
-  .mode{margin-left:auto;display:flex;align-items:center;gap:8px}
-  .mode select{padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+  .wrap{max-width:1180px;margin:26px auto;padding:0 16px}
 
+  /* ===== Hero header ===== */
+  .hero{
+    display:grid;grid-template-columns:1fr auto;gap:16px;
+    background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:16px 18px 18px;
+    box-shadow:var(--shadow);position:relative;overflow:hidden
+  }
+  .hero::before{
+    content:"";position:absolute;left:16px;right:16px;top:12px;height:8px;border-radius:999px;
+    background:linear-gradient(90deg,var(--brand),var(--brand2));
+    box-shadow:0 0 0 1px rgba(111,87,233,.25) inset;
+  }
+  .brand{
+    display:flex;gap:14px;align-items:center;margin-top:10px
+  }
+  .logoBox{
+    width:64px;height:64px;border-radius:16px;background:#fff;display:grid;place-items:center;
+    border:1px solid var(--line);box-shadow:0 4px 12px rgba(17,16,60,.06);overflow:hidden
+  }
+  .logoBox img{max-width:56px;max-height:56px}
+  .titles h1{margin:0;font-weight:900;letter-spacing:.2px;font-size:22px}
+  .titles .sub{font-size:12px;color:var(--muted)}
+
+  .heroRight{
+    display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:6px
+  }
+  .selector{
+    display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);
+    border-radius:14px;padding:8px 12px;box-shadow:0 2px 8px rgba(20,18,66,.06)
+  }
+  .selector label{font-weight:700;color:#2a2e3a}
+  .selector select{
+    padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;font-weight:700
+  }
+  .cta{
+    border:0;border-radius:12px;padding:10px 14px;font-weight:800;color:#fff;
+    background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 18px rgba(79,63,214,.35);
+    cursor:pointer
+  }
+
+  /* ===== Sections / panels ===== */
   .actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
-  button, .btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;font-weight:700;cursor:pointer}
-  .brandbtn{background:linear-gradient(135deg,var(--brand),var(--brand2));border-color:transparent;color:#fff}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px 12px;font-weight:700;cursor:pointer}
+  .btn.pill{border-radius:999px}
+  .btn.brand{background:linear-gradient(135deg,var(--brand),var(--brand2));border-color:transparent;color:#fff}
   .ghost{background:#fff}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media (max-width:980px){ .grid{grid-template-columns:1fr} }
 
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  @media (max-width:960px){ .grid{grid-template-columns:1fr} }
-
-  .panel{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
-  .panel h2{margin:0 0 10px;font-size:15px;font-weight:800;letter-spacing:.02em}
+  .panel{
+    background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:14px;
+    box-shadow:0 2px 8px rgba(20,18,66,.05)
+  }
+  .panel h2{margin:0 0 10px;font-size:15px;font-weight:900;letter-spacing:.02em}
 
   .row{display:grid;grid-template-columns:repeat(12,1fr);gap:10px}
   .field{display:flex;flex-direction:column;gap:6px}
   .field label{font-size:12px;color:var(--muted)}
   input[type="text"],input[type="number"],input[type="date"],select,textarea{
-    border:1px solid var(--line);border-radius:8px;background:#fff;padding:8px;width:100%
+    border:1px solid var(--line);border-radius:10px;background:#fff;padding:9px;width:100%
   }
   textarea{min-height:72px;resize:vertical}
+  .k2{grid-column:span 2}.k3{grid-column:span 3}.k4{grid-column:span 4}.k5{grid-column:span 5}
+  .k6{grid-column:span 6}.k7{grid-column:span 7}.k8{grid-column:span 8}.k9{grid-column:span 9}.k12{grid-column:span 12}
 
-  .k2{grid-column:span 2}.k3{grid-column:span 3}.k4{grid-column:span 4}
-  .k5{grid-column:span 5}.k6{grid-column:span 6}.k7{grid-column:span 7}
-  .k8{grid-column:span 8}.k9{grid-column:span 9}.k12{grid-column:span 12}
-
-  /* Common doc preview */
-  .doc{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px}
-  .hdr{display:grid;grid-template-columns:1fr auto;gap:12px;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:10px}
-  .hdr-left{display:flex;gap:10px;align-items:center}
-  .hdr-title{font-size:22px;font-weight:900;letter-spacing:.2px}
+  /* ===== Document preview ===== */
+  .doc{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}
+  .hdr{display:grid;grid-template-columns:1fr auto;gap:12px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px}
+  .hdr-left{display:flex;gap:12px;align-items:center}
+  .badge{
+    width:72px;height:72px;border-radius:16px;display:grid;place-items:center;overflow:hidden;
+    background:linear-gradient(135deg,var(--brand),var(--brand2));
+    box-shadow:0 6px 18px rgba(92,77,224,.35)
+  }
+  .badge img{max-width:60px;max-height:60px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.15))}
+  .hdr-title{font-size:24px;font-weight:900;letter-spacing:.2px}
   .hdr-meta{font-size:12px;color:#2a2f36}
+  .cap{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .box{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}
   .col-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .box{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}
-  .box .cap{font-size:12px;color:var(--muted);margin-bottom:6px}
 
-  table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:8px}
-  thead th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#3a4250;background:#fafaff;border-bottom:1px solid var(--line);padding:8px;text-align:left}
+  table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:8px}
+  thead th{
+    background:linear-gradient(0deg,#f5f3ff,#fbfbff); color:#2f3450; font-size:12px; text-transform:uppercase; letter-spacing:.06em;
+    border-bottom:1px solid var(--line); padding:8px; text-align:left
+  }
   tbody td{border-bottom:1px solid var(--line);padding:8px;vertical-align:top}
   tbody tr:last-child td{border-bottom:none}
   .num{text-align:right}
 
-  .totalsGrid{display:grid;grid-template-columns:1fr minmax(280px,40%);gap:10px;margin-top:10px}
+  .totalsGrid{display:grid;grid-template-columns:1fr minmax(300px,42%);gap:12px;margin-top:10px}
   .right{display:grid;gap:6px}
   .trow{display:flex;justify-content:space-between;gap:8px}
   .trow .label{color:#3a4250}
-  .trow .val{font-weight:800}
+  .trow .val{font-weight:900}
 
   .signature{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center;margin-top:10px}
-  .sigimg{max-height:70px;border:1px dashed var(--line);border-radius:8px;padding:4px}
-  .declaration{font-size:12px;color:#3b3f47;line-height:1.45}
-  .muted{color:#6d7486}
+  .sigimg{max-height:80px;border:1px dashed var(--line);border-radius:10px;padding:4px}
+  .muted{color:#747c93}
 
-  /* Picking ticket extras */
-  .pt-chip{font-size:11px;color:#5a6070;border:1px solid var(--line);background:#fafbff;border-radius:999px;padding:2px 8px}
-  .pt-thanks{background:#fafaff;border:1px dashed #d4d4eb;border-radius:12px;padding:12px;margin-top:18px;font-size:14px}
-  .pt-thanks strong{color:var(--brand)}
-  .pt-contact{display:flex;flex-wrap:wrap;gap:18px;margin-top:8px;font-size:13px;color:#4a4f63}
-  .pt-contact a{color:var(--brand);text-decoration:none;font-weight:600}
+  /* ===== Picking ticket footer strip ===== */
+  .pt-footer{
+    border-radius:12px;margin-top:14px;overflow:hidden;border:1px solid var(--line)
+  }
+  .pt-footer .bar{height:8px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+  .pt-footer .body{padding:12px 12px 10px;background:#fbfbff}
+  .pt-footer .body strong{color:var(--brand)}
+  .pt-contact{display:flex;gap:18px;flex-wrap:wrap;color:#4a5066;font-size:13px;margin-top:6px}
+  .pt-contact a{color:var(--brand);text-decoration:none;font-weight:700}
 
   /* Helpers */
   .hidden{display:none}
@@ -92,7 +135,7 @@
   /* Print */
   @media print{
     body{background:#fff}
-    .topbar,.actions,.panel.form,.only-screen{display:none !important}
+    .hero,.actions,.panel.form,.only-screen{display:none !important}
     .doc{border:none;border-radius:0;padding:0}
     thead{display:table-header-group}
     @page{size:A4;margin:14mm}
@@ -101,49 +144,51 @@
 </head>
 <body>
   <div class="wrap">
-    <!-- Header -->
-    <div class="topbar">
-      <div class="badge">
-        <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="VE">
+    <!-- ===== HERO ===== -->
+    <div class="hero">
+      <div class="brand">
+        <div class="logoBox">
+          <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified">
+        </div>
+        <div class="titles">
+          <h1>Commercial Invoice & Picking Ticket</h1>
+          <div class="sub">Verified Electronics</div>
+        </div>
       </div>
-      <div>
-        <div class="brandgrad"></div>
-        <div style="font-size:20px;font-weight:800">Commercial Invoice & Picking Ticket</div>
-        <div class="muted" style="font-size:12px">Verified Electronics</div>
-      </div>
-      <div class="mode">
-        <label for="modeSel" class="only-screen"><strong>Document:</strong></label>
-        <select id="modeSel" onchange="switchMode()">
-          <option value="ci" selected>Commercial Invoice</option>
-          <option value="pt">Picking Ticket</option>
-        </select>
+      <div class="heroRight">
+        <div class="selector">
+          <label for="modeSel">Document</label>
+          <select id="modeSel" onchange="switchMode()">
+            <option value="ci" selected>Commercial Invoice</option>
+            <option value="pt">Picking Ticket</option>
+          </select>
+        </div>
+        <button class="cta" onclick="window.print()">Download / Print PDF</button>
       </div>
     </div>
 
-    <!-- Shared actions -->
+    <!-- ===== ACTIONS ===== -->
     <div class="actions">
-      <button class="brandbtn" onclick="window.print()">Download / Print PDF</button>
-
-      <!-- CI-only -->
+      <!-- CI buttons -->
       <span id="ciBtns">
-        <button class="ghost" onclick="ciAddRow()">Add line</button>
-        <button class="ghost" onclick="ciClearRows()">Clear lines</button>
-        <button class="ghost" onclick="ciSaveJSON()">Save JSON</button>
-        <label class="ghost" style="cursor:pointer">Load JSON
+        <button class="btn pill" onclick="ciAddRow()">Add line</button>
+        <button class="btn pill" onclick="ciClearRows()">Clear lines</button>
+        <button class="btn pill" onclick="ciSaveJSON()">Save JSON</button>
+        <label class="btn pill" style="cursor:pointer">Load JSON
           <input type="file" accept=".json" style="display:none" onchange="ciLoadJSON(event)">
         </label>
-        <button class="ghost" onclick="ciLoadSample()">Load sample</button>
+        <button class="btn pill" onclick="ciLoadSample()">Load sample</button>
       </span>
 
-      <!-- PT-only -->
+      <!-- PT buttons -->
       <span id="ptBtns" class="hidden">
-        <button class="ghost" onclick="ptAddRow()">Add item</button>
-        <button class="ghost" onclick="ptClearRows()">Clear items</button>
-        <button class="ghost" onclick="ptSaveJSON()">Save JSON</button>
-        <label class="ghost" style="cursor:pointer">Load JSON
+        <button class="btn pill" onclick="ptAddRow()">Add item</button>
+        <button class="btn pill" onclick="ptClearRows()">Clear items</button>
+        <button class="btn pill" onclick="ptSaveJSON()">Save JSON</button>
+        <label class="btn pill" style="cursor:pointer">Load JSON
           <input type="file" accept=".json" style="display:none" onchange="ptLoadJSON(event)">
         </label>
-        <button class="ghost" onclick="ptLoadSample()">Load sample</button>
+        <button class="btn pill" onclick="ptLoadSample()">Load sample</button>
       </span>
     </div>
 
@@ -255,40 +300,19 @@
             </div>
             <div class="field k6">
               <div class="row">
-                <div class="field k6">
-                  <label>Freight</label>
-                  <input id="ci-freight" type="number" step="0.01" value="0" oninput="ciSync()">
-                </div>
-                <div class="field k6">
-                  <label>Insurance</label>
-                  <input id="ci-insurance" type="number" step="0.01" value="0" oninput="ciSync()">
-                </div>
-                <div class="field k6">
-                  <label>Other</label>
-                  <input id="ci-other" type="number" step="0.01" value="0" oninput="ciSync()">
-                </div>
-                <div class="field k6">
-                  <label>Discount/Rebate</label>
-                  <input id="ci-discount" type="number" step="0.01" value="0" oninput="ciSync()">
-                </div>
+                <div class="field k6"><label>Freight</label><input id="ci-freight" type="number" step="0.01" value="0" oninput="ciSync()"></div>
+                <div class="field k6"><label>Insurance</label><input id="ci-insurance" type="number" step="0.01" value="0" oninput="ciSync()"></div>
+                <div class="field k6"><label>Other</label><input id="ci-other" type="number" step="0.01" value="0" oninput="ciSync()"></div>
+                <div class="field k6"><label>Discount/Rebate</label><input id="ci-discount" type="number" step="0.01" value="0" oninput="ciSync()"></div>
               </div>
             </div>
           </div>
 
           <h2 style="margin-top:10px">Signature</h2>
           <div class="row">
-            <div class="field k6">
-              <label>Signer (name & title)</label>
-              <input id="ci-signedBy" type="text" placeholder="Name, Title">
-            </div>
-            <div class="field k3">
-              <label>Date of issue</label>
-              <input id="ci-issueDate" type="date">
-            </div>
-            <div class="field k3">
-              <label>Upload Signature (PNG/JPG)</label>
-              <input id="ci-sigFile" type="file" accept="image/*" onchange="ciLoadSignature(event)">
-            </div>
+            <div class="field k6"><label>Signer (name & title)</label><input id="ci-signedBy" type="text" placeholder="Name, Title"></div>
+            <div class="field k3"><label>Date of issue</label><input id="ci-issueDate" type="date"></div>
+            <div class="field k3"><label>Upload Signature (PNG/JPG)</label><input id="ci-sigFile" type="file" accept="image/*" onchange="ciLoadSignature(event)"></div>
           </div>
         </section>
 
@@ -298,9 +322,7 @@
           <div id="ci-print" class="doc">
             <div class="hdr">
               <div class="hdr-left">
-                <div class="badge">
-                  <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="VE">
-                </div>
+                <div class="badge"><img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="VE"></div>
                 <div>
                   <div class="hdr-title">Commercial Invoice</div>
                   <div class="hdr-meta">Verified Electronics · Official customs invoice</div>
@@ -310,56 +332,36 @@
             </div>
 
             <div class="col-2">
-              <div class="box">
-                <div class="cap">From (Exporter/Shipper)</div>
-                <div id="ci-v-from" style="white-space:pre-wrap"></div>
-              </div>
-              <div class="box">
-                <div class="cap">Waybill / Shipment</div>
-                <div id="ci-v-shipmeta"></div>
-              </div>
+              <div class="box"><div class="cap">From (Exporter/Shipper)</div><div id="ci-v-from" style="white-space:pre-wrap"></div></div>
+              <div class="box"><div class="cap">Waybill / Shipment</div><div id="ci-v-shipmeta"></div></div>
             </div>
 
             <div class="col-2" style="margin-top:10px">
-              <div class="box">
-                <div class="cap">Ship To</div>
-                <div id="ci-v-shipto" style="white-space:pre-wrap"></div>
-              </div>
-              <div class="box">
-                <div class="cap">Sold To (Bill To)</div>
-                <div id="ci-v-soldto" style="white-space:pre-wrap"></div>
-              </div>
+              <div class="box"><div class="cap">Ship To</div><div id="ci-v-shipto" style="white-space:pre-wrap"></div></div>
+              <div class="box"><div class="cap">Sold To (Bill To)</div><div id="ci-v-soldto" style="white-space:pre-wrap"></div></div>
             </div>
 
             <table style="margin-top:10px">
-              <thead>
-                <tr>
-                  <th>Units</th><th>U/M</th><th>Description of Goods / Part Number</th>
-                  <th>Harmonized Code</th><th>C/O</th>
-                  <th class="num">Unit Value</th><th class="num">Total Value</th>
-                </tr>
-              </thead>
+              <thead><tr>
+                <th>Units</th><th>U/M</th><th>Description of Goods / Part Number</th>
+                <th>Harmonized Code</th><th>C/O</th><th class="num">Unit Value</th><th class="num">Total Value</th>
+              </tr></thead>
               <tbody id="ci-pbody"></tbody>
-              <tfoot><tr><td colspan="7" id="ci-lineTotalCell" class="num" style="font-weight:800"></td></tr></tfoot>
+              <tfoot><tr><td colspan="7" id="ci-lineTotalCell" class="num" style="font-weight:900"></td></tr></tfoot>
             </table>
 
             <div class="totalsGrid">
-              <div class="box">
-                <div class="cap">Additional Comments</div>
-                <div id="ci-v-comments" style="white-space:pre-wrap"></div>
-              </div>
+              <div class="box"><div class="cap">Additional Comments</div><div id="ci-v-comments" style="white-space:pre-wrap"></div></div>
               <div class="box right" id="ci-totalsBox"></div>
             </div>
 
             <div class="box" style="margin-top:10px">
               <div class="cap">Declaration Statement</div>
-              <div class="declaration">
-                I declare the information contained in this invoice to be true and correct and that the goods are
-                of the origin indicated. The goods are sold on the stated Incoterms. This document is issued for
-                customs purposes. These items may be subject to U.S., E.U., and other export controls and are
-                authorized for export only to the country of ultimate destination for use by the identified
-                consignee/end-user. They may not be resold, transferred, or otherwise disposed of to any other
-                country or person without prior authorization where required.
+              <div class="muted" style="line-height:1.45">
+                I declare the information contained in this invoice to be true and correct and that the goods are of the origin indicated.
+                This document is issued for customs purposes. These items may be subject to U.S., E.U., and other export controls and are
+                authorized for export only to the country of ultimate destination for use by the identified consignee/end-user. They may
+                not be resold, transferred, or otherwise disposed of to any other country or person without prior authorization where required.
               </div>
             </div>
 
@@ -385,59 +387,30 @@
         <section class="panel form">
           <h2>Picking Ticket</h2>
           <div class="row">
-            <div class="field k4">
-              <label>Order Number</label>
-              <input type="text" id="pt-orderNo" placeholder="VE-PT-0001">
-            </div>
-            <div class="field k4">
-              <label>Customer PO Number</label>
-              <input type="text" id="pt-poNo" placeholder="Customer PO">
-            </div>
-            <div class="field k4">
-              <label>Date</label>
-              <input type="date" id="pt-date">
-            </div>
-            <div class="field k6">
-              <label>From (carried from CI)</label>
-              <textarea id="pt-from" placeholder="Exporter/Shipper"></textarea>
-            </div>
-            <div class="field k6">
-              <label>Ship To (carried from CI)</label>
-              <textarea id="pt-shipTo" placeholder="Ship To address"></textarea>
-            </div>
-            <div class="field k6">
-              <label>Sold To (carried from CI)</label>
-              <textarea id="pt-soldTo" placeholder="Bill To"></textarea>
-            </div>
-            <div class="field k6">
-              <label>Contact Name (carried from CI)</label>
-              <input id="pt-contact" type="text" placeholder="Buyer / Warehouse contact">
-            </div>
-            <div class="field k6">
-              <label>Shipment Type</label>
-              <select id="pt-shipType"><option>Full Shipment</option><option>Partial Shipment</option></select>
-            </div>
+            <div class="field k4"><label>Order Number</label><input type="text" id="pt-orderNo" placeholder="VE-PT-0001"></div>
+            <div class="field k4"><label>Customer PO Number</label><input type="text" id="pt-poNo" placeholder="Customer PO"></div>
+            <div class="field k4"><label>Date</label><input type="date" id="pt-date"></div>
+
+            <div class="field k6"><label>From (carried from CI)</label><textarea id="pt-from" placeholder="Exporter/Shipper"></textarea></div>
+            <div class="field k6"><label>Ship To (carried from CI)</label><textarea id="pt-shipTo" placeholder="Ship To address"></textarea></div>
+            <div class="field k6"><label>Sold To (carried from CI)</label><textarea id="pt-soldTo" placeholder="Bill To"></textarea></div>
+            <div class="field k6"><label>Contact Name (carried from CI)</label><input id="pt-contact" type="text" placeholder="Buyer / Warehouse contact"></div>
+
+            <div class="field k6"><label>Shipment Type</label><select id="pt-shipType"><option>Full Shipment</option><option>Partial Shipment</option></select></div>
           </div>
 
           <h2 style="margin-top:10px">Items</h2>
           <table id="pt-table">
-            <thead><tr><th>Item</th><th style="width:110px">Quantity</th><th style="width:160px">Date Code</th><th style="width:90px">Actions</th></tr></thead>
+            <thead><tr><th style="width:44%">Item</th><th class="num" style="width:14%">Quantity</th><th style="width:22%">Date Code</th><th style="width:100px">Actions</th></tr></thead>
             <tbody></tbody>
           </table>
           <div class="actions">
-            <button onclick="ptAddRow()">Add item</button>
-            <button onclick="ptClearRows()">Clear items</button>
+            <button class="btn pill" onclick="ptAddRow()">Add item</button>
+            <button class="btn pill" onclick="ptClearRows()">Clear items</button>
           </div>
 
-          <div class="field">
-            <label>Special Instructions</label>
-            <textarea id="pt-notes" placeholder="e.g., Pack in anti-static bags, seal with tamper proof tape"></textarea>
-          </div>
-
-          <div class="field k6">
-            <label>Signature / Name</label>
-            <input type="text" id="pt-signer" placeholder="Warehouse operator">
-          </div>
+          <div class="field"><label>Special Instructions</label><textarea id="pt-notes" placeholder="e.g., Pick with ESD precautions, Verified purple outer labels"></textarea></div>
+          <div class="field k6"><label>Signature / Name</label><input type="text" id="pt-signer" placeholder="Warehouse operator"></div>
         </section>
 
         <!-- Preview -->
@@ -446,9 +419,7 @@
           <div id="pt-print" class="doc">
             <div class="hdr">
               <div class="hdr-left">
-                <div class="badge" style="background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:none">
-                  <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="VE">
-                </div>
+                <div class="badge"><img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="VE"></div>
                 <div>
                   <div class="hdr-title">Picking Ticket</div>
                   <div class="hdr-meta">Verified Electronics</div>
@@ -458,48 +429,34 @@
             </div>
 
             <div class="col-2">
-              <div class="box">
-                <div class="cap">From</div>
-                <div id="pt-v-from" style="white-space:pre-wrap"></div>
-              </div>
-              <div class="box">
-                <div class="cap">Ship To</div>
-                <div id="pt-v-shipTo" style="white-space:pre-wrap"></div>
-              </div>
+              <div class="box"><div class="cap">From</div><div id="pt-v-from" style="white-space:pre-wrap"></div></div>
+              <div class="box"><div class="cap">Ship To</div><div id="pt-v-shipTo" style="white-space:pre-wrap"></div></div>
             </div>
-
-            <div class="box" style="margin-top:10px">
-              <div class="cap">Sold To (Bill To)</div>
-              <div id="pt-v-soldTo" style="white-space:pre-wrap"></div>
-            </div>
+            <div class="box" style="margin-top:10px"><div class="cap">Sold To (Bill To)</div><div id="pt-v-soldTo" style="white-space:pre-wrap"></div></div>
 
             <table style="margin-top:10px">
               <thead><tr><th>#</th><th>Item</th><th class="num">Quantity</th><th>Date Code</th></tr></thead>
               <tbody id="pt-pbody"></tbody>
             </table>
 
-            <div class="box" style="margin-top:10px">
-              <div class="cap">Special Instructions</div>
-              <div id="pt-v-notes" style="white-space:pre-wrap"></div>
-            </div>
+            <div class="box" style="margin-top:10px"><div class="cap">Special Instructions</div><div id="pt-v-notes" style="white-space:pre-wrap"></div></div>
 
             <div class="signature">
-              <div class="box">
-                <div class="cap">Signature / Name</div>
-                <div id="pt-v-signer">—</div>
-              </div>
-              <div class="box">
-                <span class="pt-chip" id="pt-v-shipType">Full Shipment</span>
-              </div>
+              <div class="box"><div class="cap">Signature / Name</div><div id="pt-v-signer">—</div></div>
+              <div class="box"><span class="muted">Shipment Type:</span> <span style="font-weight:900;color:var(--brand)" id="pt-v-shipType">Full Shipment</span></div>
             </div>
 
-            <div class="pt-thanks">
-              <strong>Thank you for your order and continued business.</strong><br>
-              We appreciate your trust in Verified Electronics and look forward to serving you again.
-              <div class="pt-contact">
-                <div>📞 +1 203 299 2980</div>
-                <div>✉️ <a href="mailto:sales@verifiedelectronics.com">sales@verifiedelectronics.com</a></div>
-                <div>🌐 <a href="https://verifiedelectronics.com" target="_blank">verifiedelectronics.com</a></div>
+            <!-- Footer strip -->
+            <div class="pt-footer">
+              <div class="bar"></div>
+              <div class="body">
+                <strong>Thank you for your order and continued business.</strong><br>
+                We appreciate your trust in Verified Electronics and look forward to serving you again.
+                <div class="pt-contact">
+                  <div>📞 +1 203 299 2980</div>
+                  <div>✉️ <a href="mailto:sales@verifiedelectronics.com">sales@verifiedelectronics.com</a></div>
+                  <div>🌐 <a href="https://verifiedelectronics.com" target="_blank">verifiedelectronics.com</a></div>
+                </div>
               </div>
             </div>
           </div>
@@ -517,30 +474,23 @@
   const fmt = n => Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
   const esc = s => (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-  /* ===== Mode switch (with carryover) ===== */
-  const SHARED = {
-    from:'', shipTo:'', soldTo:'', contact:'', date:'', po:''
-  };
-
+  /* ===== Mode switch with carryover ===== */
   function readSharedFromCI(){
-    SHARED.from  = $('#ci-from').value;
-    SHARED.shipTo= $('#ci-shipTo').value;
-    SHARED.soldTo= $('#ci-soldTo').value;
-    SHARED.contact = $('#ci-contact').value;
-    SHARED.date    = $('#ci-invDate').value;
-    SHARED.po      = $('#ci-poNo').value;
+    return {
+      from:$('#ci-from').value, shipTo:$('#ci-shipTo').value, soldTo:$('#ci-soldTo').value,
+      contact:$('#ci-contact').value, date:$('#ci-invDate').value, po:$('#ci-poNo').value
+    };
   }
-  function writeSharedToPT(){
-    if (!$('#pt-from').value)   $('#pt-from').value   = SHARED.from;
-    if (!$('#pt-shipTo').value) $('#pt-shipTo').value = SHARED.shipTo;
-    if (!$('#pt-soldTo').value) $('#pt-soldTo').value = SHARED.soldTo;
-    if (!$('#pt-contact').value)$('#pt-contact').value= SHARED.contact;
-    if (!$('#pt-date').value)   $('#pt-date').value   = SHARED.date;
-    if (!$('#pt-poNo').value)   $('#pt-poNo').value   = SHARED.po;
+  function writeSharedToPT(shared){
+    if (!$('#pt-from').value)   $('#pt-from').value   = shared.from||'';
+    if (!$('#pt-shipTo').value) $('#pt-shipTo').value = shared.shipTo||'';
+    if (!$('#pt-soldTo').value) $('#pt-soldTo').value = shared.soldTo||'';
+    if (!$('#pt-contact').value)$('#pt-contact').value= shared.contact||'';
+    if (!$('#pt-date').value)   $('#pt-date').value   = shared.date||'';
+    if (!$('#pt-poNo').value)   $('#pt-poNo').value   = shared.po||'';
     ptSync();
   }
   function writeSharedFromPT(){
-    // if user filled PT first, allow pushing back to CI where empty
     if (!$('#ci-from').value)    $('#ci-from').value    = $('#pt-from').value;
     if (!$('#ci-shipTo').value)  $('#ci-shipTo').value  = $('#pt-shipTo').value;
     if (!$('#ci-soldTo').value)  $('#ci-soldTo').value  = $('#pt-soldTo').value;
@@ -549,7 +499,6 @@
     if (!$('#ci-poNo').value)    $('#ci-poNo').value    = $('#pt-poNo').value;
     ciSync();
   }
-
   function switchMode(){
     const val = $('#modeSel').value;
     if (val==='ci'){
@@ -557,18 +506,18 @@
       $('#ciBtns').classList.remove('hidden');
       $('#mode-pt').classList.add('hidden');
       $('#ptBtns').classList.add('hidden');
-      writeSharedFromPT(); // push back if CI was empty
+      writeSharedFromPT(); // carry back if CI empty
     }else{
-      readSharedFromCI();
+      const shared = readSharedFromCI();
       $('#mode-ci').classList.add('hidden');
       $('#ciBtns').classList.add('hidden');
       $('#mode-pt').classList.remove('hidden');
       $('#ptBtns').classList.remove('hidden');
-      writeSharedToPT();
+      writeSharedToPT(shared);
     }
   }
 
-  /* ===== Commercial Invoice logic (from your original) ===== */
+  /* ======== Commercial Invoice ======== */
   function ciAddRow(obj={}){
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -580,8 +529,8 @@
       <td class="num"><input type="number" step="0.01" min="0" value="${obj.unitValue??''}" oninput="ciSync()"></td>
       <td class="num vtotal">0.00</td>
       <td>
-        <button class="btn" onclick="ciDupRow(this)">Duplicate</button>
-        <button class="btn" style="color:#a63b2f" onclick="ciDelRow(this)">Delete</button>
+        <button class="btn pill" onclick="ciDupRow(this)">Duplicate</button>
+        <button class="btn pill" style="color:#a63b2f" onclick="ciDelRow(this)">Delete</button>
       </td>`;
     $('#ci-tbody').appendChild(tr);
     ciSync();
@@ -613,7 +562,6 @@
     const r = new FileReader(); r.onload = ()=> $('#ci-sigImg').src = r.result; r.readAsDataURL(f);
   }
   function ciSync(){
-    // totals etc.
     const list = ciItems();
     const goods = list.reduce((s,i)=>s+i.total,0);
     const discount = parseFloat($('#ci-discount').value)||0;
@@ -623,7 +571,6 @@
     const subtotal = Math.max(goods - discount, 0);
     const grand = subtotal + freight + insurance + other;
 
-    // meta
     const meta = [];
     if($('#ci-invDate').value) meta.push(`<div><b>Date:</b> ${new Date($('#ci-invDate').value).toLocaleDateString()}</div>`);
     if($('#ci-invNo').value)  meta.push(`<div><b>Invoice #:</b> ${esc($('#ci-invNo').value)}</div>`);
@@ -633,7 +580,6 @@
     if($('#ci-reason').value) meta.push(`<div><b>Reason for export:</b> ${esc($('#ci-reason').value)}</div>`);
     $('#ci-metaBox').innerHTML = meta.join('');
 
-    // blocks
     $('#ci-v-from').textContent   = $('#ci-from').value || '';
     $('#ci-v-shipto').textContent = $('#ci-shipTo').value || '';
     $('#ci-v-soldto').textContent = $('#ci-soldTo').value || '';
@@ -667,11 +613,10 @@
       <div class="trow"><span class="label">Other</span><span class="val">${sym()} ${fmt(other)}</span></div>
       <div class="trow"><span class="label">Discount/Rebate</span><span class="val">-${sym()} ${fmt(discount)}</span></div>
       <hr style="border:none;border-top:1px solid var(--line)">
-      <div class="trow"><span class="label" style="font-weight:800">Total Invoice amount</span><span class="val" style="font-size:16px">${sym()} ${fmt(grand)}</span></div>
+      <div class="trow"><span class="label" style="font-weight:900">Total Invoice amount</span><span class="val" style="font-size:16px">${sym()} ${fmt(grand)}</span></div>
       <div class="muted" style="font-size:12px;margin-top:4px">Currency: ${$('#ci-currency').value}</div>`;
 
     $('#ci-v-comments').textContent = $('#ci-comments').value || '';
-
     const parts = [];
     if($('#ci-signedBy').value) parts.push($('#ci-signedBy').value);
     if($('#ci-issueDate').value) parts.push(new Date($('#ci-issueDate').value).toLocaleDateString());
@@ -703,8 +648,7 @@
     $('#ci-other').value=s.other||0; $('#ci-discount').value=s.discount||0;
     $('#ci-signedBy').value=s.signedBy||''; $('#ci-issueDate').value=s.issueDate||'';
     if(s.sigImg) $('#ci-sigImg').src=s.sigImg;
-    ciClearRows();
-    (s.items||[]).forEach(ciAddRow);
+    ciClearRows(); (s.items||[]).forEach(ciAddRow);
     if(!s.items || !s.items.length) ciAddRow();
     ciSync();
   }
@@ -722,25 +666,14 @@
   function ciLoadSample(){
     const today = new Date().toISOString().slice(0,10);
     ciApply({
-      from: "Verified Electronics Ltd\n1 Example Street\nChichester, PO19 1AA, UK\nEORI/VAT: GB123456789",
+      from: "Verified Electronics Ltd\n14 Albion Street, Offices 1–3\nHull, HU1 3TD, UNITED KINGDOM\nPhone: +44 1482 904582\nEORI/VAT: GB123456789",
       shipTo: "Acme Devices Inc.\n1000 Logistics Dr\nDallas, TX 75001, USA\nTAX ID: 12-3456789",
       soldTo: "Acme Devices Inc.\n500 Market St\nAustin, TX 78701, USA\nTAX ID: 12-3456789",
-      awb: "7790 1234 5678",
-      shipmentId: "SHIP-8891",
-      contact: "Jane Buyer",
-      phone: "+1 (512) 555-0199",
-      invDate: today,
-      invNo: "VE-CI-1025",
-      poNo: "PO-78910",
-      incoterm: "DAP",
-      incotermPlace: "Austin, TX",
-      currency: "USD",
-      reason: "Sale of goods",
-      packages: "2",
-      weight: "20.0",
+      awb: "7790 1234 5678", shipmentId: "SHIP-8891", contact: "Jane Buyer", phone: "+1 512 555 0199",
+      invDate: today, invNo: "VE-CI-1025", poNo: "PO-78910", incoterm: "DAP", incotermPlace: "Austin, TX",
+      currency: "USD", reason: "Sale of goods", packages: "2", weight: "20.0",
       comments: "No wood packaging materials used. Non-hazardous electronic components.",
-      freight: 120, insurance: 40, other: 0, discount: 0,
-      signedBy: "Nick North, Director", issueDate: today,
+      freight: 120, insurance: 40, other: 0, discount: 0, signedBy: "Nick North, Director", issueDate: today,
       items: [
         {units:1000, um:"pcs", desc:"IPF015N10N5ATMA1 — MOSFET 100V 150A", hs:"854129", coo:"CN", unitValue:1.92},
         {units:40, um:"pcs", desc:"DS1644-120+ — RTC + NV SRAM 120ns", hs:"854232", coo:"PH", unitValue:66.90}
@@ -748,19 +681,18 @@
     });
   }
 
-  /* ===== Picking Ticket logic ===== */
+  /* ======== Picking Ticket ======== */
   function ptAddRow(d={}) {
     const tr=document.createElement('tr');
     tr.innerHTML=`<td><input value="${d.item||''}" placeholder="Item"></td>
       <td class="num"><input type="number" value="${d.qty||''}" placeholder="Qty" style="width:100%"></td>
       <td><input value="${d.date||''}" placeholder="Date code"></td>
-      <td><button onclick="this.closest('tr').remove();ptSync()">✕</button></td>`;
+      <td><button class="btn pill" onclick="this.closest('tr').remove();ptSync()">✕</button></td>`;
     $('#pt-table tbody').appendChild(tr);
     tr.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',ptSync));
     ptSync();
   }
   function ptClearRows(){ $('#pt-table tbody').innerHTML=''; ptSync(); }
-
   function ptItems(){
     return $$('#pt-table tbody tr').map((tr,i)=>{
       const [item,qty,date]=tr.querySelectorAll('input');
@@ -768,7 +700,6 @@
     }).filter(r=>r.item||r.qty||r.date);
   }
   function ptSync(){
-    // meta
     const meta = [];
     if($('#pt-date').value)    meta.push(`<div><b>Date:</b> ${new Date($('#pt-date').value).toLocaleDateString()}</div>`);
     if($('#pt-orderNo').value) meta.push(`<div><b>Order #:</b> ${esc($('#pt-orderNo').value)}</div>`);
@@ -776,12 +707,10 @@
     if($('#pt-contact').value) meta.push(`<div><b>Contact:</b> ${esc($('#pt-contact').value)}</div>`);
     $('#pt-metaBox').innerHTML = meta.join('');
 
-    // addresses
     $('#pt-v-from').textContent   = $('#pt-from').value || '';
     $('#pt-v-shipTo').textContent = $('#pt-shipTo').value || '';
     $('#pt-v-soldTo').textContent = $('#pt-soldTo').value || '';
 
-    // items
     const body=$('#pt-pbody'); body.innerHTML='';
     ptItems().forEach(r=>{
       const tr=document.createElement('tr');
@@ -789,7 +718,6 @@
       body.appendChild(tr);
     });
 
-    // other fields
     $('#pt-v-notes').textContent = $('#pt-notes').value || '';
     $('#pt-v-signer').textContent = $('#pt-signer').value || '—';
     $('#pt-v-shipType').textContent = $('#pt-shipType').value;
@@ -800,8 +728,7 @@
       orderNo:$('#pt-orderNo').value, poNo:$('#pt-poNo').value, date:$('#pt-date').value,
       from:$('#pt-from').value, shipTo:$('#pt-shipTo').value, soldTo:$('#pt-soldTo').value,
       contact:$('#pt-contact').value, shipType:$('#pt-shipType').value,
-      notes:$('#pt-notes').value, signer:$('#pt-signer').value,
-      items:ptItems()
+      notes:$('#pt-notes').value, signer:$('#pt-signer').value, items:ptItems()
     };
   }
   function ptApply(d){
@@ -836,23 +763,25 @@
 
   /* ===== Init ===== */
   window.addEventListener('load', ()=>{
-    // CI defaults
     if(!$('#ci-tbody').children.length) ciAddRow();
     const d = new Date().toISOString().slice(0,10);
     $('#ci-invDate').value = d; $('#ci-issueDate').value = d;
 
+    // CI sync/carryover on any change
     $$('.form input, .form textarea, .form select').forEach(el=>{
-      el.addEventListener('input', ()=>{ ciSync(); readSharedFromCI(); });
-      el.addEventListener('change', ()=>{ ciSync(); readSharedFromCI(); });
+      el.addEventListener('input', ()=>{ ciSync(); });
+      el.addEventListener('change', ()=>{ ciSync(); });
     });
-    // PT listeners
+
+    // PT inputs -> live preview
     ['#pt-orderNo','#pt-poNo','#pt-date','#pt-from','#pt-shipTo','#pt-soldTo','#pt-contact','#pt-shipType','#pt-notes','#pt-signer']
       .forEach(sel=>$(sel).addEventListener('input', ptSync));
 
-    ciSync(); // first render
-    ptAddRow(); // at least one row ready
+    ciSync();
+    ptAddRow();
   });
 </script>
 </body>
 </html>
+
 
