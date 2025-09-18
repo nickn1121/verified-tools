@@ -1,482 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Verified Electronics — SO / Invoice Generator</title>
-  <!-- Tailwind -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- jsPDF + AutoTable -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Verified Electronics — CI & Picking Ticket</title>
+<link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+<style>
+  :root{
+    --brand:#673ab7;
+    --ink:#1a1d22; --muted:#666e7a; --line:#dcdfe5;
+    --bg:#f6f7fb; --paper:#ffffff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:14px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:1100px;margin:28px auto;padding:0 16px}
+  .topbar{display:flex;align-items:center;gap:12px;background:var(--paper);
+    border:1px solid var(--line);border-radius:14px;padding:14px 16px;
+    box-shadow:0 2px 14px rgba(0,0,0,.04)}
+  .badge{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;
+         background:#efeafd;box-shadow:inset 0 0 0 1px #e3ddfb}
+  .badge img{max-width:26px}
+  h1{margin:0;font-size:20px;font-weight:800}
+  .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .selector{margin:16px 0;display:flex;gap:10px}
+  .selector select{padding:8px 12px;border:1px solid var(--line);border-radius:10px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:960px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .panel h2{margin:0 0 10px;font-size:15px;font-weight:800}
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+  .field label{font-size:12px;color:var(--muted)}
+  input,textarea,select{border:1px solid var(--line);border-radius:8px;padding:8px;width:100%}
+  textarea{resize:vertical}
+  table{width:100%;border-collapse:collapse;margin-top:10px}
+  th,td{border:1px solid var(--line);padding:6px;font-size:13px}
+  th{background:#fafaff;text-transform:uppercase;font-size:11px;letter-spacing:.05em}
+  .actions{display:flex;gap:10px;margin:12px 0}
+  button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;
+          font-weight:600;cursor:pointer}
+  button.brand{background:var(--brand);border-color:var(--brand);color:#fff}
+  .hidden{display:none}
+</style>
 </head>
-<body class="bg-slate-50 text-slate-800">
-  <div class="w-full h-1.5 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600"></div>
-
-  <div class="max-w-6xl mx-auto p-6 md:p-10 space-y-6">
-    <!-- Header -->
-    <header class="flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <div class="w-16 h-16 rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 flex items-center justify-center overflow-hidden">
-          <img id="logoPreview" alt="Verified Electronics" class="max-w-14 max-h-14 hidden" />
-          <span id="logoPlaceholder" class="text-[11px] text-slate-400">Logo</span>
-        </div>
-        <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Verified Electronics</h1>
-      </div>
-      <div class="flex items-center gap-2">
-        <!-- NEW: Back button -->
-        <a href="https://tools.verifiedelectronics.com" class="px-3 py-2 rounded-xl bg-white shadow-sm ring-1 ring-slate-200 text-sm hover:bg-slate-50">← Back to Tools</a>
-        <label class="inline-flex items-center gap-2 cursor-pointer">
-          <input type="file" id="logoFile" accept="image/*" class="hidden" />
-          <span class="px-3 py-2 rounded-xl bg-white shadow-sm ring-1 ring-slate-200 text-sm hover:bg-slate-50">Upload Logo</span>
-        </label>
-        <button id="generateBtn" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-sm">Generate PDF</button>
-      </div>
-    </header>
-
-    <!-- Top options -->
-    <section class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
-      <div class="grid md:grid-cols-4 gap-4">
-        <div>
-          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Document Type</label>
-          <select id="docType" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <option value="so" selected>Sales Order Confirmation</option>
-            <option value="invoice">Invoice</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Currency</label>
-          <select id="currency" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <option value="USD">USD</option>
-            <option value="GBP">GBP</option>
-            <option value="EUR">EUR</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Global VAT % (optional)</label>
-          <input id="vatPct" type="number" step="0.01" class="w-full border rounded-lg px-3 py-2" placeholder="0">
-        </div>
-        <div>
-          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Shipping</label>
-          <input id="shipping" type="number" step="0.01" class="w-full border rounded-lg px-3 py-2" placeholder="0.00">
-        </div>
-      </div>
-    </section>
-
-    <!-- Seller / Buyer / Order -->
-    <section class="grid md:grid-cols-3 gap-4">
-      <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
-        <h2 class="font-semibold mb-3">Seller</h2>
-
-        <label class="block text-sm mb-1">Seller Preset</label>
-        <select id="sellerPreset" class="w-full border rounded-lg px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <option value="">— Select —</option>
-          <option value="uk">Verified Electronics (VELUK Group Limited)</option>
-          <option value="us">Verified Electronics LLC</option>
-        </select>
-
-        <label class="block text-sm mb-1">Seller Name</label>
-        <input id="sellerName" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Company name" />
-        <label class="block text-sm mb-1">Address</label>
-        <textarea id="sellerAddress" rows="4" class="w-full border rounded-lg px-3 py-2" placeholder="Address lines"></textarea>
-        <div class="grid grid-cols-2 gap-3 mt-3">
-          <div>
-            <label class="block text-sm mb-1">VAT / Tax ID</label>
-            <input id="sellerVat" class="w-full border rounded-lg px-3 py-2" placeholder="(optional)">
-          </div>
-          <div>
-            <label class="block text-sm mb-1">Invoice/SO Date</label>
-            <input id="docDate" type="date" class="w-full border rounded-lg px-3 py-2">
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
-        <h2 class="font-semibold mb-3">Buyer</h2>
-        <label class="block text-sm mb-1">Buyer / Company</label>
-        <input id="buyerCompany" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Customer Company Ltd." />
-        <label class="block text-sm mb-1">Contact</label>
-        <input id="buyerContact" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Name / Email / Phone" />
-        <label class="block text-sm mb-1">Bill To</label>
-        <textarea id="billTo" rows="4" class="w-full border rounded-lg px-3 py-2" placeholder="Billing address"></textarea>
-      </div>
-
-      <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
-        <h2 class="font-semibold mb-3">Order / Meta</h2>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-sm mb-1">Number</label>
-            <input id="docNumber" class="w-full border rounded-lg px-3 py-2" placeholder="SO- / INV-" />
-          </div>
-          <div>
-            <label class="block text-sm mb-1">Customer PO #</label>
-            <input id="poNumber" class="w-full border rounded-lg px-3 py-2" placeholder="(optional)" />
-          </div>
-          <div>
-            <label class="block text-sm mb-1">Salesperson</label>
-            <input id="salesperson" class="w-full border rounded-lg px-3 py-2" placeholder="Name" />
-          </div>
-          <div>
-            <label class="block text-sm mb-1">Delivery Terms (Incoterms)</label>
-            <select id="incoterms" class="w-full border rounded-lg px-3 py-2">
-              <option value="">— Select —</option>
-              <option>EXW</option>
-              <option>FCA</option>
-              <option>FOB</option>
-              <option>CPT</option>
-              <option>CIP</option>
-              <option>DAP</option>
-              <option>DDP</option>
-            </select>
-          </div>
-        </div>
-        <!-- NEW: Payment Terms -->
-        <div class="mt-3">
-          <label class="block text-sm mb-1">Payment Terms</label>
-          <input id="paymentTerms" class="w-full border rounded-lg px-3 py-2" placeholder="e.g., NET 30" />
-        </div>
-      </div>
-    </section>
-
-    <!-- Ship / Logistics -->
-    <section class="grid md:grid-cols-3 gap-4">
-      <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
-        <h2 class="font-semibold mb-3">Ship To</h2>
-        <textarea id="shipTo" rows="6" class="w-full border rounded-lg px-3 py-2" placeholder="Shipping address"></textarea>
-      </div>
-      <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
-        <h2 class="font-semibold mb-3">Lead Time / Notes</h2>
-        <input id="leadTime" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="e.g., 10–12 days" />
-        <input id="cooHts" class="w-full border rounded-lg px-3 py-2" placeholder="COO: __  HTS: __" />
-      </div>
-      <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
-        <h2 class="font-semibold mb-3">Other</h2>
-        <label class="block text-sm mb-1">Extra Notes (shown on PDF)</label>
-        <textarea id="notes" rows="6" class="w-full border rounded-lg px-3 py-2" placeholder="Any terms, testing notes, warranty, etc."></textarea>
-      </div>
-    </section>
-
-    <!-- Line Items -->
-    <section class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="font-semibold">Line Items</h2>
-        <button type="button" id="addRowBtn" class="px-3 py-2 text-sm rounded-xl text-white bg-gradient-to-r from-purple-600 via-fuchsia-600 to-indigo-600 hover:opacity-90">
-          Add Item
-        </button>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-100">
-            <tr>
-              <th class="p-2 text-left">Part Number</th>
-              <th class="p-2 text-left">Description</th>
-              <th class="p-2 text-left">Date Code</th>
-              <th class="p-2 text-left">Qty</th>
-              <th class="p-2 text-left">Unit Price</th>
-              <th class="p-2 text-left">VAT %</th>
-              <th class="p-2 text-left">Ext. Price</th>
-              <th class="p-2 text-left">Remove</th>
-            </tr>
-          </thead>
-          <tbody id="itemsBody"></tbody>
-        </table>
-      </div>
-    </section>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="badge">
+      <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="VE">
+    </div>
+    <div>
+      <h1>Commercial Invoice & Picking Ticket</h1>
+      <div class="sub">Verified Electronics</div>
+    </div>
   </div>
 
-  <script>
-    const $ = (id) => document.getElementById(id);
-    const nf = (n) => Number(n || 0);
-    const money = (v, cur) => {
-      try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur }).format(nf(v)); }
-      catch { return (cur || 'USD') + ' ' + nf(v).toFixed(2); }
-    };
+  <!-- Selector -->
+  <div class="selector">
+    <label for="docType"><strong>Select Document:</strong></label>
+    <select id="docType" onchange="switchForm()">
+      <option value="ci" selected>Commercial Invoice</option>
+      <option value="pick">Picking Ticket</option>
+    </select>
+  </div>
 
-    // ===== LOGO (auto-load from repo + optional upload override) =====
-    // IMPORTANT: this path is from /so-confirmation/ up to /assets/
-    const LOGO_URL = '../assets/Logo_color_white_background (1).png';
-    let logoDataUrl = null, logoImg = null;
+  <!-- ===== Commercial Invoice Form (original) ===== -->
+  <div id="ciForm">
+    <!-- reuse original CI content here -->
+    <iframe src="index10-original.html" style="width:100%;height:1400px;border:0;border-radius:12px"></iframe>
+  </div>
 
-    async function loadRepoLogo() {
-      try {
-        const res = await fetch(LOGO_URL, { cache: 'no-store' });
-        if (!res.ok) return;
-        const blob = await res.blob();
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          logoDataUrl = ev.target.result;
-          logoImg = new Image();
-          logoImg.onload = () => {
-            const prev = $('logoPreview');
-            prev.src = logoDataUrl; prev.classList.remove('hidden');
-            $('logoPlaceholder').classList.add('hidden');
-          };
-          logoImg.src = logoDataUrl;
-        };
-        reader.readAsDataURL(blob);
-      } catch (_) {}
-    }
+  <!-- ===== Picking Ticket Form ===== -->
+  <div id="pickForm" class="hidden">
+    <div class="grid">
+      <section class="panel">
+        <h2>Picking Ticket Details</h2>
+        <div class="field">
+          <label>Order Number</label>
+          <input type="text" id="ptOrderNo" placeholder="VE-PT-0001">
+        </div>
+        <div class="field">
+          <label>Customer PO Number</label>
+          <input type="text" id="ptPONo" placeholder="Customer PO">
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="ptDate">
+        </div>
+        <div class="field">
+          <label>Special Instructions</label>
+          <textarea id="ptInstructions" placeholder="e.g. Pack in anti-static bags"></textarea>
+        </div>
+        <div class="field">
+          <label>Shipment Type</label>
+          <select id="ptShipType">
+            <option>Full Shipment</option>
+            <option>Partial Shipment</option>
+          </select>
+        </div>
 
-    $('logoFile')?.addEventListener('change', (e)=>{
-      const f = e.target.files[0]; if(!f) return;
-      const r = new FileReader();
-      r.onload = ev => {
-        logoDataUrl = ev.target.result;
-        logoImg = new Image();
-        logoImg.onload = () => {
-          const img = $('logoPreview'); img.src = logoDataUrl; img.classList.remove('hidden');
-          $('logoPlaceholder').classList.add('hidden');
-        };
-        logoImg.src = logoDataUrl;
-      };
-      r.readAsDataURL(f);
-    });
+        <h2>Items</h2>
+        <table id="ptTable">
+          <thead>
+            <tr><th>Item</th><th>Quantity</th><th>Date Code</th><th>Actions</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="actions">
+          <button onclick="ptAddRow()">Add Row</button>
+          <button onclick="ptClearRows()">Clear</button>
+        </div>
 
-    function drawLogoFitted(doc, x, y, maxW, maxH) {
-      if (!logoDataUrl || !logoImg) return;
-      const iw = logoImg.naturalWidth || logoImg.width;
-      const ih = logoImg.naturalHeight || logoImg.height;
-      if (!iw || !ih) return;
-      const ratio = Math.min(maxW / iw, maxH / ih);
-      const w = Math.max(1, iw * ratio);
-      const h = Math.max(1, ih * ratio);
-      doc.addImage(logoDataUrl, 'PNG', x, y, w, h, undefined, 'FAST');
-    }
+        <h2>Signature</h2>
+        <div class="field">
+          <label>Signature / Name</label>
+          <input type="text" id="ptSigner" placeholder="Name">
+        </div>
+      </section>
 
-    // ===== Seller presets =====
-    const SELLER_PRESETS = {
-      uk: {
-        name: 'Verified Electronics (VELUK Group Limited)',
-        address: [
-          '14 Albion Street',
-          'Offices 1–3',
-          'Hull',
-          'East Yorkshire',
-          'HU1 3TD',
-          'UNITED KINGDOM',
-          'Phone: +44 1482 904582'
-        ].join('\n'),
-        vat: ''
-      },
-      us: {
-        name: 'Verified Electronics LLC',
-        address: [
-          '8 The Green, Suite B',
-          'Dover, DE 19901',
-          'UNITED STATES',
-          'Phone: +1 203 299 2980',
-          'Email: sales@verifiedelectronics.com'
-        ].join('\n'),
-        vat: ''
-      }
-    };
+      <section class="panel">
+        <h2>Preview</h2>
+        <div id="ptPreview" style="white-space:pre-wrap;font-family:monospace;font-size:13px"></div>
+        <div class="actions">
+          <button class="brand" onclick="window.print()">Print / Save PDF</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
 
-    $('sellerPreset')?.addEventListener('change', (e)=>{
-      const key = e.target.value;
-      const p = SELLER_PRESETS[key];
-      if (!p) { $('sellerName').value=''; $('sellerAddress').value=''; $('sellerVat').value=''; return; }
-      $('sellerName').value = p.name || '';
-      $('sellerAddress').value = p.address || '';
-      $('sellerVat').value = p.vat || '';
-    });
-
-    // ===== Items table =====
-    function addRow(d={}) {
-      const tr = document.createElement('tr');
-      tr.className='border-b';
-      tr.innerHTML = `
-        <td class="p-2"><input class="w-full border rounded-lg px-2 py-1" placeholder="Part number" value="${d.part||''}"></td>
-        <td class="p-2"><input class="w-full border rounded-lg px-2 py-1" placeholder="Description" value="${d.desc||''}"></td>
-        <td class="p-2"><input class="w-full border rounded-lg px-2 py-1" placeholder="Date code" value="${d.date||''}"></td>
-        <td class="p-2"><input type="number" min="0" step="1" class="w-24 border rounded-lg px-2 py-1" placeholder="Qty" value="${d.qty||''}"></td>
-        <td class="p-2"><input type="number" min="0" step="0.0001" class="w-28 border rounded-lg px-2 py-1" placeholder="Unit" value="${d.unit||''}"></td>
-        <td class="p-2"><input type="number" min="0" step="0.01" class="w-24 border rounded-lg px-2 py-1 vatCell" placeholder="% (line)" value="${d.vat||''}"></td>
-        <td class="p-2"><input disabled class="w-28 border rounded-lg px-2 py-1 bg-slate-100 extCell" placeholder="0.00"></td>
-        <td class="p-2"><button type="button" class="text-sm px-3 py-1 rounded-lg bg-rose-100 text-rose-700 rm">✕</button></td>`;
-      $('itemsBody').appendChild(tr);
-      tr.querySelectorAll('input').forEach(inp => inp.addEventListener('input', ()=>recalcRow(tr)));
-      tr.querySelector('.rm').addEventListener('click', ()=>tr.remove());
-    }
-
-    function recalcRow(tr){
-      const tds = tr.querySelectorAll('td input');
-      const qty = nf(tds[3].value), unit = nf(tds[4].value);
-      const ext = qty*unit;
-      tds[6].value = (isFinite(ext)?ext:0).toFixed(2);
-    }
-
-    function gatherItems(){
-      const rows = [...document.querySelectorAll('#itemsBody tr')];
-      let items=[], subtotal=0, vatTotal=0;
-      const globalVatPct = nf($('vatPct').value);
-      rows.forEach(tr=>{
-        const tds = tr.querySelectorAll('td input');
-        const part = tds[0].value.trim();
-        const desc = tds[1].value.trim();
-        const date = tds[2].value.trim();
-        const qty = nf(tds[3].value);
-        const unit = nf(tds[4].value);
-        const lineVatPct = tds[5].value ? nf(tds[5].value) : globalVatPct;
-        const ext = qty*unit;
-        if(part && qty>0){
-          const vat = ext * (lineVatPct/100);
-          items.push({part, desc, date, qty, unit, ext, vat, vatPct: lineVatPct});
-          subtotal += ext; vatTotal += vat;
-        }
-      });
-      return {items, subtotal, vatTotal};
-    }
-
-    // first empty row + wire Add button
-    addRow({});
-    $('addRowBtn').addEventListener('click', () => addRow({}));
-
-    document.addEventListener('input', (e)=>{
-      if (e.target && e.target.closest('#itemsBody tr')) recalcRow(e.target.closest('tr'));
-    });
-
-    // ===== PDF generation (classic professional layout) =====
-    $('generateBtn').addEventListener('click', ()=>{
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ unit:'pt', format:'a4' });
-
-      // Margins and rulers
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const left=40, right=pageWidth-40; // 40pt margins
-      const contentWidth = right - left;
-      const aline = y => doc.line(left,y,right,y);
-
-      const currency = ($('currency').value||'USD').toUpperCase();
-      const docType = $('docType').value;
-
-      const sellerName = $('sellerName').value;
-      const sellerAddress = $('sellerAddress').value;
-      const sellerVat = $('sellerVat').value;
-      const buyerCompany = $('buyerCompany').value;
-      const buyerContact = $('buyerContact').value;
-      const billTo = $('billTo').value;
-      const shipTo = $('shipTo').value;
-      const docNumber = $('docNumber').value;
-      const docDate = $('docDate').value;
-      const poNumber = $('poNumber').value;
-      const salesperson = $('salesperson').value;
-      const incoterms = $('incoterms').value;
-      const paymentTerms = $('paymentTerms').value; // NEW
-      const leadTime = $('leadTime').value;
-      const cooHts = $('cooHts').value;
-      const shipping = nf($('shipping').value);
-      const notes = $('notes').value;
-
-      const {items, subtotal, vatTotal} = gatherItems();
-      const total = subtotal + vatTotal + shipping;
-
-      // Header
-      drawLogoFitted(doc, left, 28, 160, 90);
-      doc.setFont('helvetica','bold'); doc.setFontSize(18);
-      doc.text(docType==='invoice'?'TAX INVOICE':'Sales Order Confirmation', right, 42, {align:'right'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(10);
-      if (docNumber) doc.text(`${docType==='invoice'?'Invoice':'SO'} Number: ${docNumber}`, right, 58, {align:'right'});
-      if (docDate) doc.text(`Date: ${docDate}`, right, 72, {align:'right'});
-      if (poNumber) doc.text(`Reference / PO: ${poNumber}`, right, 86, {align:'right'});
-      if (sellerVat) doc.text(`VAT / Tax ID: ${sellerVat}`, right, 100, {align:'right'});
-
-      // Seller / Buyer blocks
-      let y=132;
-      doc.setFont('helvetica','bold'); doc.text('Seller', left, y);
-      doc.text('Buyer', 300, y);
-      doc.setFont('helvetica','normal');
-      y+=14; doc.text(sellerName||'-', left, y); doc.text(buyerCompany||'-', 300, y);
-
-      const sLines = (sellerAddress||'-').split('\n'); sLines.forEach((line,i)=> doc.text(line, left, y+12*(i+1)));
-      const bLines = (buyerContact||'-').split('\n'); bLines.forEach((line,i)=> doc.text(line, 300, y+12*(i+1)));
-      y += 12 * (Math.max(sLines.length, bLines.length) + 2);
-      aline(y); y+=16;
-
-      // Commercial Terms + addresses
-      doc.setFont('helvetica','bold'); doc.text('Commercial Terms', left, y);
-      doc.setFont('helvetica','normal');
-
-      const termsLine = [
-        `Currency: ${currency}`,
-        `Incoterms: ${incoterms||'-'}`,
-        `Salesperson: ${salesperson||'-'}`,
-        `Payment Terms: ${paymentTerms || '-'}`
-      ].join('   ');
-      doc.text(termsLine, left, y+14);
-
-      doc.setFont('helvetica','bold'); doc.text('Bill To', left, y+38);
-      doc.setFont('helvetica','normal'); (billTo||'-').split('\n').forEach((l,i)=> doc.text(l, left, y+52+12*i));
-      doc.setFont('helvetica','bold'); doc.text('Ship To', 300, y+38);
-      doc.setFont('helvetica','normal'); (shipTo||'-').split('\n').forEach((l,i)=> doc.text(l, 300, y+52+12*i));
-
-      // Items table
-      const tableY = y+90;
-      const head = [['#','Part Number','Description','Date Code','Qty','Unit Price','VAT %','Ext. Price']];
-      const body = items.length ? items.map((it,i)=>[
-        i+1, it.part, it.desc||'', it.date||'', it.qty, money(it.unit, currency), it.vatPct? it.vatPct.toFixed(2):'0', money(it.ext, currency)
-      ]) : [['','','','','','','','']];
-
-      // Column widths tuned to exactly fit contentWidth (515pt at 40pt margins on A4):
-      // 20 + 95 + 140 + 55 + 50 + 65 + 40 + 50 = 515
-      doc.autoTable({
-        startY: tableY,
-        head,
-        body,
-        styles:{fontSize:9, cellPadding:6, overflow:'linebreak'},
-        headStyles:{fillColor:[30,64,175], halign:'left'},
-        margin: { left, right: pageWidth - right },
-        tableWidth: contentWidth,
-        columnStyles:{
-          0:{cellWidth:20, halign:'right'},
-          1:{cellWidth:95},
-          2:{cellWidth:140},   // description wraps
-          3:{cellWidth:55},
-          4:{cellWidth:50, halign:'right'},
-          5:{cellWidth:65, halign:'right'},
-          6:{cellWidth:40, halign:'center'},
-          7:{cellWidth:50, halign:'right'}
-        },
-        didDrawPage: function () {
-          const pageCount = doc.getNumberOfPages();
-          doc.setFontSize(9);
-          doc.text(`Page ${doc.internal.getCurrentPageInfo().pageNumber} of ${pageCount}`, right, doc.internal.pageSize.height-18, {align:'right'});
-        }
-      });
-      let after = doc.lastAutoTable ? doc.lastAutoTable.finalY + 12 : tableY + 40;
-
-      // Summary
-      doc.setFont('helvetica','bold'); doc.text('Summary', left, after);
-      doc.setFont('helvetica','normal');
-      after+=14;
-      doc.text(`Subtotal: ${money(subtotal, currency)}`, left, after);
-      doc.text(`VAT: ${money(vatTotal, currency)}`, left, after+14);
-      doc.text(`Shipping: ${money(nf(shipping), currency)}`, left, after+28);
-      doc.setFont('helvetica','bold'); doc.text(`TOTAL: ${money(total, currency)}`, left, after+48);
-
-      // Optional extra sections
-      let blockY = after + 120;
-      if (leadTime) { doc.setFont('helvetica','bold'); doc.text('Lead Time / Delivery', left, blockY);
-        doc.setFont('helvetica','normal'); doc.text(leadTime, left, blockY+14, {maxWidth: contentWidth}); blockY += 34; }
-      if (cooHts) { doc.setFont('helvetica','bold'); doc.text('COO/HTS', left, blockY);
-        doc.setFont('helvetica','normal'); doc.text(cooHts, left, blockY+14, {maxWidth: contentWidth}); blockY += 34; }
-      if (notes)  { doc.setFont('helvetica','bold'); doc.text('Notes', left, blockY);
-        doc.setFont('helvetica','normal'); doc.text(notes, left, blockY+14, {maxWidth: contentWidth}); blockY += 54; }
-
-      // Signatures for SO
-      if (docType==='so') {
-        doc.setFont('helvetica','bold'); doc.text('Authorised Signature (Seller):', left, blockY+120);
-        doc.line(left, blockY+132, left+220, blockY+132);
-        doc.text('Authorised Signature (Buyer):', 300, blockY+120);
-        doc.line(300, blockY+132, 520, blockY+132);
-      }
-
-      const fn = (docType==='invoice'?'Invoice-':'SO-') + (docNumber||'Document') + '.pdf';
-      doc.save(fn);
-    });
-
-    // Start
-    loadRepoLogo();
-  </script>
+<script>
+function switchForm(){
+  const val = document.getElementById('docType').value;
+  document.getElementById('ciForm').classList.toggle('hidden', val!=='ci');
+  document.getElementById('pickForm').classList.toggle('hidden', val!=='pick');
+}
+function ptAddRow(d={}) {
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td><input value="${d.item||''}" placeholder="Item"></td>
+    <td><input type="number" value="${d.qty||''}" placeholder="Qty"></td>
+    <td><input value="${d.date||''}" placeholder="Date code"></td>
+    <td><button onclick="this.closest('tr').remove()">✕</button></td>`;
+  document.querySelector('#ptTable tbody').appendChild(tr);
+  tr.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',ptSync));
+  ptSync();
+}
+function ptClearRows(){document.querySelector('#ptTable tbody').innerHTML='';ptSync();}
+function ptSync(){
+  const rows=[...document.querySelectorAll('#ptTable tbody tr')];
+  let out=`Picking Ticket\n====================\n`;
+  out+=`Order No: ${document.getElementById('ptOrderNo').value||''}\n`;
+  out+=`Customer PO: ${document.getElementById('ptPONo').value||''}\n`;
+  out+=`Date: ${document.getElementById('ptDate').value||''}\n`;
+  out+=`Shipment: ${document.getElementById('ptShipType').value||''}\n\n`;
+  out+=`Items:\n`;
+  rows.forEach((tr,i)=>{
+    const [item,qty,date]=tr.querySelectorAll('input');
+    out+=`${i+1}. ${item.value} | Qty: ${qty.value} | Date Code: ${date.value}\n`;
+  });
+  out+=`\nSpecial Instructions:\n${document.getElementById('ptInstructions').value||''}\n`;
+  out+=`\nSignature: ${document.getElementById('ptSigner').value||''}`;
+  document.getElementById('ptPreview').textContent=out;
+}
+['ptOrderNo','ptPONo','ptDate','ptInstructions','ptShipType','ptSigner']
+.forEach(id=>document.getElementById(id).addEventListener('input',ptSync));
+ptAddRow();
+</script>
 </body>
 </html>
+
 
