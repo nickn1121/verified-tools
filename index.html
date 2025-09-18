@@ -155,6 +155,34 @@
         </div>
       </article>
 
+      <!-- COC Generator -->
+      <article class="card" data-title="coc generator certificate of conformance">
+        <div class="bubble">📜</div>
+        <div class="cd-hd">
+          <div class="icon">CC</div>
+          <div class="ttl">COC Generator</div>
+        </div>
+        <p class="desc">Generate and format Certificates of Conformance with consistent company details.</p>
+        <div class="cd-ft">
+          <a class="btn" href="coc.index.html">Open</a>
+          <span class="tag">Docs</span>
+        </div>
+      </article>
+
+      <!-- Commercial Invoice & Packing List Generator -->
+      <article class="card" data-title="commercial invoice packing list generator customs shipping ci pl">
+        <div class="bubble">💳</div>
+        <div class="cd-hd">
+          <div class="icon">CI</div>
+          <div class="ttl">Commercial Invoice &amp; Packing List Generator</div>
+        </div>
+        <p class="desc">Create compliant commercial invoices and packing lists for global shipments in minutes.</p>
+        <div class="cd-ft">
+          <a class="btn" href="commercial-invoice/index.html">Open</a>
+          <span class="tag">Docs</span>
+        </div>
+      </article>
+
       <!-- Company Info (coming soon) -->
       <article class="card" aria-disabled="true" data-title="company info addresses vat bank certificates">
         <div class="bubble">🏢</div>
@@ -230,7 +258,6 @@
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${UI_SHARED_TOKEN}`
-              // NOTE: removed X-Requested-With to satisfy Worker CORS policy
             },
             body: JSON.stringify({ dry_run: false })
           });
@@ -254,6 +281,7 @@
   </script>
 </body>
 </html>
+
 
 
 
