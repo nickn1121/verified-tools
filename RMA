@@ -4,9 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Verified Electronics — RMA Generator</title>
-  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- jsPDF + AutoTable -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 </head>
@@ -24,7 +22,6 @@
         <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Verified Electronics</h1>
       </div>
       <div class="flex items-center gap-2">
-        <a href="https://tools.verifiedelectronics.com" class="px-3 py-2 rounded-xl bg-white shadow-sm ring-1 ring-slate-200 text-sm hover:bg-slate-50">← Back to Tools</a>
         <label class="inline-flex items-center gap-2 cursor-pointer">
           <input type="file" id="logoFile" accept="image/*" class="hidden" />
           <span class="px-3 py-2 rounded-xl bg-white shadow-sm ring-1 ring-slate-200 text-sm hover:bg-slate-50">Upload Logo</span>
@@ -38,7 +35,7 @@
       <div class="grid md:grid-cols-5 gap-4">
         <div>
           <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">RMA Number</label>
-          <input id="rmaNumber" class="w-full border rounded-lg px-3 py-2" placeholder="RMA-000123" />
+          <input id="rmaNumber" class="w-full border rounded-lg px-3 py-2" placeholder="RMA-0213" />
         </div>
         <div>
           <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Issue Date</label>
@@ -61,21 +58,20 @@
       </div>
     </section>
 
-    <!-- Parties -->
+    <!-- Parties / Meta -->
     <section class="grid md:grid-cols-3 gap-4">
-      <!-- Seller -->
+      <!-- Verified Electronics -->
       <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
-        <h2 class="font-semibold mb-3">Seller (Verified Electronics)</h2>
-        <label class="block text-sm mb-1">Seller Preset</label>
+        <h2 class="font-semibold mb-3">Verified Electronics</h2>
+        <label class="block text-sm mb-1">Entity</label>
         <select id="sellerPreset" class="w-full border rounded-lg px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <option value="">— Select —</option>
-          <option value="uk">Verified Electronics (VELUK Group Limited)</option>
-          <option value="us">Verified Electronics LLC</option>
+          <option value="uk">VELUK Group Limited (UK)</option>
+          <option value="us">Verified Electronics LLC (US)</option>
         </select>
-        <label class="block text-sm mb-1">Seller Name</label>
-        <input id="sellerName" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Company name" />
+        <label class="block text-sm mb-1">Name</label>
+        <input id="sellerName" class="w-full border rounded-lg px-3 py-2 mb-3" />
         <label class="block text-sm mb-1">Address</label>
-        <textarea id="sellerAddress" rows="4" class="w-full border rounded-lg px-3 py-2" placeholder="Address lines"></textarea>
+        <textarea id="sellerAddress" rows="5" class="w-full border rounded-lg px-3 py-2"></textarea>
         <div class="grid grid-cols-2 gap-3 mt-3">
           <div>
             <label class="block text-sm mb-1">VAT / Tax ID</label>
@@ -95,26 +91,23 @@
         <input id="buyerCompany" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Customer Company Ltd." />
         <label class="block text-sm mb-1">Contact</label>
         <input id="buyerContact" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Name / Email / Phone" />
-        <label class="block text-sm mb-1">Bill To</label>
-        <textarea id="billTo" rows="4" class="w-full border rounded-lg px-3 py-2" placeholder="Billing address"></textarea>
+        <label class="block text-sm mb-1">Customer Address</label>
+        <textarea id="buyerAddress" rows="6" class="w-full border rounded-lg px-3 py-2" placeholder="Street&#10;City&#10;Region&#10;Postcode&#10;Country"></textarea>
       </div>
 
-      <!-- Return meta -->
+      <!-- RMA meta -->
       <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
-        <h2 class="font-semibold mb-3">Return Meta</h2>
+        <h2 class="font-semibold mb-3">RMA Details</h2>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-sm mb-1">Requested Resolution</label>
             <select id="resolution" class="w-full border rounded-lg px-3 py-2">
-              <option>Replace</option>
-              <option>Credit</option>
-              <option>Repair</option>
-              <option>Return Only</option>
+              <option>Replace</option><option>Credit</option><option>Repair</option><option>Return Only</option>
             </select>
           </div>
           <div>
             <label class="block text-sm mb-1">Return Window (days)</label>
-            <input id="returnWindow" type="number" class="w-full border rounded-lg px-3 py-2" placeholder="e.g., 30">
+            <input id="returnWindow" type="number" class="w-full border rounded-lg px-3 py-2" placeholder="30">
           </div>
         </div>
         <div class="mt-3">
@@ -126,37 +119,35 @@
           </select>
         </div>
         <div class="mt-3">
+          <label class="block text-sm mb-1">Return To (Warehouse / Lab)</label>
+          <textarea id="returnTo" rows="6" class="w-full border rounded-lg px-3 py-2" placeholder="Enter full return address on separate lines"></textarea>
+        </div>
+        <div class="mt-3">
           <label class="block text-sm mb-1">Return Instructions (shown on PDF)</label>
-          <textarea id="instructions" rows="4" class="w-full border rounded-lg px-3 py-2" placeholder="Affix RMA # to carton exterior. Include all original labels. ..."></textarea>
+          <textarea id="instructions" rows="5" class="w-full border rounded-lg px-3 py-2" placeholder="Affix RMA # to carton exterior. Include original labels. Ship with tracking and share the tracking #."></textarea>
         </div>
       </div>
     </section>
 
-    <!-- Technical & Policy -->
+    <!-- Technical -->
     <section class="grid md:grid-cols-3 gap-4">
       <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
-        <h2 class="font-semibold mb-3">Technical</h2>
-        <label class="block text-sm mb-1">Suspected Issue</label>
+        <h2 class="font-semibold mb-3">Issue / Failure</h2>
+        <label class="block text-sm mb-1">Type</label>
         <select id="issueType" class="w-full border rounded-lg px-3 py-2 mb-3">
-          <option>Wrong Part Shipped</option>
-          <option>Wrong Quantity</option>
-          <option>Transit Damage</option>
-          <option>Failed Testing / Suspected Counterfeit</option>
-          <option>Functional Failure</option>
-          <option>Other</option>
+          <option>Wrong Part Shipped</option><option>Wrong Quantity</option>
+          <option>Transit Damage</option><option>Failed Testing / Suspected Counterfeit</option>
+          <option>Functional Failure</option><option>Other</option>
         </select>
-        <label class="block text-sm mb-1">Issue Summary</label>
-        <textarea id="issueSummary" rows="5" class="w-full border rounded-lg px-3 py-2" placeholder="Brief description of failure, test results, photos available, etc."></textarea>
+        <label class="block text-sm mb-1">Summary</label>
+        <textarea id="issueSummary" rows="6" class="w-full border rounded-lg px-3 py-2" placeholder="Brief description, test results, photos available, etc."></textarea>
       </div>
 
       <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
-        <h2 class="font-semibold mb-3">Test / Triage</h2>
+        <h2 class="font-semibold mb-3">Triage</h2>
         <label class="block text-sm mb-1">Preferred Test House</label>
         <select id="testHouse" class="w-full border rounded-lg px-3 py-2 mb-3">
-          <option>GETS</option>
-          <option>AAA</option>
-          <option>White Horse</option>
-          <option>Other / N/A</option>
+          <option>GETS</option><option>AAA</option><option>White Horse</option><option>Other / N/A</option>
         </select>
         <label class="inline-flex items-center gap-2 text-sm"><input id="photosProvided" type="checkbox"> Photos Provided</label><br/>
         <label class="inline-flex items-center gap-2 text-sm"><input id="samplesProvided" type="checkbox"> Samples Provided</label><br/>
@@ -164,8 +155,21 @@
       </div>
 
       <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
-        <h2 class="font-semibold mb-3">Policy Notes</h2>
-        <textarea id="policyNotes" rows="9" class="w-full border rounded-lg px-3 py-2" placeholder="Returns require an RMA number and original labels. Claims window: 90 days from invoice unless agreed otherwise. No consequential damages. Items soldered/used may require failure analysis before credit."></textarea>
+        <h2 class="font-semibold mb-3">Totals (optional)</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Global Unit Value</label>
+            <input id="defaultUnit" type="number" step="0.0001" class="w-full border rounded-lg px-3 py-2" placeholder="0.00">
+          </div>
+          <div>
+            <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Shipping Cost</label>
+            <input id="shipping" type="number" step="0.01" class="w-full border rounded-lg px-3 py-2" placeholder="0.00">
+          </div>
+        </div>
+        <div class="mt-3">
+          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Restocking Fee %</label>
+          <input id="restockPct" type="number" step="0.01" class="w-full border rounded-lg px-3 py-2" placeholder="0">
+        </div>
       </div>
     </section>
 
@@ -183,44 +187,25 @@
             <tr>
               <th class="p-2 text-left">Part Number</th>
               <th class="p-2 text-left">Description</th>
-              <th class="p-2 text-left">Date Code / Lot</th>
+              <th class="p-2 text-left">Date/Lot</th>
               <th class="p-2 text-left">Qty Shipped</th>
-              <th class="p-2 text-left">Qty Returning</th>
+              <th class="p-2 text-left">Qty Return</th>
               <th class="p-2 text-left">Reason</th>
               <th class="p-2 text-left">Condition</th>
-              <th class="p-2 text-left">Ext. Value</th>
+              <th class="p-2 text-left">Unit</th>
+              <th class="p-2 text-left">Ext.</th>
               <th class="p-2 text-left">Remove</th>
             </tr>
           </thead>
           <tbody id="itemsBody"></tbody>
         </table>
       </div>
-      <div class="grid md:grid-cols-3 gap-4 mt-4">
-        <div>
-          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Global Unit Value (optional)</label>
-          <input id="defaultUnit" type="number" step="0.0001" class="w-full border rounded-lg px-3 py-2" placeholder="0.00">
-        </div>
-        <div>
-          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Shipping Cost (optional)</label>
-          <input id="shipping" type="number" step="0.01" class="w-full border rounded-lg px-3 py-2" placeholder="0.00">
-        </div>
-        <div>
-          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Restocking Fee % (optional)</label>
-          <input id="restockPct" type="number" step="0.01" class="w-full border rounded-lg px-3 py-2" placeholder="0">
-        </div>
-      </div>
     </section>
 
-    <!-- Addresses / Footer -->
-    <section class="grid md:grid-cols-2 gap-4">
-      <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
-        <h2 class="font-semibold mb-3">Return To (Warehouse / Lab)</h2>
-        <textarea id="returnTo" rows="6" class="w-full border rounded-lg px-3 py-2" placeholder="Return address for goods"></textarea>
-      </div>
-      <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
-        <h2 class="font-semibold mb-3">Additional Notes (shown on PDF)</h2>
-        <textarea id="notes" rows="6" class="w-full border rounded-lg px-3 py-2" placeholder="Courier account, deadline, label format, RA#, etc."></textarea>
-      </div>
+    <!-- Notes -->
+    <section class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
+      <h2 class="font-semibold mb-3">Additional Notes (shown on PDF)</h2>
+      <textarea id="notes" rows="5" class="w-full border rounded-lg px-3 py-2" placeholder="Courier account, deadline, label format, RA#, etc."></textarea>
     </section>
   </div>
 
@@ -232,8 +217,7 @@
       catch { return (cur || 'USD') + ' ' + nf(v).toFixed(2); }
     };
 
-    // ===== LOGO (reuse pattern from SO / Invoice) =====
-    // Adjust relative path if this file sits at a different depth than the SO tool
+    // ===== LOGO =====
     const LOGO_URL = '../assets/Logo_color_white_background (1).png';
     let logoDataUrl = null, logoImg = null;
 
@@ -278,46 +262,38 @@
       const ih = logoImg.naturalHeight || logoImg.height;
       if (!iw || !ih) return;
       const ratio = Math.min(maxW / iw, maxH / ih);
-      const w = Math.max(1, iw * ratio);
-      const h = Math.max(1, ih * ratio);
-      doc.addImage(logoDataUrl, 'PNG', x, y, w, h, undefined, 'FAST');
+      doc.addImage(logoDataUrl, 'PNG', x, y, Math.max(1, iw*ratio), Math.max(1, ih*ratio), undefined, 'FAST');
     }
 
-    // ===== Seller presets (same as SO maker) =====
+    // ===== Presets =====
     const SELLER_PRESETS = {
       uk: {
         name: 'Verified Electronics (VELUK Group Limited)',
-        address: [
-          '14 Albion Street',
-          'Offices 1–3',
-          'Hull',
-          'East Yorkshire',
-          'HU1 3TD',
-          'UNITED KINGDOM',
-          'Phone: +44 1482 904582'
-        ].join('\\n'),
+        address: `14 Albion Street
+Offices 1–3
+Hull
+East Yorkshire
+HU1 3TD
+UNITED KINGDOM
+Phone: +44 1482 904582`,
         vat: ''
       },
       us: {
         name: 'Verified Electronics LLC',
-        address: [
-          '8 The Green, Suite B',
-          'Dover, DE 19901',
-          'UNITED STATES',
-          'Phone: +1 203 299 2980',
-          'Email: sales@verifiedelectronics.com'
-        ].join('\\n'),
+        address: `8 The Green, Suite B
+Dover, DE 19901
+UNITED STATES
+Phone: +1 203 299 2980
+Email: sales@verifiedelectronics.com`,
         vat: ''
       }
     };
 
-    $('sellerPreset')?.addEventListener('change', (e)=>{
-      const key = e.target.value;
-      const p = SELLER_PRESETS[key];
-      if (!p) { $('sellerName').value=''; $('sellerAddress').value=''; $('sellerVat').value=''; return; }
-      $('sellerName').value = p.name || '';
-      $('sellerAddress').value = p.address || '';
-      $('sellerVat').value = p.vat || '';
+    $('sellerPreset').addEventListener('change', (e)=>{
+      const p = SELLER_PRESETS[e.target.value];
+      $('sellerName').value = p?.name || '';
+      $('sellerAddress').value = p?.address || '';
+      $('sellerVat').value = p?.vat || '';
     });
 
     // ===== Line items =====
@@ -369,10 +345,7 @@
         const cond   = inp[6].querySelector('select').value;
         const unit   = inp[7].querySelector('input').value ? nf(inp[7].querySelector('input').value) : nf($('defaultUnit').value);
         const ext = qr * unit;
-        if (part && qr>0) {
-          items.push({part, desc, lot, qs, qr, reason, cond, unit, ext});
-          subtotal += ext;
-        }
+        if (part && qr>0) { items.push({part, desc, lot, qs, qr, reason, cond, unit, ext}); subtotal += ext; }
       });
       return {items, subtotal};
     }
@@ -395,7 +368,7 @@
 
       const currency = ($('currency').value||'USD').toUpperCase();
 
-      // Grab fields
+      // Fields
       const rmaNumber = $('rmaNumber').value;
       const rmaDate = $('rmaDate').value;
       const refNumber = $('refNumber').value;
@@ -408,7 +381,7 @@
 
       const buyerCompany = $('buyerCompany').value;
       const buyerContact = $('buyerContact').value;
-      const billTo = $('billTo').value;
+      const buyerAddress = $('buyerAddress').value;
 
       const resolution = $('resolution').value;
       const returnWindow = $('returnWindow').value;
@@ -421,8 +394,6 @@
       const photosProvided = $('photosProvided').checked;
       const samplesProvided = $('samplesProvided').checked;
       const usedOrSoldered = $('usedOrSoldered').checked;
-
-      const policyNotes = $('policyNotes').value;
 
       const shipping = nf($('shipping').value);
       const restockPct = nf($('restockPct').value);
@@ -438,66 +409,72 @@
       doc.setFont('helvetica','bold'); doc.setFontSize(18);
       doc.text('Return Material Authorization (RMA)', right, 42, {align:'right'});
       doc.setFont('helvetica','normal'); doc.setFontSize(10);
-      if (rmaNumber) doc.text(`RMA Number: ${rmaNumber}`, right, 58, {align:'right'});
-      if (rmaDate) doc.text(`Issue Date: ${rmaDate}`, right, 72, {align:'right'});
-      if (refNumber) doc.text(`Related: ${refNumber}`, right, 86, {align:'right'});
-      if (poNumber) doc.text(`PO: ${poNumber}`, right, 100, {align:'right'});
-      if (sellerVat) doc.text(`VAT / Tax ID: ${sellerVat}`, right, 114, {align:'right'});
+      const hdrLines = [
+        rmaNumber ? `RMA Number: ${rmaNumber}` : '',
+        rmaDate ? `Issue Date: ${rmaDate}` : '',
+        refNumber ? `Related: ${refNumber}` : '',
+        poNumber ? `PO: ${poNumber}` : '',
+        sellerVat ? `VAT / Tax ID: ${sellerVat}` : ''
+      ].filter(Boolean).join('\n');
+      if (hdrLines) doc.text(hdrLines, right, 60, {align:'right', maxWidth: 240});
 
       // Parties
       let y=132;
-      doc.setFont('helvetica','bold'); doc.text('Seller', left, y);
+      doc.setFont('helvetica','bold'); doc.text('Verified Electronics', left, y);
       doc.text('Customer', 300, y);
       doc.setFont('helvetica','normal');
-      y+=14; doc.text(sellerName||'-', left, y); doc.text(buyerCompany||'-', 300, y);
-      const sLines = (sellerAddress||'-').split('\\n'); sLines.forEach((line,i)=> doc.text(line, left, y+12*(i+1)));
-      const bLines = (buyerContact||'-').split('\\n'); bLines.forEach((line,i)=> doc.text(line, 300, y+12*(i+1)));
-      const heightA = 12 * (Math.max(sLines.length, bLines.length) + 2);
-      y += heightA;
+      y+=14; 
+      doc.text(sellerName||'-', left, y);
+      doc.text(buyerCompany||'-', 300, y);
+
+      const sLines = (sellerAddress||'-').split('\n'); sLines.forEach((line,i)=> doc.text(line, left, y+12*(i+1), {maxWidth: 240}));
+      const cLines = (buyerAddress||'-').split('\n'); cLines.forEach((line,i)=> doc.text(line, 300, y+12*(i+1), {maxWidth: right-300}));
+      const afterAddrY = y + 12 * (Math.max(sLines.length, cLines.length) + 1);
+      if (buyerContact) doc.text(buyerContact, 300, afterAddrY+12, {maxWidth: right-300});
+
+      y = afterAddrY + 28;
       aline(y); y+=16;
 
-      // Meta
+      // RMA Meta + Return To
       doc.setFont('helvetica','bold'); doc.text('RMA Details', left, y);
       doc.setFont('helvetica','normal');
-      const meta1 = [
+      const metaText = [
         `Requested Resolution: ${resolution}`,
         `Return Window: ${returnWindow||'-'} days`,
         `Return Method: ${returnMethod}`,
         sellerContact ? `RMA Contact: ${sellerContact}` : ''
-      ].filter(Boolean).join('   ');
-      doc.text(meta1, left, y+14);
+      ].filter(Boolean).join('\n');
+      doc.text(metaText, left, y+14, {maxWidth: 240});
 
-      doc.setFont('helvetica','bold'); doc.text('Bill To', left, y+38);
-      doc.setFont('helvetica','normal'); (billTo||'-').split('\\n').forEach((l,i)=> doc.text(l, left, y+52+12*i));
-      doc.setFont('helvetica','bold'); doc.text('Return To', 300, y+38);
-      doc.setFont('helvetica','normal'); (returnTo||'-').split('\\n').forEach((l,i)=> doc.text(l, 300, y+52+12*i));
+      doc.setFont('helvetica','bold'); doc.text('Return To', 300, y);
+      doc.setFont('helvetica','normal');
+      (returnTo||'-').split('\n').forEach((l,i)=> doc.text(l, 300, y+14+12*i, {maxWidth: right-300}));
 
-      // Items table
+      // Items table — narrower set of columns (no "Qty Shipped" in PDF; no "Remove")
       const tableY = y+90;
-      const head = [['#','Part Number','Description','Date/Lot','Qty Shipped','Qty Return','Reason','Condition','Unit Value','Ext. Value']];
+      const head = [['#','Part Number','Description','Date/Lot','Qty Return','Reason','Condition','Unit','Ext.']];
       const body = items.length ? items.map((it,i)=>[
-        i+1, it.part, it.desc||'', it.lot||'', it.qs, it.qr, it.reason||'', it.cond||'', money(it.unit, currency), money(it.ext, currency)
-      ]) : [['','','','','','','','','','']];
+        i+1, it.part, it.desc||'', it.lot||'', it.qr, it.reason||'', it.cond||'', money(it.unit, currency), money(it.ext, currency)
+      ]) : [['','','','','','','','','']];
 
-      // 20 + 95 + 140 + 60 + 50 + 55 + 80 + 70 + 60 + 60 = 690 (we'll let autotable fit to width)
+      // Column widths chosen to stay under the printable width (~515pt)
       doc.autoTable({
         startY: tableY,
         head, body,
-        styles:{fontSize:9, cellPadding:6, overflow:'linebreak'},
+        styles:{fontSize:9, cellPadding:5, overflow:'linebreak'},
         headStyles:{fillColor:[30,64,175], halign:'left'},
         margin: { left, right: pageWidth - right },
         tableWidth: contentWidth,
         columnStyles:{
-          0:{cellWidth:20, halign:'right'},
-          1:{cellWidth:95},
-          2:{cellWidth:140},
-          3:{cellWidth:60},
-          4:{cellWidth:50, halign:'right'},
-          5:{cellWidth:55, halign:'right'},
-          6:{cellWidth:80},
-          7:{cellWidth:70},
-          8:{cellWidth:60, halign:'right'},
-          9:{cellWidth:60, halign:'right'}
+          0:{cellWidth:16, halign:'right'},  // #
+          1:{cellWidth:75},                  // Part
+          2:{cellWidth:100},                 // Desc
+          3:{cellWidth:45},                  // Date/Lot
+          4:{cellWidth:45, halign:'right'},  // Qty Return
+          5:{cellWidth:65},                  // Reason
+          6:{cellWidth:65},                  // Condition
+          7:{cellWidth:40, halign:'right'},  // Unit
+          8:{cellWidth:45, halign:'right'}   // Ext.
         },
         didDrawPage: function () {
           const pageCount = doc.getNumberOfPages();
@@ -511,12 +488,12 @@
       doc.setFont('helvetica','bold'); doc.text('Summary', left, after);
       doc.setFont('helvetica','normal');
       after+=14;
-      doc.text(`Items Value: ${money(subtotal, currency)}`, left, after);
-      doc.text(`Shipping: ${money(shipping, currency)}`, left, after+14);
-      doc.text(`Restocking Fee (${restockPct.toFixed(2)}%): ${money(restockFee, currency)}`, left, after+28);
-      doc.setFont('helvetica','bold'); doc.text(`TOTAL: ${money(total, currency)}`, left, after+48);
+      doc.text(`Items Value: ${money(subtotal, currency)}`, left, after, {maxWidth: contentWidth});
+      doc.text(`Shipping: ${money(shipping, currency)}`, left, after+14, {maxWidth: contentWidth});
+      doc.text(`Restocking Fee (${restockPct.toFixed(2)}%): ${money(restockFee, currency)}`, left, after+28, {maxWidth: contentWidth});
+      doc.setFont('helvetica','bold'); doc.text(`TOTAL: ${money(total, currency)}`, left, after+48, {maxWidth: contentWidth});
 
-      // Technical / Instructions blocks
+      // Technical / Instructions / Notes
       let blockY = after + 90;
 
       if (issueType || issueSummary) {
@@ -525,9 +502,9 @@
         const techLines = [
           issueType ? ('Type: ' + issueType) : '',
           issueSummary || ''
-        ].filter(Boolean).join('\\n');
-        doc.text(techLines, left, blockY+14, {maxWidth: contentWidth}); 
-        blockY += 60;
+        ].filter(Boolean).join('\n');
+        doc.text(techLines, left, blockY+14, {maxWidth: contentWidth});
+        blockY += 54;
       }
 
       const triageBits = [
@@ -539,33 +516,27 @@
       if (triageBits) {
         doc.setFont('helvetica','bold'); doc.text('Triage', left, blockY);
         doc.setFont('helvetica','normal'); doc.text(triageBits, left, blockY+14, {maxWidth: contentWidth});
-        blockY += 34;
+        blockY += 40;
       }
 
       if (instructions) {
         doc.setFont('helvetica','bold'); doc.text('Return Instructions', left, blockY);
         doc.setFont('helvetica','normal'); doc.text(instructions, left, blockY+14, {maxWidth: contentWidth});
-        blockY += 54;
+        blockY += 46;
       }
 
       if (notes) {
         doc.setFont('helvetica','bold'); doc.text('Notes', left, blockY);
         doc.setFont('helvetica','normal'); doc.text(notes, left, blockY+14, {maxWidth: contentWidth});
-        blockY += 54;
-      }
-
-      if (policyNotes) {
-        doc.setFont('helvetica','bold'); doc.text('Policy', left, blockY);
-        doc.setFont('helvetica','normal'); doc.text(policyNotes, left, blockY+14, {maxWidth: contentWidth});
-        blockY += 54;
+        blockY += 46;
       }
 
       // Signatures
       doc.setFont('helvetica','bold'); 
-      doc.text('Authorized (Seller):', left, blockY+90);
-      doc.line(left, blockY+102, left+220, blockY+102);
-      doc.text('Authorized (Customer):', 300, blockY+90);
-      doc.line(300, blockY+102, 520, blockY+102);
+      doc.text('Authorized (Seller):', left, blockY+70);
+      doc.line(left, blockY+82, left+220, blockY+82);
+      doc.text('Authorized (Customer):', 300, blockY+70);
+      doc.line(300, blockY+82, 520, blockY+82);
 
       const fn = 'RMA-' + (rmaNumber || 'Document') + '.pdf';
       doc.save(fn);
@@ -573,20 +544,25 @@
 
     // Defaults
     function setDefaults(){
+      const p = SELLER_PRESETS.uk;
+      $('sellerName').value = p.name;
+      $('sellerAddress').value = p.address;
+      $('sellerVat').value = p.vat;
       $('sellerContact').value = 'support@verifiedelectronics.com';
       $('returnWindow').value = 30;
-      $('instructions').value = 'Affix the RMA number to the outer carton. Include original labels and packaging where possible. Remove or obscure previous shipping labels. Ship with tracking and share the tracking number with your Verified Electronics contact.';
-      $('policyNotes').value = 'Claims window: 90 days from invoice date unless agreed otherwise. Items soldered/used may require failure analysis before credit or replacement. RMA required for all returns. No consequential damages.';
-      $('returnTo').value = [
-        'Verified Electronics — RMA Receiving',
-        '14 Albion Street, Offices 1–3',
-        'Hull, East Yorkshire, HU1 3TD',
-        'UNITED KINGDOM'
-      ].join('\\n');
+      $('instructions').value = `Affix the RMA number to the outer carton.
+Include original labels and packaging where possible.
+Remove/obscure previous shipping labels.
+Ship with tracking and share the tracking number.`;
+      $('returnTo').value = `Verified Electronics — RMA Receiving
+14 Albion Street, Offices 1–3
+Hull, East Yorkshire, HU1 3TD
+UNITED KINGDOM`;
     }
 
-    loadRepoLogo();
     setDefaults();
+    loadRepoLogo();
   </script>
 </body>
 </html>
+
