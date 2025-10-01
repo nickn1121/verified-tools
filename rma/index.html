@@ -35,7 +35,7 @@
       <div class="grid md:grid-cols-5 gap-4">
         <div>
           <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">RMA Number</label>
-          <input id="rmaNumber" class="w-full border rounded-lg px-3 py-2" placeholder="RMA-000123" />
+          <input id="rmaNumber" class="w-full border rounded-lg px-3 py-2" placeholder="RMA-0213" />
         </div>
         <div>
           <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Issue Date</label>
@@ -91,11 +91,11 @@
         <input id="buyerCompany" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Customer Company Ltd." />
         <label class="block text-sm mb-1">Contact</label>
         <input id="buyerContact" class="w-full border rounded-lg px-3 py-2 mb-3" placeholder="Name / Email / Phone" />
-        <label class="block text-sm mb-1">Return To (Warehouse / Lab)</label>
-        <textarea id="returnTo" rows="6" class="w-full border rounded-lg px-3 py-2" placeholder="Enter full return address on separate lines"></textarea>
+        <label class="block text-sm mb-1">Customer Address</label>
+        <textarea id="buyerAddress" rows="6" class="w-full border rounded-lg px-3 py-2" placeholder="Street&#10;City&#10;Region&#10;Postcode&#10;Country"></textarea>
       </div>
 
-      <!-- Return meta -->
+      <!-- RMA meta -->
       <div class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
         <h2 class="font-semibold mb-3">RMA Details</h2>
         <div class="grid grid-cols-2 gap-3">
@@ -117,6 +117,10 @@
             <option>Verified Electronics Collect</option>
             <option>3rd Party Account</option>
           </select>
+        </div>
+        <div class="mt-3">
+          <label class="block text-sm mb-1">Return To (Warehouse / Lab)</label>
+          <textarea id="returnTo" rows="6" class="w-full border rounded-lg px-3 py-2" placeholder="Enter full return address on separate lines"></textarea>
         </div>
         <div class="mt-3">
           <label class="block text-sm mb-1">Return Instructions (shown on PDF)</label>
@@ -183,13 +187,13 @@
             <tr>
               <th class="p-2 text-left">Part Number</th>
               <th class="p-2 text-left">Description</th>
-              <th class="p-2 text-left">Date Code / Lot</th>
+              <th class="p-2 text-left">Date/Lot</th>
               <th class="p-2 text-left">Qty Shipped</th>
-              <th class="p-2 text-left">Qty Returning</th>
+              <th class="p-2 text-left">Qty Return</th>
               <th class="p-2 text-left">Reason</th>
               <th class="p-2 text-left">Condition</th>
-              <th class="p-2 text-left">Unit Value</th>
-              <th class="p-2 text-left">Ext. Value</th>
+              <th class="p-2 text-left">Unit</th>
+              <th class="p-2 text-left">Ext.</th>
               <th class="p-2 text-left">Remove</th>
             </tr>
           </thead>
@@ -377,6 +381,7 @@ Email: sales@verifiedelectronics.com`,
 
       const buyerCompany = $('buyerCompany').value;
       const buyerContact = $('buyerContact').value;
+      const buyerAddress = $('buyerAddress').value;
 
       const resolution = $('resolution').value;
       const returnWindow = $('returnWindow').value;
@@ -421,13 +426,16 @@ Email: sales@verifiedelectronics.com`,
       y+=14; 
       doc.text(sellerName||'-', left, y);
       doc.text(buyerCompany||'-', 300, y);
-      const sLines = (sellerAddress||'-').split('\n'); sLines.forEach((line,i)=> doc.text(line, left, y+12*(i+1)));
-      const bLines = (buyerContact||'-').split('\n'); bLines.forEach((line,i)=> doc.text(line, 300, y+12*(i+1)));
-      const heightA = 12 * (Math.max(sLines.length, bLines.length) + 2);
-      y += heightA;
+
+      const sLines = (sellerAddress||'-').split('\n'); sLines.forEach((line,i)=> doc.text(line, left, y+12*(i+1), {maxWidth: 240}));
+      const cLines = (buyerAddress||'-').split('\n'); cLines.forEach((line,i)=> doc.text(line, 300, y+12*(i+1), {maxWidth: right-300}));
+      const afterAddrY = y + 12 * (Math.max(sLines.length, cLines.length) + 1);
+      if (buyerContact) doc.text(buyerContact, 300, afterAddrY+12, {maxWidth: right-300});
+
+      y = afterAddrY + 28;
       aline(y); y+=16;
 
-      // RMA Meta (wrapped, to avoid spill)
+      // RMA Meta + Return To
       doc.setFont('helvetica','bold'); doc.text('RMA Details', left, y);
       doc.setFont('helvetica','normal');
       const metaText = [
@@ -436,38 +444,37 @@ Email: sales@verifiedelectronics.com`,
         `Return Method: ${returnMethod}`,
         sellerContact ? `RMA Contact: ${sellerContact}` : ''
       ].filter(Boolean).join('\n');
-      doc.text(metaText, left, y+14, {maxWidth: contentWidth});
+      doc.text(metaText, left, y+14, {maxWidth: 240});
 
-      // Return To (now free-form, normal newlines)
       doc.setFont('helvetica','bold'); doc.text('Return To', 300, y);
       doc.setFont('helvetica','normal');
       (returnTo||'-').split('\n').forEach((l,i)=> doc.text(l, 300, y+14+12*i, {maxWidth: right-300}));
 
-      // Items table
+      // Items table — narrower set of columns (no "Qty Shipped" in PDF; no "Remove")
       const tableY = y+90;
-      const head = [['#','Part Number','Description','Date/Lot','Qty Shipped','Qty Return','Reason','Condition','Unit','Ext.']];
+      const head = [['#','Part Number','Description','Date/Lot','Qty Return','Reason','Condition','Unit','Ext.']];
       const body = items.length ? items.map((it,i)=>[
-        i+1, it.part, it.desc||'', it.lot||'', it.qs, it.qr, it.reason||'', it.cond||'', money(it.unit, currency), money(it.ext, currency)
-      ]) : [['','','','','','','','','','']];
+        i+1, it.part, it.desc||'', it.lot||'', it.qr, it.reason||'', it.cond||'', money(it.unit, currency), money(it.ext, currency)
+      ]) : [['','','','','','','','','']];
 
+      // Column widths chosen to stay under the printable width (~515pt)
       doc.autoTable({
         startY: tableY,
         head, body,
-        styles:{fontSize:9, cellPadding:6, overflow:'linebreak'},
+        styles:{fontSize:9, cellPadding:5, overflow:'linebreak'},
         headStyles:{fillColor:[30,64,175], halign:'left'},
         margin: { left, right: pageWidth - right },
         tableWidth: contentWidth,
         columnStyles:{
-          0:{cellWidth:18, halign:'right'},
-          1:{cellWidth:95},
-          2:{cellWidth:140},
-          3:{cellWidth:60},
-          4:{cellWidth:54, halign:'right'},
-          5:{cellWidth:58, halign:'right'},
-          6:{cellWidth:90},
-          7:{cellWidth:70},
-          8:{cellWidth:56, halign:'right'},
-          9:{cellWidth:56, halign:'right'}
+          0:{cellWidth:16, halign:'right'},  // #
+          1:{cellWidth:75},                  // Part
+          2:{cellWidth:100},                 // Desc
+          3:{cellWidth:45},                  // Date/Lot
+          4:{cellWidth:45, halign:'right'},  // Qty Return
+          5:{cellWidth:65},                  // Reason
+          6:{cellWidth:65},                  // Condition
+          7:{cellWidth:40, halign:'right'},  // Unit
+          8:{cellWidth:45, halign:'right'}   // Ext.
         },
         didDrawPage: function () {
           const pageCount = doc.getNumberOfPages();
@@ -486,7 +493,7 @@ Email: sales@verifiedelectronics.com`,
       doc.text(`Restocking Fee (${restockPct.toFixed(2)}%): ${money(restockFee, currency)}`, left, after+28, {maxWidth: contentWidth});
       doc.setFont('helvetica','bold'); doc.text(`TOTAL: ${money(total, currency)}`, left, after+48, {maxWidth: contentWidth});
 
-      // Technical / Instructions / Notes (no Policy)
+      // Technical / Instructions / Notes
       let blockY = after + 90;
 
       if (issueType || issueSummary) {
@@ -535,7 +542,7 @@ Email: sales@verifiedelectronics.com`,
       doc.save(fn);
     });
 
-    // Defaults (real newlines, no "\n" literals shown in the UI)
+    // Defaults
     function setDefaults(){
       const p = SELLER_PRESETS.uk;
       $('sellerName').value = p.name;
@@ -558,3 +565,4 @@ UNITED KINGDOM`;
   </script>
 </body>
 </html>
+
