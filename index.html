@@ -140,6 +140,20 @@
         </div>
       </article>
 
+      <!-- RMA Generator -->
+      <article class="card" data-title="rma return material authorization generator">
+        <div class="bubble">📦</div>
+        <div class="cd-hd">
+          <div class="icon">RMA</div>
+          <div class="ttl">RMA Generator</div>
+        </div>
+        <p class="desc">Generate branded Return Material Authorization PDFs with traceability, item details and policies.</p>
+        <div class="cd-ft">
+          <a class="btn" href="rma/index.html">Open</a>
+          <span class="tag">Docs</span>
+        </div>
+      </article>
+
       <!-- Auto IC Source Uploader -->
       <article class="card" data-title="auto ic source uploader normalise map dedupe">
         <div class="bubble">📤</div>
@@ -240,8 +254,8 @@
     });
 
     // === Auto IC: trigger Cloudflare Worker ===
-    const WORKER_URL = 'https://young-firefly-7d18.nick-north.workers.dev/'; // your Worker
-    const UI_SHARED_TOKEN = 'icsource-7d4f2a9d81-Prod'; // must match Worker env UI_SHARED_TOKEN
+    const WORKER_URL = 'https://young-firefly-7d18.nick-north.workers.dev/';
+    const UI_SHARED_TOKEN = 'icsource-7d4f2a9d81-Prod';
 
     const sendBtn = document.getElementById('sendNowBtn');
     if (sendBtn) {
@@ -281,6 +295,7 @@
   </script>
 </body>
 </html>
+
 
 
 
