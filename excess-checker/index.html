@@ -63,6 +63,12 @@
     /* progress bar */
     .progress{position:relative;height:10px;border-radius:999px;background:#eee;overflow:hidden;border:1px solid var(--line);margin-top:8px}
     .progress-bar{height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2));transition:width .2s ease}
+
+    /* mini table for per-vendor breakdowns in search results */
+    .minitable{width:100%; border-collapse:collapse; margin-top:6px; font-size:13px}
+    .minitable th,.minitable td{padding:6px 8px; border-top:1px solid var(--line)}
+    .minitable th{color:var(--muted); text-align:left}
+    .minitable td.qty{text-align:right; font-variant-numeric: tabular-nums}
   </style>
 </head>
 <body>
@@ -450,7 +456,7 @@ STM32F103C8T6, 50, ST"></textarea>
     const HDR_VEND = ["Vendor","Supplier","Seller","Company","Vendor Name","Supplier Name"];
     const dedupUpper = (arr)=>[...new Set(arr.map(s=>s.trim()).filter(Boolean).map(s=>s.toUpperCase()))];
 
-    // Stream-parse CSV with Papa (worker) so huge files don't load in memory
+    // Stream-parse CSV (Papa worker) so huge files don't load in memory
     const streamParseCSV = (file, onChunk) => new Promise((resolve, reject) => {
       let headers = null, totalRows = 0;
       Papa.parse(file, {
@@ -483,11 +489,8 @@ STM32F103C8T6, 50, ST"></textarea>
 
       const file = $("file-search").files?.[0];
       if (file){
-        // quick parse (header=true) for part column only
         let collected = [];
-        await streamParseCSV(file, (chunkRows)=>{
-          collected.push(...chunkRows);
-        });
+        await streamParseCSV(file, (chunkRows)=>{ collected.push(...chunkRows); });
         const headers = Object.keys(collected[0] || {});
         const hPart = findHeader(headers, HDR_PART);
         if (!hPart) { alert("CSV needs a Part Number/MPN column"); return; }
@@ -505,14 +508,38 @@ STM32F103C8T6, 50, ST"></textarea>
       if (results.length === 0){
         container.innerHTML = `<div class="row">No matching parts found.</div>`;
       } else {
-        const byPart = results.reduce((m,r)=>{ const k=r.part_number.toUpperCase(); (m[k]??=[]).push(r); return m; }, {});
+        // group by part
+        const byPart = results.reduce((m,r)=>{
+          const k = (r.part_number || "").toUpperCase();
+          (m[k] ??= []).push(r);
+          return m;
+        }, {});
+
         Object.keys(byPart).sort().forEach(k=>{
-          const totalQty = byPart[k].reduce((a,b)=>a + (Number(b.quantity)||0),0);
-          const vendors = [...new Set(byPart[k].map(x=>x.vendor).filter(Boolean))].join(", ");
-          const el = document.createElement("div"); el.className = "row";
-          el.innerHTML = `<strong>${k}</strong><br>
-            • Total Qty: <strong>${totalQty.toLocaleString()}</strong><br>
-            • Vendors: ${vendors || "—"}`;
+          // aggregate quantities by vendor
+          const vendorTotals = {};
+          let totalQty = 0;
+          for (const r of byPart[k]) {
+            const v = r.vendor || "(unknown)";
+            const q = Number(r.quantity) || 0;
+            vendorTotals[v] = (vendorTotals[v] || 0) + q;
+            totalQty += q;
+          }
+          const rowsHtml = Object.entries(vendorTotals)
+            .sort((a,b)=>b[1]-a[1])
+            .map(([v,q])=>`<tr><td>${v}</td><td class="qty">${q.toLocaleString()}</td></tr>`)
+            .join("");
+
+          const el = document.createElement("div");
+          el.className = "row";
+          el.innerHTML = `
+            <div><strong>${k}</strong></div>
+            <table class="minitable">
+              <thead><tr><th>Vendor</th><th class="qty">Quantity</th></tr></thead>
+              <tbody>${rowsHtml}</tbody>
+              <tfoot><tr><th>Total</th><th class="qty">${totalQty.toLocaleString()}</th></tr></tfoot>
+            </table>
+          `;
           container.appendChild(el);
         });
       }
@@ -592,7 +619,7 @@ STM32F103C8T6, 50, ST"></textarea>
       }
 
       // 2) Chunk + upload with determinate progress
-      const CHUNK_SIZE = 1500;           // safe default (tune to 2000–3000 if stable)
+      const CHUNK_SIZE = 1500;           // safe default
       const SLEEP_MS   = 250;            // brief pause to avoid rate limits
       const chunks = Math.ceil(rows.length / CHUNK_SIZE);
       const sleep = (ms)=> new Promise(res=>setTimeout(res, ms));
@@ -873,10 +900,10 @@ STM32F103C8T6, 50, ST"></textarea>
       }
     };
 
-    $("vendor-search")?.addEventListener("input", ((fn, ms=250)=>{ let t; return e=>{ clearTimeout(t); t=setTimeout(()=>fn(e), ms); };})(async (e)=>{
+    $("vendor-search")?.addEventListener("input", debounce(async (e)=>{
       const q = e.target.value.trim();
       await VendorView.renderVendorList(q);
-    }));
+    }, 250));
     $("vp-prev")?.addEventListener("click", async ()=>{ if (VendorView.page > 1){ VendorView.page--; await VendorView.loadPage(); }});
     $("vp-next")?.addEventListener("click", async ()=>{ VendorView.page++; await VendorView.loadPage(); });
     $("btn-export-page")?.addEventListener("click", ()=> VendorView.exportCurrentPage());
