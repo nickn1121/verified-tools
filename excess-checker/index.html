@@ -59,6 +59,10 @@
     .filterbar{display:flex;gap:10px;align-items:center;margin:8px 0}
     .pill{padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;cursor:pointer}
     .pill.active{background:linear-gradient(90deg,var(--brand),var(--brand2));border:0;color:#fff}
+
+    /* progress bar */
+    .progress{position:relative;height:10px;border-radius:999px;background:#eee;overflow:hidden;border:1px solid var(--line);margin-top:8px}
+    .progress-bar{height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2));transition:width .2s ease}
   </style>
 </head>
 <body>
@@ -79,6 +83,7 @@
           <span class="chip">Unique Vendors: <strong id="stat-vendors">—</strong></span>
           <span class="chip">Uploads (Vendor × Date): <strong id="stat-batches">—</strong></span>
         </div>
+        <button id="btn-export-vendors" class="btn ghost" style="margin-top:8px">Export Vendors CSV</button>
       </div>
 
       <div class="tabs">
@@ -86,6 +91,7 @@
         <button class="tab" data-tab="tab-upload">Upload</button>
         <button class="tab" data-tab="tab-remove">Remove</button>
         <button class="tab" data-tab="tab-leader">Leaderboard</button>
+        <button class="tab" data-tab="tab-vendors">Vendors</button>
       </div>
 
       <!-- SEARCH -->
@@ -173,6 +179,13 @@ STM32F103C8T6, 50, ST"></textarea>
           <button id="btn-upload" class="btn">⬆️ Upload Excess</button>
           <span id="upload-status" class="hint mono"></span>
         </div>
+
+        <!-- Progress bar -->
+        <div id="upload-progress-wrap" class="subtle" style="display:none;margin-top:8px">
+          <div class="title" id="up-stage">Preparing…</div>
+          <div class="hint"><span id="up-detail">–</span></div>
+          <div class="progress"><div class="progress-bar" id="up-bar" style="width:0%"></div></div>
+        </div>
       </section>
 
       <!-- REMOVE -->
@@ -237,18 +250,59 @@ STM32F103C8T6, 50, ST"></textarea>
           </table>
         </div>
       </section>
+
+      <!-- VENDORS (read-only) -->
+      <section id="tab-vendors" class="section">
+        <div class="subtle">
+          <div class="title">View Excess by Vendor</div>
+          <div class="hint">Pick a vendor to see their parts and quantities. Read-only view.</div>
+        </div>
+
+        <div class="grid">
+          <div>
+            <label><strong>Search vendors</strong></label>
+            <input type="text" id="vendor-search" placeholder="Type to filter (min 2 chars)"/>
+            <div class="hint">Showing up to <span id="vendor-count">0</span> vendors</div>
+            <div id="vendor-list" class="rows" style="max-height:420px;overflow:auto"></div>
+          </div>
+
+          <div>
+            <div class="inline" style="justify-content:space-between">
+              <div>
+                <div class="title" id="vendor-title">—</div>
+                <div class="hint" id="vendor-stats">Select a vendor</div>
+              </div>
+              <div class="inline" style="gap:8px">
+                <button id="btn-export-page" class="btn ghost" disabled>Export page CSV</button>
+                <button id="btn-export-all" class="btn" disabled>Export full CSV</button>
+              </div>
+            </div>
+
+            <div class="rows" id="vendor-parts"></div>
+
+            <div class="inline" style="justify-content:space-between;margin-top:8px">
+              <span class="hint" id="vendor-page-hint"></span>
+              <div class="inline" style="gap:8px">
+                <button id="vp-prev" class="btn ghost" disabled>← Prev</button>
+                <button id="vp-next" class="btn ghost" disabled>Next →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div>
 
     <footer>© <span id="year"></span> Verified Electronics</footer>
   </div>
 
-  <!-- Robust CSV parser for commas-in-numbers, quotes, odd delimiters -->
+  <!-- PapaParse (robust CSV) -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    // === Supabase (your existing values) ===
+    // === Supabase (current values; you’ll rotate later) ===
     const SUPABASE_URL  = "https://ijzroisggstqkfhpjndq.supabase.co";
     const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc";
 
@@ -264,6 +318,7 @@ STM32F103C8T6, 50, ST"></textarea>
         btn.classList.add("active");
         document.getElementById(btn.dataset.tab).classList.add("active");
         if (btn.dataset.tab === "tab-leader") loadLeaderboard(currentPeriod);
+        if (btn.dataset.tab === "tab-vendors") VendorView.renderVendorList($("vendor-search")?.value?.trim()||"");
       });
     });
 
@@ -278,24 +333,69 @@ STM32F103C8T6, 50, ST"></textarea>
       return sel || "";
     };
 
-    // ---------- Stats ----------
+    // ---------- Accurate Stats (paginated vendors) ----------
+    async function getDistinctVendorsPaginated() {
+      const head = await supabase
+        .from("excess_parts")
+        .select("*", { count:"exact", head:true })
+        .not("vendor", "is", null);
+
+      const totalRows = head.count || 0;
+      if (totalRows === 0) return [];
+
+      const PAGE = 10000;
+      const pages = Math.ceil(totalRows / PAGE);
+      const uniq = new Set();
+
+      for (let p = 0; p < pages; p++) {
+        const from = p * PAGE;
+        const to   = Math.min(from + PAGE - 1, totalRows - 1);
+        const { data, error } = await supabase
+          .from("excess_parts")
+          .select("vendor")
+          .not("vendor","is",null)
+          .range(from, to);
+        if (error) throw error;
+        (data || []).forEach(r=>{
+          const v = (r.vendor||"").trim();
+          if (v) uniq.add(v);
+        });
+      }
+      return Array.from(uniq).sort((a,b)=>a.localeCompare(b));
+    }
+
     async function loadStats(){
       try{
-        const { count } = await supabase.from("excess_parts").select("*", { count:"exact", head:true });
-        $("stat-total").textContent = (count ?? 0).toLocaleString();
+        const totalHead = await supabase.from("excess_parts").select("*", { count:"exact", head:true });
+        $("stat-total").textContent = (totalHead.count ?? 0).toLocaleString();
 
-        const { data: vendors } = await supabase.from("excess_parts").select("vendor").not("vendor","is",null).limit(10000);
-        $("stat-vendors").textContent = vendors ? new Set(vendors.map(v=>v.vendor)).size : "—";
+        const vendors = await getDistinctVendorsPaginated();
+        $("stat-vendors").textContent = vendors.length.toLocaleString();
+        window.__VE_DISTINCT_VENDORS__ = vendors;
 
-        // existing view counting vendor×date uploads
         const { count: batches } = await supabase.from("excess_uploads").select("*", { count:"exact", head:true });
         $("stat-batches").textContent = (batches ?? 0).toLocaleString();
-      }catch{
+      }catch(e){
         $("stat-total").textContent = "—";
         $("stat-vendors").textContent = "—";
         $("stat-batches").textContent = "—";
+        console.error("loadStats failed", e);
       }
     }
+
+    // Export vendors CSV
+    $("btn-export-vendors")?.addEventListener("click", async ()=>{
+      try{
+        const list = window.__VE_DISTINCT_VENDORS__ || await getDistinctVendorsPaginated();
+        if (!list.length){ alert("No vendors found."); return; }
+        const csv = ["Vendor", ...list.map(v => `"${v.replace(/"/g,'""')}"`)].join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        const url  = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "vendors.csv"; a.click();
+        URL.revokeObjectURL(url);
+      }catch(err){ alert("Export failed: " + err.message); }
+    });
 
     // ---------- Upload list + dropdown (Remove tab) ----------
     async function refreshUploadsUI(){
@@ -332,17 +432,7 @@ STM32F103C8T6, 50, ST"></textarea>
       });
     }
 
-    // ---------- Robust CSV + helpers ----------
-    const parseCSV = async (file) => {
-      const text = await file.text();
-      const parsed = Papa.parse(text, {
-        header: true,
-        skipEmptyLines: true,
-        dynamicTyping: false,
-        transformHeader: (h) => String(h || "").trim()
-      });
-      return { headers: parsed.meta.fields || [], rows: parsed.data || [] };
-    };
+    // ---------- CSV helpers ----------
     const norm = (s)=>String(s ?? "").trim();
     const lower = (s)=>norm(s).toLowerCase();
     const cleanQty = (v)=>{
@@ -358,8 +448,33 @@ STM32F103C8T6, 50, ST"></textarea>
     const HDR_PART = ["Part Number","MPN","PN","Part","PartNumber","Item","MPN/Part Number"];
     const HDR_QTY  = ["Quantity","Qty","Q'ty","Qta","Quantità"];
     const HDR_VEND = ["Vendor","Supplier","Seller","Company","Vendor Name","Supplier Name"];
-
     const dedupUpper = (arr)=>[...new Set(arr.map(s=>s.trim()).filter(Boolean).map(s=>s.toUpperCase()))];
+
+    // Stream-parse CSV with Papa (worker) so huge files don't load in memory
+    const streamParseCSV = (file, onChunk) => new Promise((resolve, reject) => {
+      let headers = null, totalRows = 0;
+      Papa.parse(file, {
+        worker: true,
+        header: true,
+        skipEmptyLines: true,
+        dynamicTyping: false,
+        chunkSize: 1024 * 1024, // ~1MB
+        chunk: (results) => {
+          headers = headers || (results.meta.fields || []);
+          const rows = results.data || [];
+          totalRows += rows.length;
+          onChunk?.(rows, totalRows);
+        },
+        error: reject,
+        complete: () => resolve({ headers: headers || [], totalRows })
+      });
+    });
+
+    // Progress UI helpers
+    function showProgress(show=true){ $("upload-progress-wrap").style.display = show ? "block" : "none"; }
+    function setStage(t){ $("up-stage").textContent = t; }
+    function setDetail(t){ $("up-detail").textContent = t; }
+    function setBar(pct){ $("up-bar").style.width = Math.max(0, Math.min(100, pct)) + "%"; }
 
     // ---------- SEARCH ----------
     $("btn-search").addEventListener("click", async ()=>{
@@ -368,10 +483,15 @@ STM32F103C8T6, 50, ST"></textarea>
 
       const file = $("file-search").files?.[0];
       if (file){
-        const { headers, rows } = await parseCSV(file);
+        // quick parse (header=true) for part column only
+        let collected = [];
+        await streamParseCSV(file, (chunkRows)=>{
+          collected.push(...chunkRows);
+        });
+        const headers = Object.keys(collected[0] || {});
         const hPart = findHeader(headers, HDR_PART);
         if (!hPart) { alert("CSV needs a Part Number/MPN column"); return; }
-        parts = dedupUpper([...parts, ...rows.map(r=>r[hPart])]);
+        parts = dedupUpper([...parts, ...collected.map(r=>r[hPart])]);
       }
 
       if (parts.length === 0) { alert("Add some part numbers first."); return; }
@@ -400,72 +520,124 @@ STM32F103C8T6, 50, ST"></textarea>
       $("btn-search").disabled = false; $("btn-search").textContent = "🔍 Check Excess";
     });
 
-    // ---------- UPLOAD (RPC) ----------
+    // ---------- UPLOAD (RPC) — STREAMED + CHUNKED + STATUS BAR ----------
     $("btn-upload").addEventListener("click", async ()=>{
       const fallbackVendor = $("fallback-vendor").value.trim() || null;
       const uploader = getUploader();
-      if (!uploader){ $("upload-status").innerHTML = `<span class="err">Please select or enter 'Uploaded by'.</span>`; return; }
+      if (!uploader){
+        $("upload-status").innerHTML = `<span class="err">Please select or enter 'Uploaded by'.</span>`;
+        return;
+      }
 
+      // Reset UI
+      $("upload-status").textContent = "";
+      showProgress(true); setStage("Preparing…"); setDetail("Reading inputs"); setBar(0);
+
+      // 1) Gather rows from CSV (stream) and from pasted box
       let rows = [];
 
       const f = $("file-upload").files?.[0];
       if (f){
-        const { headers, rows: csvRows } = await parseCSV(f);
-        const hPart = findHeader(headers, HDR_PART);
-        const hQty  = findHeader(headers, HDR_QTY);
-        const hVend = findHeader(headers, HDR_VEND);
+        setStage("Parsing CSV…");
+        let headersDetected = null, hPart, hQty, hVend;
+        await streamParseCSV(f, (chunkRows, totalSoFar)=>{
+          if (!headersDetected){
+            headersDetected = Object.keys(chunkRows[0] || {});
+            hPart = findHeader(headersDetected, HDR_PART);
+            hQty  = findHeader(headersDetected, HDR_QTY);
+            hVend = findHeader(headersDetected, HDR_VEND);
+            if (!hPart || !hQty){
+              $("upload-status").innerHTML = `<span class="err">CSV must include Part Number/MPN and Quantity columns.</span>`;
+              showProgress(false);
+              throw new Error("Missing required headers");
+            }
+          }
+          rows.push(...chunkRows.map(r=>({
+            part_number: norm(r[hPart]).toUpperCase(),
+            quantity: cleanQty(r[hQty]),
+            vendor: norm(hVend ? r[hVend] : "") || (fallbackVendor || null),
+            uploaded_by: uploader
+          })));
+          setDetail(`Parsed ${totalSoFar.toLocaleString()} rows`);
+          setBar(10 + Math.min(60, (totalSoFar % 5000) / 5000 * 60)); // gentle movement 10–70%
+        });
+        setDetail(`Parsed ${rows.length.toLocaleString()} rows`);
+      }
 
-        if (!hPart || !hQty){
-          $("upload-status").innerHTML = `<span class="err">CSV must include Part Number/MPN and Quantity columns.</span>`;
+      // Pasted rows
+      const pasted = $("paste-upload").value.replace(/\r/g,"").split("\n").map(l=>l.trim()).filter(Boolean);
+      if (pasted.length){
+        setStage("Parsing pasted rows…");
+        pasted.forEach(line=>{
+          const cols = line.split(",").map(s=>s.trim()).filter(s=>s!=="");
+          if (!cols.length) return;
+          const pn = (cols[0]??"").toUpperCase();
+          let vend = null, qtyRaw = "";
+          if (cols.length === 1) qtyRaw = "0";
+          else if (cols.length === 2) qtyRaw = cols[1];
+          else { vend = cols[cols.length-1]; qtyRaw = cols.slice(1, -1).join(""); }
+          const qty = cleanQty(qtyRaw);
+          const vendor = vend || fallbackVendor || null;
+          if (pn) rows.push({ part_number: pn, quantity: qty, vendor, uploaded_by: uploader });
+        });
+        setDetail(`Parsed ${rows.length.toLocaleString()} rows`);
+      }
+
+      // Validate
+      rows = rows.filter(r=>r.part_number && r.quantity >= 0);
+      if (!rows.length){
+        $("upload-status").innerHTML = `<span class="err">Nothing to upload. Add a CSV and/or pasted rows.</span>`;
+        showProgress(false);
+        return;
+      }
+
+      // 2) Chunk + upload with determinate progress
+      const CHUNK_SIZE = 1500;           // safe default (tune to 2000–3000 if stable)
+      const SLEEP_MS   = 250;            // brief pause to avoid rate limits
+      const chunks = Math.ceil(rows.length / CHUNK_SIZE);
+      const sleep = (ms)=> new Promise(res=>setTimeout(res, ms));
+
+      $("btn-upload").disabled = true;
+      $("btn-upload").textContent = "⏳ Uploading…";
+      setStage("Uploading…");
+      setDetail(`0 of ${rows.length.toLocaleString()} rows`); setBar(70); // start at 70% after parse
+
+      let totalInserted = 0;
+      for (let i=0; i<chunks; i++){
+        const start = i * CHUNK_SIZE;
+        const end   = Math.min(start + CHUNK_SIZE, rows.length);
+        const batch = rows.slice(start, end);
+
+        $("upload-status").textContent = `Uploading chunk ${i+1}/${chunks} (${batch.length.toLocaleString()} rows)…`;
+
+        const { data, error } = await supabase.rpc("excess_bulk_insert", {
+          rows: batch,
+          default_vendor: fallbackVendor,
+          uploader
+        });
+
+        if (error){
+          $("upload-status").innerHTML = `<span class="err">Chunk ${i+1} failed: ${error.message}</span>`;
+          setStage("Failed"); setBar(100);
+          $("btn-upload").disabled = false; $("btn-upload").textContent = "⬆️ Upload Excess";
           return;
         }
 
-        rows = rows.concat(csvRows.map(r=>({
-          part_number: norm(r[hPart]).toUpperCase(),
-          quantity: cleanQty(r[hQty]),
-          vendor: norm(hVend ? r[hVend] : "") || (fallbackVendor || null),
-          uploaded_by: uploader
-        })));
+        totalInserted += batch.length;
+        const pct = Math.round(((i+1) / chunks) * 30) + 70; // 70–100% across chunks
+        setDetail(`${totalInserted.toLocaleString()} of ${rows.length.toLocaleString()} rows`);
+        setBar(Math.min(100, pct));
+        await sleep(SLEEP_MS);
       }
 
-      // Pasted rows tolerance: allow extra commas in quantity; treat first col as PN, last as Vendor (if present), middle joined as Qty
-      const pasted = $("paste-upload").value.replace(/\r/g,"").split("\n").map(l=>l.trim()).filter(Boolean);
-      pasted.forEach(line=>{
-        const cols = line.split(",").map(s=>s.trim()).filter(s=>s!=="");
-        if (!cols.length) return;
-        const pn = (cols[0]??"").toUpperCase();
-        let vend = null, qtyRaw = "";
-        if (cols.length === 1){
-          qtyRaw = "0";
-        } else if (cols.length === 2){
-          qtyRaw = cols[1];
-        } else {
-          vend = cols[cols.length-1];
-          qtyRaw = cols.slice(1, -1).join(""); // join middle bits (handles 1,342,762)
-        }
-        const qty = cleanQty(qtyRaw);
-        const vendor = vend || fallbackVendor || null;
-        if (pn) rows.push({ part_number: pn, quantity: qty, vendor, uploaded_by: uploader });
-      });
+      // 3) Done — refresh & reset
+      $("upload-status").innerHTML = `<span class="ok">✅ Uploaded ${totalInserted.toLocaleString()} rows across ${chunks} chunk(s).</span>`;
+      setStage("Completed"); setDetail(`All done`);
+      setBar(100);
 
-      rows = rows.filter(r=>r.part_number && r.quantity >= 0);
-      if (!rows.length){ $("upload-status").innerHTML = `<span class="err">Nothing to upload. Add a CSV and/or pasted rows.</span>`; return; }
-
-      $("btn-upload").disabled = true; $("btn-upload").textContent = "⏳ Uploading...";
-      $("upload-status").textContent = `Uploading ${rows.length} rows…`;
-
-      const { data, error } = await supabase.rpc("excess_bulk_insert", {
-        rows, default_vendor: fallbackVendor, uploader
-      });
-
-      if (error){
-        $("upload-status").innerHTML = `<span class="err">Upload failed: ${error.message}</span>`;
-      }else{
-        $("upload-status").innerHTML = `<span class="ok">Uploaded ${rows.length.toLocaleString()} rows (batch_id: ${data}).</span>`;
-        loadStats(); refreshUploadsUI(); loadLeaderboard(currentPeriod);
-      }
-
-      $("btn-upload").disabled = false; $("btn-upload").textContent = "⬆️ Upload Excess";
+      $("btn-upload").disabled = false;
+      $("btn-upload").textContent = "⬆️ Upload Excess";
+      loadStats(); refreshUploadsUI(); loadLeaderboard(currentPeriod);
     });
 
     // ---------- REMOVE ----------
@@ -536,7 +708,6 @@ STM32F103C8T6, 50, ST"></textarea>
       });
 
       const { from, to } = rangeFor(period);
-      // one row per batch (upload)
       let q = supabase.from("excess_batches").select("uploaded_by,batch_id,created_on_utc");
       if (period!=="all"){
         q = q.gte("created_on_utc", from).lte("created_on_utc", to);
@@ -547,14 +718,11 @@ STM32F103C8T6, 50, ST"></textarea>
 
       if (error){ tbody.innerHTML = `<tr><td colspan="3">Failed to load: ${error.message}</td></tr>`; return; }
 
-      // Count batches per uploader
       const counts = {};
       (data||[]).forEach(r=>{
         const name = r.uploaded_by || "(unknown)";
         counts[name] = (counts[name]||0) + 1;
       });
-
-      // Ensure core staff always present
       STAFF.forEach(n=>{ if(!(n in counts)) counts[n]=0; });
 
       const rows = Object.entries(counts)
@@ -573,6 +741,147 @@ STM32F103C8T6, 50, ST"></textarea>
       });
     }
 
+    document.querySelectorAll(".pill").forEach(p=>{
+      p.addEventListener("click", ()=> loadLeaderboard(p.dataset.period));
+    });
+
+    // ===== Vendors Tab Logic =====
+    function debounce(fn, ms=200){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+
+    const VendorView = {
+      selected: null, page: 1, pageSize: 200, totalRows: 0, totalQty: 0, currentPageRows: [],
+      async fetchVendors(prefix=""){
+        let q = supabase.from("excess_parts").select("vendor").not("vendor","is", null).limit(10000);
+        if (prefix && prefix.length >= 2) q = q.ilike("vendor", `${prefix}%`);
+        const { data, error } = await q;
+        if (error) throw error;
+        const uniq = [...new Set((data||[]).map(r => (r.vendor||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+        return uniq;
+      },
+      vendorItem(v){
+        const el = document.createElement("div");
+        el.className = "row"; el.style.cursor = "pointer"; el.textContent = v;
+        el.addEventListener("click", ()=> this.selectVendor(v));
+        return el;
+      },
+      async renderVendorList(prefix=""){
+        const box = $("vendor-list");
+        box.innerHTML = `<div class="row">Loading vendors…</div>`;
+        try{
+          const vendors = await this.fetchVendors(prefix);
+          $("vendor-count").textContent = vendors.length.toLocaleString();
+          box.innerHTML = "";
+          vendors.forEach(v => box.appendChild(this.vendorItem(v)));
+        }catch(e){ box.innerHTML = `<div class="row err">Failed to load vendors: ${e.message}</div>`; }
+      },
+      async selectVendor(vendor){
+        this.selected = vendor; this.page = 1;
+        $("vendor-title").textContent = vendor;
+        $("btn-export-all").disabled = false;
+        await this.refreshVendorStats();
+        await this.loadPage();
+      },
+      async refreshVendorStats(){
+        const { count } = await supabase.from("excess_parts").select("*", { count:"exact", head:true }).eq("vendor", this.selected);
+        this.totalRows = count || 0;
+
+        // SUM quantity via paged fetch (no schema changes)
+        let totalQty = 0;
+        const PAGE = 10000;
+        const pages = Math.ceil((this.totalRows||0)/PAGE);
+        for (let p=0;p<pages;p++){
+          const from = p*PAGE, to = from+PAGE-1;
+          const { data } = await supabase.from("excess_parts").select("quantity").eq("vendor", this.selected).range(from, to);
+          (data||[]).forEach(r=> totalQty += (Number(r.quantity)||0));
+        }
+        this.totalQty = totalQty;
+
+        $("vendor-stats").innerHTML = `Rows: <b>${(this.totalRows||0).toLocaleString()}</b> &nbsp;•&nbsp; Total Qty: <b>${(this.totalQty||0).toLocaleString()}</b>`;
+      },
+      async loadPage(){
+        const from = (this.page - 1) * this.pageSize;
+        const to   = from + this.pageSize - 1;
+        $("vendor-parts").innerHTML = `<div class="row">Loading parts…</div>`;
+        const { data, error, count } = await supabase
+          .from("excess_parts")
+          .select("part_number,quantity,created_at", { count:"exact" })
+          .eq("vendor", this.selected)
+          .order("part_number", { ascending:true })
+          .range(from, to);
+        if (error){ $("vendor-parts").innerHTML = `<div class="row err">Failed to load: ${error.message}</div>`; return; }
+        this.currentPageRows = data || [];
+        if (typeof count === "number") this.totalRows = count;
+
+        const box = $("vendor-parts"); box.innerHTML = "";
+        if (!this.currentPageRows.length){ box.innerHTML = `<div class="row">No parts for this vendor.</div>`; }
+        else{
+          this.currentPageRows.forEach(r=>{
+            const el = document.createElement("div");
+            el.className = "row";
+            el.innerHTML = `<div><strong>${(r.part_number||"").toUpperCase()}</strong></div>
+              <div class="hint">Qty: <b>${Number(r.quantity||0).toLocaleString()}</b> &nbsp;•&nbsp; Added: ${new Date(r.created_at).toISOString().split("T")[0]}</div>`;
+            box.appendChild(el);
+          });
+        }
+        const pages = Math.max(1, Math.ceil((this.totalRows||0) / this.pageSize));
+        $("vendor-page-hint").textContent = `Page ${this.page} of ${pages} — showing ${this.currentPageRows.length.toLocaleString()} of ${this.totalRows.toLocaleString()} rows`;
+        $("vp-prev").disabled = (this.page <= 1);
+        $("vp-next").disabled = (this.page >= pages);
+        $("btn-export-page").disabled = this.currentPageRows.length === 0;
+      },
+      async exportCurrentPage(){
+        const rows = this.currentPageRows; if (!rows.length) return;
+        const csv = [
+          ["Vendor","Part Number","Quantity","Created At"].join(","),
+          ...rows.map(r => [
+            `"${(this.selected||"").replace(/"/g,'""')}"`,
+            `"${(r.part_number||"").replace(/"/g,'""')}"`,
+            String(Number(r.quantity||0)),
+            `"${r.created_at}"`
+          ].join(","))
+        ].join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob); const a = document.createElement("a");
+        a.href = url; a.download = `vendor_${this.selected}_page_${this.page}.csv`; a.click(); URL.revokeObjectURL(url);
+      },
+      async exportAll(){
+        const pages = Math.max(1, Math.ceil((this.totalRows||0)/this.pageSize));
+        const header = ["Vendor","Part Number","Quantity","Created At"].join(",");
+        let csvParts = [header];
+        for (let p=1; p<=pages; p++){
+          const from = (p-1) * this.pageSize, to = from + this.pageSize - 1;
+          const { data, error } = await supabase
+            .from("excess_parts")
+            .select("part_number,quantity,created_at")
+            .eq("vendor", this.selected)
+            .order("part_number", { ascending:true })
+            .range(from, to);
+          if (error){ alert(`Export failed on page ${p}: ${error.message}`); return; }
+          (data||[]).forEach(r=>{
+            csvParts.push([
+              `"${(this.selected||"").replace(/"/g,'""')}"`,
+              `"${(r.part_number||"").replace(/"/g,'""')}"`,
+              String(Number(r.quantity||0)),
+              `"${r.created_at}"`
+            ].join(","));
+          });
+          $("vendor-page-hint").textContent = `Exporting… ${p}/${pages}`;
+        }
+        const blob = new Blob([csvParts.join("\n")], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob); const a = document.createElement("a");
+        a.href = url; a.download = `vendor_${this.selected}_ALL.csv`; a.click(); URL.revokeObjectURL(url);
+      }
+    };
+
+    $("vendor-search")?.addEventListener("input", ((fn, ms=250)=>{ let t; return e=>{ clearTimeout(t); t=setTimeout(()=>fn(e), ms); };})(async (e)=>{
+      const q = e.target.value.trim();
+      await VendorView.renderVendorList(q);
+    }));
+    $("vp-prev")?.addEventListener("click", async ()=>{ if (VendorView.page > 1){ VendorView.page--; await VendorView.loadPage(); }});
+    $("vp-next")?.addEventListener("click", async ()=>{ VendorView.page++; await VendorView.loadPage(); });
+    $("btn-export-page")?.addEventListener("click", ()=> VendorView.exportCurrentPage());
+    $("btn-export-all")?.addEventListener("click", ()=> VendorView.exportAll());
+
     // Init
     loadStats();
     refreshUploadsUI();
@@ -580,11 +889,3 @@ STM32F103C8T6, 50, ST"></textarea>
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
