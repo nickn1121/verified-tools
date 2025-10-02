@@ -107,7 +107,7 @@ TPS7A4700RGWT"></textarea>
         <div class="controls">
           <div>
             <input type="file" id="file-search" accept=".csv" />
-            <div class="hint">CSV must contain a column named <code>Part Number</code>.</div>
+            <div class="hint">CSV must contain a column named <code>Part Number</code> (MPN/PN also accepted).</div>
           </div>
           <button id="btn-search" class="btn">🔍 Check Excess</button>
         </div>
@@ -135,7 +135,7 @@ TPS7A4700RGWT"></textarea>
           <div>
             <label><strong>CSV file (Part Number, Quantity, Vendor)</strong></label>
             <input type="file" id="file-upload" accept=".csv" />
-            <div class="hint">Required headers: <span class="mono">Part Number</span>, <span class="mono">Quantity</span>. Optional: <span class="mono">Vendor</span>.</div>
+            <div class="hint">Required headers: <span class="mono">Part Number/MPN</span>, <span class="mono">Quantity/Qty</span>. Optional: <span class="mono">Vendor/Supplier</span>.</div>
           </div>
           <div>
             <label><strong>Fallback Vendor (if Vendor column/field is missing)</strong></label>
@@ -242,6 +242,9 @@ STM32F103C8T6, 50, ST"></textarea>
     <footer>© <span id="year"></span> Verified Electronics</footer>
   </div>
 
+  <!-- Robust CSV parser for commas-in-numbers, quotes, odd delimiters -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -329,19 +332,33 @@ STM32F103C8T6, 50, ST"></textarea>
       });
     }
 
-    // ---------- CSV helper ----------
+    // ---------- Robust CSV + helpers ----------
     const parseCSV = async (file) => {
       const text = await file.text();
-      const lines = text.replace(/\r/g,"").split("\n").filter(l=>l.trim().length>0);
-      const headers = lines.shift().split(",").map(h=>h.trim().replace(/^"|"$/g,""));
-      const rows = lines.map(l=>{
-        const cols = l.split(","); const obj = {};
-        headers.forEach((h,i)=>obj[h]= (cols[i]??"").trim().replace(/^"|"$/g,""));
-        return obj;
+      const parsed = Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true,
+        dynamicTyping: false,
+        transformHeader: (h) => String(h || "").trim()
       });
-      return { headers, rows };
+      return { headers: parsed.meta.fields || [], rows: parsed.data || [] };
     };
-    const cleanQty = (v)=>Number(String(v??"").replace(/[^0-9-]/g,""))||0;
+    const norm = (s)=>String(s ?? "").trim();
+    const lower = (s)=>norm(s).toLowerCase();
+    const cleanQty = (v)=>{
+      const n = Number(String(v ?? "").replace(/[^\d-]/g,""));
+      return Number.isFinite(n) ? n : 0;
+    };
+    const findHeader = (headers, candidates)=>{
+      const H = headers.map(h=>({ raw:h, key: lower(h) }));
+      const want = candidates.map(lower);
+      const hit = H.find(h=>want.includes(h.key));
+      return hit ? hit.raw : null;
+    };
+    const HDR_PART = ["Part Number","MPN","PN","Part","PartNumber","Item","MPN/Part Number"];
+    const HDR_QTY  = ["Quantity","Qty","Q'ty","Qta","Quantità"];
+    const HDR_VEND = ["Vendor","Supplier","Seller","Company","Vendor Name","Supplier Name"];
+
     const dedupUpper = (arr)=>[...new Set(arr.map(s=>s.trim()).filter(Boolean).map(s=>s.toUpperCase()))];
 
     // ---------- SEARCH ----------
@@ -352,9 +369,9 @@ STM32F103C8T6, 50, ST"></textarea>
       const file = $("file-search").files?.[0];
       if (file){
         const { headers, rows } = await parseCSV(file);
-        const col = headers.find(h => h.toLowerCase() === "part number");
-        if (!col) { alert("CSV needs a 'Part Number' column"); return; }
-        parts = dedupUpper([...parts, ...rows.map(r=>r[col])]);
+        const hPart = findHeader(headers, HDR_PART);
+        if (!hPart) { alert("CSV needs a Part Number/MPN column"); return; }
+        parts = dedupUpper([...parts, ...rows.map(r=>r[hPart])]);
       }
 
       if (parts.length === 0) { alert("Add some part numbers first."); return; }
@@ -394,25 +411,41 @@ STM32F103C8T6, 50, ST"></textarea>
       const f = $("file-upload").files?.[0];
       if (f){
         const { headers, rows: csvRows } = await parseCSV(f);
-        const hPart = headers.find(h => h.toLowerCase()==="part number");
-        const hQty  = headers.find(h => h.toLowerCase()==="quantity");
-        const hVend = headers.find(h => h.toLowerCase()==="vendor");
-        if (!hPart || !hQty){ $("upload-status").innerHTML = `<span class="err">CSV must include 'Part Number' and 'Quantity'.</span>`; return; }
+        const hPart = findHeader(headers, HDR_PART);
+        const hQty  = findHeader(headers, HDR_QTY);
+        const hVend = findHeader(headers, HDR_VEND);
+
+        if (!hPart || !hQty){
+          $("upload-status").innerHTML = `<span class="err">CSV must include Part Number/MPN and Quantity columns.</span>`;
+          return;
+        }
+
         rows = rows.concat(csvRows.map(r=>({
-          part_number: String(r[hPart]??"").trim().toUpperCase(),
+          part_number: norm(r[hPart]).toUpperCase(),
           quantity: cleanQty(r[hQty]),
-          vendor: (hVend ? (r[hVend]??"").toString().trim() : "") || fallbackVendor || null,
+          vendor: norm(hVend ? r[hVend] : "") || (fallbackVendor || null),
           uploaded_by: uploader
         })));
       }
 
+      // Pasted rows tolerance: allow extra commas in quantity; treat first col as PN, last as Vendor (if present), middle joined as Qty
       const pasted = $("paste-upload").value.replace(/\r/g,"").split("\n").map(l=>l.trim()).filter(Boolean);
       pasted.forEach(line=>{
-        const cols = line.split(",").map(s=>s.trim());
+        const cols = line.split(",").map(s=>s.trim()).filter(s=>s!=="");
+        if (!cols.length) return;
         const pn = (cols[0]??"").toUpperCase();
-        const qty = cleanQty(cols[1]??"");
-        const vend = (cols[2]??"") || fallbackVendor || null;
-        if (pn) rows.push({ part_number: pn, quantity: qty, vendor: vend, uploaded_by: uploader });
+        let vend = null, qtyRaw = "";
+        if (cols.length === 1){
+          qtyRaw = "0";
+        } else if (cols.length === 2){
+          qtyRaw = cols[1];
+        } else {
+          vend = cols[cols.length-1];
+          qtyRaw = cols.slice(1, -1).join(""); // join middle bits (handles 1,342,762)
+        }
+        const qty = cleanQty(qtyRaw);
+        const vendor = vend || fallbackVendor || null;
+        if (pn) rows.push({ part_number: pn, quantity: qty, vendor, uploaded_by: uploader });
       });
 
       rows = rows.filter(r=>r.part_number && r.quantity >= 0);
@@ -540,10 +573,6 @@ STM32F103C8T6, 50, ST"></textarea>
       });
     }
 
-    document.querySelectorAll(".pill").forEach(p=>{
-      p.addEventListener("click", ()=> loadLeaderboard(p.dataset.period));
-    });
-
     // Init
     loadStats();
     refreshUploadsUI();
@@ -551,6 +580,7 @@ STM32F103C8T6, 50, ST"></textarea>
   </script>
 </body>
 </html>
+
 
 
 
