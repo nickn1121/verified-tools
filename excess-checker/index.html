@@ -50,19 +50,19 @@
     .divider{height:1px;background:var(--line);margin:14px 0}
     a.link{color:#4f46e5;text-decoration:none;font-weight:600}
     .inline{display:flex;gap:10px;align-items:center}
-
-    /* mini vendor table in hits */
     .minitable{width:100%; border-collapse:collapse; margin-top:6px; font-size:13px}
     .minitable th,.minitable td{padding:6px 8px; border-top:1px solid var(--line)}
     .minitable th{color:var(--muted); text-align:left}
     .minitable td.qty{text-align:right; font-variant-numeric: tabular-nums}
+    .progress{position:relative;height:10px;border-radius:999px;background:#eee;overflow:hidden;border:1px solid var(--line);margin-top:8px}
+    .progress-bar{height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2));transition:width .2s ease}
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
       <div class="brand">
-        <img class="logo" src="../assets/Logo_color_white_background (1).png?v=v5" alt="Verified Electronics" />
+        <img class="logo" src="../assets/Logo_color_white_background (1).png?v=v6" alt="Verified Electronics" />
         <h1>Excess Part Number Checker</h1>
       </div>
       <a href="/" class="btn ghost">← Back to Tools</a>
@@ -98,7 +98,7 @@
           </div>
         </div>
 
-        <label for="input-parts"><strong>Paste part numbers (one per line)</strong></label>
+        <label><strong>Paste part numbers (one per line)</strong></label>
         <textarea id="input-parts" class="mono" placeholder="e.g.
 LM358DR
 STM32F103C8T6
@@ -175,11 +175,10 @@ STM32F103C8T6, 50, ST"></textarea>
           <span id="upload-status" class="hint mono"></span>
         </div>
 
-        <!-- simple progress (unchanged functional placeholder) -->
         <div id="upload-progress-wrap" class="subtle" style="display:none;margin-top:8px">
           <div class="title" id="up-stage">Preparing…</div>
           <div class="hint"><span id="up-detail">–</span></div>
-          <div class="rows"><div class="row">Uploading…</div></div>
+          <div class="progress"><div class="progress-bar" id="up-bar" style="width:0%"></div></div>
         </div>
       </section>
 
@@ -187,9 +186,7 @@ STM32F103C8T6, 50, ST"></textarea>
       <section id="tab-remove" class="section">
         <div class="subtle">
           <div class="title">How removal works</div>
-          <div class="hint">
-            Choose a prior upload (Vendor × Date) from the list below, then click <b>Remove</b>.
-          </div>
+          <div class="hint">Choose a prior upload (Vendor × Date) below, then click <b>Remove</b>.</div>
         </div>
 
         <div class="grid">
@@ -225,12 +222,9 @@ STM32F103C8T6, 50, ST"></textarea>
           <div class="title">Excess Leaderboard</div>
           <div class="hint">Counts lists per employee using <span class="mono">batch_id</span>.</div>
         </div>
-
         <div class="rows">
           <table style="width:100%;border-collapse:separate;border-spacing:0 8px">
-            <thead>
-              <tr><th>#</th><th>Employee</th><th>Lists</th></tr>
-            </thead>
+            <thead><tr><th>#</th><th>Employee</th><th>Lists</th></tr></thead>
             <tbody id="leader-tbody"></tbody>
           </table>
         </div>
@@ -281,14 +275,14 @@ STM32F103C8T6, 50, ST"></textarea>
     <footer>© <span id="year"></span> Verified Electronics</footer>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js?v=v5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js?v=v6"></script>
   <script type="module">
-    const APP_VERSION = "v5-canon-strict";
+    const APP_VERSION = "v6-uploadfix";
     console.info("Excess Checker:", APP_VERSION);
 
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    // ===== Supabase (placeholders; rotate in prod) =====
+    // ===== Supabase (same placeholders you’ll rotate) =====
     const SUPABASE_URL  = "https://ijzroisggstqkfhpjndq.supabase.co";
     const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc";
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
@@ -312,59 +306,20 @@ STM32F103C8T6, 50, ST"></textarea>
     const norm = s=>String(s??"").trim();
     const lower = s=>norm(s).toLowerCase();
     const dedupUpper = arr => [...new Set(arr.map(s=>s.trim()).filter(Boolean).map(s=>s.toUpperCase()))];
-
-    // CSV headers
-    const HDR_PART = ["Part Number","MPN","PN","Part","PartNumber","Item","MPN/Part Number"];
-    const HDR_QTY  = ["Quantity","Qty","Q'ty","Qta","Quantità"];
-    const HDR_VEND = ["Vendor","Supplier","Seller","Company","Vendor Name","Supplier Name"];
-    const findHeader=(headers,cands)=>{
-      const H=headers.map(h=>({raw:h, key:lower(h)})), want=cands.map(lower);
-      const hit=H.find(h=>want.includes(h.key)); return hit?hit.raw:null;
-    };
-
-    // ===== Canonical matching (STRICT) =====
     const CANON = s => String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+    const trimPkg = c => c.replace(/[A-Z]{1,6}$/, "");
+    const equalPN = (a,b)=>{ const A=CANON(a), B=CANON(b); return !!A && A===B || trimPkg(A)===trimPkg(B); };
+    const extractToken = line => (String(line||"").trim().toUpperCase().split(/[,\s;]+/)[0] || "");
+    const anchorPattern = raw => { const c=CANON(raw); return c.length>=4? "%"+c.slice(0,4)+"%" : "%"+c+"%"; };
 
-    // Trim trailing packaging suffix (letters only, 1–6 chars), e.g., RGWT, TR, NOPB, LF, etc.
-    const trimPkg = c => c.replace(/[A-Z]{1,6}$/, "");  // only letters at end
-
-    // Two strings match if:
-    // 1) CANON(a) === CANON(b), OR
-    // 2) trimPkg(CANON(a)) === trimPkg(CANON(b)) (tolerate common packaging suffix at end)
-    function equalPN(a,b){
-      const A = CANON(a), B = CANON(b);
-      if (!A || !B) return false;
-      if (A === B) return true;
-      return trimPkg(A) === trimPkg(B);
-    }
-
-    // Extract the most likely PN token from a line: take the first non-empty token
-    // (before the first space/comma/semicolon). This preserves order and ignores descriptors.
-    function extractToken(line){
-      const s = String(line||"").trim().toUpperCase();
-      if (!s) return "";
-      const token = s.split(/[,\s;]+/)[0];            // first token
-      return token || s;                              // fallback to whole line if weird
-    }
-
-    // Build a light search pattern for ILIKE to reduce rows we pull.
-    // We use the first 4 canonical characters as an anchor (if available).
-    function anchorPattern(raw){
-      const c = CANON(raw);
-      if (c.length >= 4) return "%" + c.slice(0,4) + "%";
-      if (c.length) return "%" + c + "%";
-      return "%";
-    }
-
-    // ===== Stats (unchanged) =====
+    // ===== Stats =====
     async function getDistinctVendorsPaginated() {
       const head = await supabase.from("excess_parts").select("*",{count:"exact",head:true}).not("vendor","is",null);
       const totalRows = head.count || 0;
       if (!totalRows) return [];
       const PAGE=10000, pages=Math.ceil(totalRows/PAGE), uniq=new Set();
       for (let p=0;p<pages;p++){
-        const {data} = await supabase.from("excess_parts")
-          .select("vendor").not("vendor","is",null)
+        const {data} = await supabase.from("excess_parts").select("vendor").not("vendor","is",null)
           .range(p*PAGE, Math.min(p*PAGE+PAGE-1,totalRows-1));
         (data||[]).forEach(r=>{const v=(r.vendor||"").trim(); if(v) uniq.add(v);});
       }
@@ -387,7 +342,7 @@ STM32F103C8T6, 50, ST"></textarea>
       a.href=url; a.download="vendors.csv"; a.click(); URL.revokeObjectURL(url);
     });
 
-    // ===== Upload list (remove tab) — unchanged UI =====
+    // ===== Upload list (remove tab) =====
     async function refreshUploadsUI(){
       const list=$("upload-list"); list.innerHTML="";
       const sel=$("rm-batch"); sel.innerHTML="";
@@ -397,7 +352,7 @@ STM32F103C8T6, 50, ST"></textarea>
       if (!data?.length){ list.innerHTML=`<div class="row">No uploads yet.</div>`; return; }
       sel.appendChild(new Option("— Select an upload —",""));
       data.forEach(r=>{
-        const label = `${r.vendor} — ${r.created_on_utc}  (${r.rows_count} rows, ${Number(r.total_qty||0).toLocaleString()} qty)`;
+        const label = `${r.vendor} — ${r.created_on_utc}  (${r.rows_count.toLocaleString()} rows, ${Number(r.total_qty||0).toLocaleString()} qty)`;
         sel.appendChild(new Option(label, JSON.stringify({vendor:r.vendor,date:r.created_on_utc,rows:r.rows_count,qty:r.total_qty})));
       });
       sel.onchange=()=>{ if(!sel.value){$("rm-batch-info").textContent="";return;}
@@ -412,21 +367,156 @@ STM32F103C8T6, 50, ST"></textarea>
     }
 
     // ===== CSV helpers =====
+    const HDR_PART = ["Part Number","MPN","PN","Part","PartNumber","Item","MPN/Part Number"];
+    const HDR_QTY  = ["Quantity","Qty","Q'ty","Qta","Quantità"];
+    const HDR_VEND = ["Vendor","Supplier","Seller","Company","Vendor Name","Supplier Name"];
+    const findHeader=(headers,cands)=>{
+      const H=headers.map(h=>({raw:h, key:lower(h)})), want=cands.map(lower);
+      const hit=H.find(h=>want.includes(h.key)); return hit?hit.raw:null;
+    };
     const streamParseCSV=(file,onChunk)=>new Promise((resolve,reject)=>{
       let headers=null,total=0;
       Papa.parse(file,{worker:true,header:true,skipEmptyLines:true,chunkSize:1024*1024,
         chunk:(res)=>{headers=headers||(res.meta.fields||[]); const rows=res.data||[]; total+=rows.length; onChunk?.(rows,total);},
         error:reject, complete:()=>resolve({headers:headers||[],totalRows:total})});
     });
+    const num = v => { const s=String(v??"").replace(/[^\d.-]/g,""); const n=Number(s); return Number.isFinite(n)?n:null; };
 
-    // ===== SEARCH (STRICT canonical equality) =====
-    let __lastSearchRows__ = []; // for export
+    // ====== UPLOAD HANDLER (fixed) ======
+    function uuidv4(){
+      return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+      );
+    }
+    function todayUTC(){ return new Date().toISOString().slice(0,10); }
+    function getUploader(){
+      const sel=$("uploaded-by").value;
+      if (sel==="Other") return $("other-staff").value.trim();
+      return sel || "";
+    }
+    window.toggleOtherStaff=()=>{$("other-staff").style.display=$("uploaded-by").value==="Other"?"block":"none";};
 
+    async function doInserts(table, rows, chunk=1500){
+      for (let i=0;i<rows.length;i+=chunk){
+        const slice = rows.slice(i, i+chunk);
+        const { error } = await supabase.from(table).insert(slice);
+        if (error) throw new Error(error.message);
+        // progress
+        const pct = Math.round(((i+slice.length)/rows.length)*100);
+        $("up-bar").style.width = pct+"%";
+        $("up-detail").textContent = `Inserted ${i+slice.length} of ${rows.length}`;
+      }
+    }
+
+    $("btn-upload").addEventListener("click", async ()=>{
+      const fallbackVendor = $("fallback-vendor").value.trim();
+      const uploader = getUploader();
+      const pasted = $("paste-upload").value.trim();
+      const file = $("file-upload").files?.[0];
+
+      if (!file && !pasted){ alert("Attach a CSV or paste rows first."); return; }
+      if (!uploader){ alert("Please choose who uploaded the list."); return; }
+
+      $("btn-upload").disabled = true; $("btn-upload").textContent = "⏳ Uploading…";
+      $("upload-progress-wrap").style.display = "block";
+      $("up-stage").textContent = "Parsing data…";
+      $("up-detail").textContent = "Reading file/paste";
+      $("up-bar").style.width="5%";
+
+      const rows = []; // {part_number, quantity, vendor, batch_id}
+
+      if (file){
+        let collected=[]; let headerMap=null;
+        await streamParseCSV(file, (chunk)=>{ collected.push(...chunk); });
+        if (!collected.length){ alert("CSV is empty."); resetUploadBtn(); return; }
+        const headers = Object.keys(collected[0]||{});
+        const hPart = findHeader(headers, HDR_PART);
+        const hQty  = findHeader(headers, HDR_QTY);
+        const hVend = findHeader(headers, HDR_VEND);
+
+        if (!hPart || !hQty){ alert("CSV must have Part Number and Quantity columns."); resetUploadBtn(); return; }
+
+        const batch_id = uuidv4();
+        for (const r of collected){
+          const pn = norm(r[hPart]);
+          const q  = num(r[hQty]);
+          let vendor = norm(hVend? r[hVend] : "") || fallbackVendor;
+          if (!pn || q===null) continue;
+          rows.push({ part_number: pn, quantity: q, vendor, batch_id });
+        }
+      } else {
+        // Pasted rows: "PN, Qty, Vendor?" — Vendor optional
+        const lines = pasted.split("\n").map(l=>l.trim()).filter(Boolean);
+        const batch_id = uuidv4();
+        for (const line of lines){
+          const bits = line.split(",").map(s=>s.trim());
+          const pn = bits[0]||"";
+          const q  = num(bits[1]);
+          let vendor = (bits[2]||"").trim() || fallbackVendor;
+          if (!pn || q===null) continue;
+          rows.push({ part_number: pn, quantity: q, vendor, batch_id });
+        }
+      }
+
+      if (!rows.length){ alert("Nothing to upload after parsing — check your columns."); resetUploadBtn(); return; }
+
+      $("up-stage").textContent = "Inserting parts…";
+      $("up-detail").textContent = `0 of ${rows.length}`;
+      $("up-bar").style.width="10%";
+
+      try{
+        // Insert into excess_parts in chunks
+        await doInserts("excess_parts", rows, 1500);
+
+        // Summarize for excess_uploads
+        const batch_id = rows[0].batch_id;
+        const total_qty = rows.reduce((a,b)=>a+(Number(b.quantity)||0), 0);
+        const vendors = [...new Set(rows.map(r=>r.vendor||""))];
+        const created_on_utc = todayUTC();
+
+        // If multiple vendors in one file, we record one row per vendor
+        for (const v of vendors){
+          const vRows = rows.filter(r=> (r.vendor||"")===v);
+          const vQty  = vRows.reduce((a,b)=>a+(Number(b.quantity)||0),0);
+          const summary = {
+            vendor: v || (fallbackVendor||"(unknown)"),
+            rows_count: vRows.length,
+            total_qty: vQty,
+            uploaded_by: uploader || null,
+            created_on_utc,
+            batch_id
+          };
+          const { error: upErr } = await supabase.from("excess_uploads").insert(summary);
+          if (upErr) throw new Error(upErr.message);
+        }
+
+        $("up-stage").textContent = "Done!";
+        $("up-detail").textContent = `Inserted ${rows.length.toLocaleString()} rows.`;
+        $("up-bar").style.width="100%";
+        $("upload-status").innerHTML = `<span class="ok">Upload complete.</span>`;
+
+        // Refresh UI
+        await loadStats();
+        await refreshUploadsUI();
+
+      } catch (e){
+        console.error(e);
+        $("upload-status").innerHTML = `<span class="err">Upload failed: ${e.message}</span>`;
+      } finally {
+        resetUploadBtn();
+      }
+    });
+
+    function resetUploadBtn(){
+      $("btn-upload").disabled = false; $("btn-upload").textContent = "⬆️ Upload Excess";
+    }
+
+    // ===== SEARCH (strict canonical equality) =====
+    let __lastSearchRows__ = [];
     $("btn-search").addEventListener("click", async ()=>{
       const pasted = $("input-parts").value.split("\n").map(s=>s.trim()).filter(Boolean);
       let parts = dedupUpper(pasted);
 
-      // optional CSV
       const file = $("file-search").files?.[0];
       if (file){
         let collected = [];
@@ -443,33 +533,28 @@ STM32F103C8T6, 50, ST"></textarea>
       const box = $("search-results"); box.innerHTML=""; __lastSearchRows__ = [];
 
       for (const rawLine of parts){
-        // Extract first token and build canonical forms for query
         const token = extractToken(rawLine);
         const canonQ = CANON(token);
         if (!canonQ) continue;
 
-        // Build a light anchor to cut result set; then filter strictly in JS
         const like = anchorPattern(token);
         const { data, error } = await supabase
           .from("excess_parts")
           .select("part_number,vendor,quantity,created_at")
           .ilike("part_number", like)
-          .limit(5000); // safety
+          .limit(5000);
 
         if (error){ console.error(error); continue; }
 
-        // Keep rows whose part_number equals query under our strict rules
         const hits = (data||[]).filter(r => equalPN(r.part_number, token));
-        if (!hits.length) continue; // no per-line "no match" row; we skip
+        if (!hits.length) continue;
 
-        // Group by matched part_number (as stored)
         const groups = hits.reduce((m,r)=>{
           const key = r.part_number.toUpperCase();
           (m[key] ??= []).push(r);
           return m;
         },{});
 
-        // Render each part group with vendor breakdown; collect for export
         Object.keys(groups).sort().forEach(pn=>{
           const rows = groups[pn];
           const byVendor = {};
@@ -508,7 +593,6 @@ STM32F103C8T6, 50, ST"></textarea>
       $("btn-search").disabled = false; $("btn-search").textContent = "🔍 Check Excess";
     });
 
-    // Export hits: Part Number, Vendor, Quantity
     $("btn-export-results").addEventListener("click", ()=>{
       const rows = __lastSearchRows__ || [];
       if (!rows.length){ alert("Nothing to export yet."); return; }
@@ -523,7 +607,7 @@ STM32F103C8T6, 50, ST"></textarea>
       a.href = url; a.download = "excess_search_results.csv"; a.click(); URL.revokeObjectURL(url);
     });
 
-    // ===== Remove (unchanged behavior) =====
+    // ===== Remove =====
     $("btn-remove").addEventListener("click", async ()=>{
       let vendor = $("rm-vendor").value.trim();
       let date = $("rm-date").value;
@@ -545,7 +629,7 @@ STM32F103C8T6, 50, ST"></textarea>
       $("btn-remove").disabled = false; $("btn-remove").textContent = "🗑️ Remove Selected Upload";
     });
 
-    // ===== Leaderboard (simple) =====
+    // ===== Leaderboard =====
     async function loadLeaderboard(period="week"){
       const { data, error } = await supabase.from("excess_batches").select("uploaded_by,batch_id,created_on_utc").limit(20000);
       const tbody = $("leader-tbody"); tbody.innerHTML="";
@@ -561,7 +645,7 @@ STM32F103C8T6, 50, ST"></textarea>
       });
     }
 
-    // ===== Vendors tab (simple read-only list) =====
+    // ===== Vendors tab =====
     const VendorView = {
       selected:null, page:1, pageSize:200, totalRows:0, totalQty:0, currentPageRows:[],
       async fetchVendors(prefix=""){
@@ -571,10 +655,8 @@ STM32F103C8T6, 50, ST"></textarea>
         const uniq=[...new Set((data||[]).map(r=>(r.vendor||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
         return uniq;
       },
-      vendorItem(v){
-        const el=document.createElement("div"); el.className="row"; el.style.cursor="pointer"; el.textContent=v;
-        el.addEventListener("click", ()=> this.selectVendor(v)); return el;
-      },
+      vendorItem(v){ const el=document.createElement("div"); el.className="row"; el.style.cursor="pointer"; el.textContent=v;
+        el.addEventListener("click", ()=> this.selectVendor(v)); return el; },
       async renderVendorList(prefix=""){ const box=$("vendor-list"); box.innerHTML=`<div class="row">Loading vendors…</div>`;
         try{ const vendors=await this.fetchVendors(prefix); $("vendor-count").textContent=vendors.length.toLocaleString();
           box.innerHTML=""; vendors.forEach(v=>box.appendChild(this.vendorItem(v))); }catch(e){ box.innerHTML=`<div class="row err">${e.message}</div>`; }
@@ -594,7 +676,8 @@ STM32F103C8T6, 50, ST"></textarea>
       async loadPage(){
         const from=(this.page-1)*this.pageSize, to=from+this.pageSize-1;
         const { data, error, count } = await supabase
-          .from("excess_parts").select("part_number,quantity,created_at",{count:"exact"})
+          .from("excess_parts")
+          .select("part_number,quantity,created_at",{count:"exact"})
           .eq("vendor", this.selected).order("part_number",{ascending:true}).range(from,to);
         const box=$("vendor-parts"); if (error){ box.innerHTML=`<div class="row err">${error.message}</div>`; return; }
         this.currentPageRows=data||[]; if (typeof count==="number") this.totalRows=count;
@@ -661,6 +744,3 @@ STM32F103C8T6, 50, ST"></textarea>
   </script>
 </body>
 </html>
-
-
-
