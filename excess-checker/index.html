@@ -530,13 +530,14 @@ TPS7A4700-RGWT"></textarea>
     await loadStats(); await refreshUploadsUI(); await loadExcessLog();
   }
 
-  // remove tab list + button
+  // REMOVE TAB — REFRESH LIST (with fallback to excess_log)
   async function refreshUploadsUI(){
     const list = $("upload-list");
     list.innerHTML = "";
     const sel = $("rm-batch");
     sel.innerHTML = "";
 
+    // 1) try summaries table/view
     let data = null;
     try {
       const r = await supabase
@@ -549,8 +550,29 @@ TPS7A4700-RGWT"></textarea>
       data = null;
     }
 
+    // 2) FALLBACK to excess_log if nothing there
+    if (!data || data.length === 0) {
+      try {
+        const r = await supabase
+          .from("excess_log")
+          .select("vendor, created_on_utc, rows_count, total_qty, batch_id, status")
+          .eq("status", "success")
+          .order("created_on_utc", { ascending: false })
+          .limit(500);
+        data = (r.data || []).map(x => ({
+          vendor: x.vendor,
+          created_on_utc: x.created_on_utc,
+          rows_count: x.rows_count,
+          total_qty: x.total_qty,
+          batch_id: x.batch_id || null
+        }));
+      } catch {
+        data = null;
+      }
+    }
+
     if (!data) {
-      list.innerHTML = `<div class="row">Upload summaries are not being recorded. You can still remove by Vendor + Date using the big button.</div>`;
+      list.innerHTML = `<div class="row">Upload summaries could not be read.</div>`;
       sel.appendChild(new Option("— No upload summaries —",""));
       return;
     }
@@ -565,11 +587,11 @@ TPS7A4700-RGWT"></textarea>
       const payload = {
         vendor: r.vendor,
         date:   r.created_on_utc,
-        rows_count: r.rows_count,
-        total_qty:  r.total_qty,
+        rows_count: r.rows_count || 0,
+        total_qty:  r.total_qty  || 0,
         batch_id:   r.batch_id || null
       };
-      const label = `${payload.date} (${payload.rows_count.toLocaleString()} rows, ${Number(payload.total_qty||0).toLocaleString()} qty)` + (payload.batch_id ? ` — batch ${payload.batch_id}` : ``);
+      const label = `${payload.date} (${(payload.rows_count||0).toLocaleString()} rows, ${Number(payload.total_qty||0).toLocaleString()} qty)` + (payload.batch_id ? ` — batch ${payload.batch_id}` : ``);
       sel.appendChild(new Option(label, JSON.stringify(payload)));
 
       const el = document.createElement("div");
@@ -578,7 +600,7 @@ TPS7A4700-RGWT"></textarea>
         <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
           <div>
             <div><strong>${payload.vendor}</strong> — ${payload.date}</div>
-            <div class="hint">Rows: <b>${payload.rows_count.toLocaleString()}</b> • Total Qty: <b>${Number(payload.total_qty||0).toLocaleString()}</b></div>
+            <div class="hint">Rows: <b>${(payload.rows_count||0).toLocaleString()}</b> • Total Qty: <b>${Number(payload.total_qty||0).toLocaleString()}</b></div>
             ${payload.batch_id ? `<div class="hint mono">Batch: ${payload.batch_id}</div>` : ``}
           </div>
           <div>
@@ -597,7 +619,7 @@ TPS7A4700-RGWT"></textarea>
       if (!sel.value) { $("rm-batch-info").textContent = ""; return; }
       const v = JSON.parse(sel.value);
       $("rm-batch-info").textContent =
-        `Selected: ${v.vendor} on ${v.date} — ${v.rows_count.toLocaleString()} rows (${Number(v.total_qty||0).toLocaleString()} qty)` +
+        `Selected: ${v.vendor} on ${v.date} — ${(v.rows_count||0).toLocaleString()} rows (${Number(v.total_qty||0).toLocaleString()} qty)` +
         (v.batch_id ? ` — batch ${v.batch_id}` : ``);
       $("rm-vendor").value = v.vendor;
       $("rm-date").value   = v.date;
@@ -751,4 +773,5 @@ TPS7A4700-RGWT"></textarea>
 </script>
 </body>
 </html>
+
 
