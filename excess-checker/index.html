@@ -2,16 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Excess Parts — Verified Electronics</title>
+  <title>Excess Part Number Checker — Verified Electronics</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#ffffff; --ink:#1f2937; --muted:#6b7280;
-      --line:#e5e7eb; --panel:#f9fafb;
-      --brand:#6d28d9; --brand2:#9333ea;
-      --ok:#10b981; --warn:#f59e0b; --err:#ef4444;
+      --bg:#ffffff;--ink:#1f2937;--muted:#6b7280;--line:#e5e7eb;--panel:#f9fafb;
+      --brand:#6d28d9;--brand2:#9333ea;--ok:#10b981;--warn:#f59e0b;--err:#ef4444
     }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
@@ -20,727 +18,635 @@
     .brand{display:flex;align-items:center;gap:14px}
     .logo{height:54px}
     h1{margin:0;font-size:24px;font-weight:800;letter-spacing:.2px}
+    a.btn,button.btn{appearance:none}
     .btn{background:linear-gradient(90deg,var(--brand),var(--brand2));color:#fff;border:0;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer}
     .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
-    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
     .card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 28px rgba(17,24,39,.06);padding:18px}
     .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
     .chips{display:flex;gap:8px;flex-wrap:wrap}
     .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:#eef2ff;border:1px solid #e0e7ff;color:#3730a3;font-size:12px}
-    .tabs{display:flex;gap:8px;margin:8px 0}
+    .tabs{display:flex;gap:8px;margin:8px 0;flex-wrap:wrap}
     .tab{padding:10px 14px;border-radius:12px;background:#fff;border:1px solid var(--line);cursor:pointer;font-weight:600}
     .tab.active{background:linear-gradient(90deg,var(--brand),var(--brand2));color:#fff;border:0}
-    .section{display:none;margin-top:12px}
-    .section.active{display:block}
+    .section{display:none;margin-top:12px}.section.active{display:block}
     label strong{display:block;margin:6px 0}
     textarea{width:100%;min-height:140px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink);resize:vertical}
-    input[type="text"],input[type="date"],input[type="number"]{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+    input[type="text"],input[type="date"],input[type="number"],select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink)}
     input[type="file"]{width:100%}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
     .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px}
     .hint{font-size:12px;color:var(--muted)}
-    .rows{margin-top:14px}
-    .row{background:var(--panel);border:1px solid var(--line);padding:10px 12px;border-radius:12px;margin:8px 0}
+    .rows{margin-top:14px}.row{background:var(--panel);border:1px solid var(--line);padding:10px 12px;border-radius:12px;margin:8px 0}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
     .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}
-    footer{margin:26px 2px 10px;color:var(--muted);font-size:12px;text-align:center}
-    select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink)}
-    .subtle{border:1px dashed var(--line);background:#fff;border-radius:12px;padding:10px}
-    .title{font-weight:700;margin-bottom:6px}
-    .divider{height:1px;background:var(--line);margin:14px 0}
-    a.link{color:#4f46e5;text-decoration:none;font-weight:600}
-    .inline{display:flex;gap:10px;align-items:center}
-    .minitable{width:100%; border-collapse:collapse; margin-top:6px; font-size:13px}
-    .minitable th,.minitable td{padding:6px 8px; border-top:1px solid var(--line)}
-    .minitable th{color:var(--muted); text-align:left}
-    .minitable td.qty{text-align:right; font-variant-numeric: tabular-nums}
+    .minitable{width:100%;border-collapse:collapse;margin-top:6px;font-size:13px}
+    .minitable th,.minitable td{padding:6px 8px;border-top:1px solid var(--line)}
+    .minitable th{color:var(--muted);text-align:left}.minitable td.qty{text-align:right;font-variant-numeric:tabular-nums}
     .progress{position:relative;height:10px;border-radius:999px;background:#eee;overflow:hidden;border:1px solid var(--line);margin-top:8px}
     .progress-bar{height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2));transition:width .2s ease}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="brand">
-        <img class="logo" src="../assets/Logo_color_white_background (1).png?v=v6" alt="Verified Electronics" />
-        <h1>Excess Part Number Checker</h1>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <img class="logo" src="../assets/Logo_color_white_background (1).png?v=v6b" alt="Verified Electronics"/>
+      <h1>Excess Part Number Checker</h1>
+    </div>
+    <a href="/" class="btn ghost">← Back to Tools</a>
+  </header>
+
+  <div class="card">
+    <div class="stat">
+      <div class="title">📊 Live Excess Inventory</div>
+      <div class="chips">
+        <span class="chip">Total Part Numbers: <strong id="stat-total">—</strong></span>
+        <span class="chip">Unique Vendors: <strong id="stat-vendors">—</strong></span>
+        <span class="chip">Uploads (Vendor × Date): <strong id="stat-batches">—</strong></span>
       </div>
-      <a href="/" class="btn ghost">← Back to Tools</a>
-    </header>
+      <button id="btn-export-vendors" class="btn ghost" style="margin-top:8px">Export Vendors CSV</button>
+    </div>
 
-    <div class="card">
-      <div class="stat">
-        <div class="title">📊 Live Excess Inventory</div>
-        <div class="chips">
-          <span class="chip">Total Part Numbers: <strong id="stat-total">—</strong></span>
-          <span class="chip">Unique Vendors: <strong id="stat-vendors">—</strong></span>
-          <span class="chip">Uploads (Vendor × Date): <strong id="stat-batches">—</strong></span>
-        </div>
-        <button id="btn-export-vendors" class="btn ghost" style="margin-top:8px">Export Vendors CSV</button>
+    <div class="tabs">
+      <button class="tab active" data-tab="tab-search">Search</button>
+      <button class="tab" data-tab="tab-upload">Upload</button>
+      <button class="tab" data-tab="tab-remove">Remove</button>
+      <button class="tab" data-tab="tab-leader">Leaderboard</button>
+      <button class="tab" data-tab="tab-vendors">Vendors</button>
+      <button class="tab" data-tab="tab-log">Excess log</button>
+    </div>
+
+    <!-- SEARCH -->
+    <section id="tab-search" class="section active">
+      <div class="hint" style="border:1px dashed var(--line);border-radius:12px;padding:10px;margin-bottom:10px">
+        Paste one part per line, or upload a CSV with a <span class="mono">Part Number</span> column.
+        Matching is exact (case-insensitive) while tolerating punctuation & common package suffixes (TR/NOPB/RGWT).
+        Letter/number order must be identical (no fuzzy reordering).
       </div>
-
-      <div class="tabs">
-        <button class="tab active" data-tab="tab-search">Search</button>
-        <button class="tab" data-tab="tab-upload">Upload</button>
-        <button class="tab" data-tab="tab-remove">Remove</button>
-        <button class="tab" data-tab="tab-leader">Leaderboard</button>
-        <button class="tab" data-tab="tab-vendors">Vendors</button>
-      </div>
-
-      <!-- SEARCH -->
-      <section id="tab-search" class="section active">
-        <div class="subtle">
-          <div class="title">How to search</div>
-          <div class="hint">
-            Paste one part number per line, or upload a CSV with a <span class="mono">Part Number</span> column.
-            Matching is exact (case-insensitive) while tolerating <b>punctuation and common packaging suffixes</b>
-            (e.g., TR, NOPB, RGWT). Letter/number <b>order must be identical</b>.
-          </div>
-        </div>
-
-        <label><strong>Paste part numbers (one per line)</strong></label>
-        <textarea id="input-parts" class="mono" placeholder="e.g.
+      <label><strong>Paste part numbers (one per line)</strong></label>
+      <textarea id="input-parts" class="mono" placeholder="e.g.
 LM358DR
 STM32F103C8T6
 TPS7A4700-RGWT"></textarea>
-
-        <div class="controls">
-          <div>
-            <input type="file" id="file-search" accept=".csv" />
-            <div class="hint">CSV must contain a column named <code>Part Number</code> (MPN/PN also accepted).</div>
-          </div>
-          <button id="btn-search" class="btn">🔍 Check Excess</button>
-          <button id="btn-export-results" class="btn ghost" disabled>Export results CSV</button>
+      <div class="controls">
+        <div>
+          <input type="file" id="file-search" accept=".csv"/>
+          <div class="hint">CSV must contain a column named <code>Part Number</code> (MPN/PN also accepted).</div>
         </div>
+        <button id="btn-search" class="btn">🔍 Check Excess</button>
+        <button id="btn-export-results" class="btn ghost" disabled>Export results CSV</button>
+      </div>
+      <div id="search-results" class="rows"></div>
+    </section>
 
-        <div id="search-results" class="rows"></div>
-      </section>
-
-      <!-- UPLOAD -->
-      <section id="tab-upload" class="section">
-        <div class="subtle">
-          <div class="title">How to upload</div>
-          <div class="hint">
-            Option A — CSV with headers: <span class="mono">Part Number, Quantity, Vendor</span> (Vendor optional).<br/>
-            Option B — Paste rows below using: <span class="mono">Part Number, Quantity, Vendor</span>. One row per line.<br/>
-            If Vendor is missing, the <b>Fallback Vendor</b> will be used.
-            <br/><br/>
-            👉 <a
-              class="link"
-              href="data:text/csv;charset=utf-8,Part%20Number,Quantity,Vendor%0ATEST123,100,DemoVendor%0ALM358DR,250,DemoVendor%0ASTM32F103C8T6,50,ST"
-              download="sample_excess.csv">Download sample CSV</a>
-          </div>
+    <!-- UPLOAD -->
+    <section id="tab-upload" class="section">
+      <div class="hint" style="border:1px dashed var(--line);border-radius:12px;padding:10px;margin-bottom:10px">
+        Option A — CSV with headers: <span class="mono">Part Number, Quantity, Vendor</span> (Vendor optional).<br/>
+        Option B — Paste rows below using: <span class="mono">Part Number, Quantity, Vendor</span>. One row per line.<br/>
+        If Vendor is missing, the <b>Fallback Vendor</b> will be used.
+      </div>
+      <div class="grid">
+        <div>
+          <label><strong>CSV file (Part Number, Quantity, Vendor)</strong></label>
+          <input type="file" id="file-upload" accept=".csv"/>
+          <div class="hint">Required: <span class="mono">Part Number/MPN</span>, <span class="mono">Quantity/Qty</span>. Optional: <span class="mono">Vendor/Supplier</span>.</div>
         </div>
-
-        <div class="grid">
-          <div>
-            <label><strong>CSV file (Part Number, Quantity, Vendor)</strong></label>
-            <input type="file" id="file-upload" accept=".csv" />
-            <div class="hint">Required headers: <span class="mono">Part Number/MPN</span>, <span class="mono">Quantity/Qty</span>. Optional: <span class="mono">Vendor/Supplier</span>.</div>
-          </div>
-          <div>
-            <label><strong>Fallback Vendor (if Vendor column/field is missing)</strong></label>
-            <input type="text" id="fallback-vendor" placeholder="e.g. ACME Components" />
-          </div>
+        <div>
+          <label><strong>Fallback Vendor (if Vendor column/field is missing)</strong></label>
+          <input type="text" id="fallback-vendor" placeholder="e.g. ACME Components"/>
         </div>
+      </div>
+      <label style="margin-top:10px"><strong>Or paste rows</strong></label>
+      <textarea id="paste-upload" class="mono" placeholder="TEST123, 100, DemoVendor&#10;LM358DR, 250&#10;STM32F103C8T6, 50, ST"></textarea>
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <label><strong>Uploaded by</strong></label>
+          <div style="display:flex;gap:10px;align-items:center">
+            <select id="uploaded-by">
+              <option value="">— Select Staff —</option>
+              <option value="Nick N">Nick N</option>
+              <option value="Nick K">Nick K</option>
+              <option value="Jake B">Jake B</option>
+              <option value="Dan C">Dan C</option>
+              <option value="Emir B">Emir B</option>
+              <option value="Other">Other…</option>
+            </select>
+            <input type="text" id="other-staff" placeholder="Enter staff name" style="display:none;width:50%"/>
+          </div>
+          <div class="hint">Choose a name. If “Other…”, enter a new staff member.</div>
+        </div>
+        <div></div>
+      </div>
+      <div class="controls">
+        <button id="btn-upload" class="btn">⬆️ Upload Excess</button>
+        <span id="upload-status" class="hint mono"></span>
+      </div>
+      <div id="upload-progress-wrap" style="display:none;margin-top:8px;border:1px dashed var(--line);border-radius:12px;padding:10px">
+        <div class="title" id="up-stage">Preparing…</div>
+        <div class="hint"><span id="up-detail">–</span></div>
+        <div class="progress"><div class="progress-bar" id="up-bar" style="width:0%"></div></div>
+      </div>
+    </section>
 
-        <label style="margin-top:10px"><strong>Or paste rows</strong></label>
-        <textarea id="paste-upload" class="mono" placeholder="Examples:
-TEST123, 100, DemoVendor
-LM358DR, 250
-STM32F103C8T6, 50, ST"></textarea>
+    <!-- REMOVE -->
+    <section id="tab-remove" class="section">
+      <div class="hint" style="border:1px dashed var(--line);border-radius:12px;padding:10px;margin-bottom:10px">
+        Choose a prior upload (Vendor × Date) below, then click <b>Remove</b>.
+      </div>
+      <div class="grid">
+        <div>
+          <label><strong>Pick an upload (Vendor × Date)</strong></label>
+          <select id="rm-batch"></select>
+          <div class="hint" id="rm-batch-info"></div>
+        </div>
+        <div>
+          <label><strong>…or enter manually</strong></label>
+          <div class="grid">
+            <input type="text" id="rm-vendor" placeholder="Vendor"/>
+            <input type="date" id="rm-date"/>
+          </div>
+          <div class="hint">Manual inputs are only used if no item is selected above.</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button id="btn-remove" class="btn">🗑️ Remove Selected Upload</button>
+        <span class="hint" id="remove-status"></span>
+      </div>
+      <div class="rows" id="upload-list"></div>
+    </section>
 
-        <div class="grid" style="margin-top:10px">
-          <div>
-            <label><strong>Uploaded by</strong></label>
-            <div class="inline">
-              <select id="uploaded-by" onchange="window.toggleOtherStaff()">
-                <option value="">— Select Staff —</option>
-                <option value="Nick N">Nick N</option>
-                <option value="Nick K">Nick K</option>
-                <option value="Jake B">Jake B</option>
-                <option value="Dan C">Dan C</option>
-                <option value="Emir B">Emir B</option>
-                <option value="Other">Other…</option>
-              </select>
-              <input type="text" id="other-staff" placeholder="Enter staff name" style="display:none;width:50%" />
+    <!-- LEADERBOARD -->
+    <section id="tab-leader" class="section">
+      <div class="hint" style="border:1px dashed var(--line);border-radius:12px;padding:10px;margin-bottom:10px">
+        Counts lists per employee using <span class="mono">batch_id</span>.
+      </div>
+      <div class="rows">
+        <table style="width:100%;border-collapse:separate;border-spacing:0 8px">
+          <thead><tr><th>#</th><th>Employee</th><th>Lists</th></tr></thead>
+          <tbody id="leader-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- VENDORS -->
+    <section id="tab-vendors" class="section">
+      <div class="hint" style="border:1px dashed var(--line);border-radius:12px;padding:10px;margin-bottom:10px">
+        Pick a vendor to see their parts and quantities.
+      </div>
+      <div class="grid">
+        <div>
+          <label><strong>Search vendors</strong></label>
+          <input type="text" id="vendor-search" placeholder="Type to filter (min 2 chars)"/>
+          <div class="hint">Showing <span id="vendor-count">0</span> vendors</div>
+          <div id="vendor-list" class="rows" style="max-height:420px;overflow:auto"></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="title" id="vendor-title">—</div>
+              <div class="hint" id="vendor-stats">Select a vendor</div>
             </div>
-            <div class="hint">Choose a name. If “Other…”, enter a new staff member.</div>
-          </div>
-          <div></div>
-        </div>
-
-        <div class="controls">
-          <button id="btn-upload" class="btn">⬆️ Upload Excess</button>
-          <span id="upload-status" class="hint mono"></span>
-        </div>
-
-        <div id="upload-progress-wrap" class="subtle" style="display:none;margin-top:8px">
-          <div class="title" id="up-stage">Preparing…</div>
-          <div class="hint"><span id="up-detail">–</span></div>
-          <div class="progress"><div class="progress-bar" id="up-bar" style="width:0%"></div></div>
-        </div>
-      </section>
-
-      <!-- REMOVE -->
-      <section id="tab-remove" class="section">
-        <div class="subtle">
-          <div class="title">How removal works</div>
-          <div class="hint">Choose a prior upload (Vendor × Date) below, then click <b>Remove</b>.</div>
-        </div>
-
-        <div class="grid">
-          <div>
-            <label><strong>Pick an upload (Vendor × Date)</strong></label>
-            <select id="rm-batch"></select>
-            <div class="hint" id="rm-batch-info"></div>
-          </div>
-          <div>
-            <label><strong>…or enter manually</strong></label>
-            <div class="grid">
-              <input type="text" id="rm-vendor" placeholder="Vendor" />
-              <input type="date" id="rm-date" />
+            <div style="display:flex;gap:8px">
+              <button id="btn-export-page" class="btn ghost" disabled>Export page CSV</button>
+              <button id="btn-export-all" class="btn" disabled>Export full CSV</button>
             </div>
-            <div class="hint">Manual inputs are only used if no item is selected above.</div>
           </div>
-        </div>
-
-        <div class="controls">
-          <button id="btn-remove" class="btn">🗑️ Remove Selected Upload</button>
-          <span class="hint" id="remove-status"></span>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="title">Recent uploads</div>
-        <div id="upload-list" class="rows"></div>
-      </section>
-
-      <!-- LEADERBOARD -->
-      <section id="tab-leader" class="section">
-        <div class="subtle">
-          <div class="title">Excess Leaderboard</div>
-          <div class="hint">Counts lists per employee using <span class="mono">batch_id</span>.</div>
-        </div>
-        <div class="rows">
-          <table style="width:100%;border-collapse:separate;border-spacing:0 8px">
-            <thead><tr><th>#</th><th>Employee</th><th>Lists</th></tr></thead>
-            <tbody id="leader-tbody"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- VENDORS -->
-      <section id="tab-vendors" class="section">
-        <div class="subtle">
-          <div class="title">View Excess by Vendor</div>
-          <div class="hint">Pick a vendor to see their parts and quantities.</div>
-        </div>
-
-        <div class="grid">
-          <div>
-            <label><strong>Search vendors</strong></label>
-            <input type="text" id="vendor-search" placeholder="Type to filter (min 2 chars)"/>
-            <div class="hint">Showing <span id="vendor-count">0</span> vendors</div>
-            <div id="vendor-list" class="rows" style="max-height:420px;overflow:auto"></div>
-          </div>
-
-          <div>
-            <div class="inline" style="justify-content:space-between">
-              <div>
-                <div class="title" id="vendor-title">—</div>
-                <div class="hint" id="vendor-stats">Select a vendor</div>
-              </div>
-              <div class="inline" style="gap:8px">
-                <button id="btn-export-page" class="btn ghost" disabled>Export page CSV</button>
-                <button id="btn-export-all" class="btn" disabled>Export full CSV</button>
-              </div>
-            </div>
-
-            <div class="rows" id="vendor-parts"></div>
-
-            <div class="inline" style="justify-content:space-between;margin-top:8px">
-              <span class="hint" id="vendor-page-hint"></span>
-              <div class="inline" style="gap:8px">
-                <button id="vp-prev" class="btn ghost" disabled>← Prev</button>
-                <button id="vp-next" class="btn ghost" disabled>Next →</button>
-              </div>
+          <div class="rows" id="vendor-parts"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+            <span class="hint" id="vendor-page-hint"></span>
+            <div style="display:flex;gap:8px">
+              <button id="vp-prev" class="btn ghost" disabled>← Prev</button>
+              <button id="vp-next" class="btn ghost" disabled>Next →</button>
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-    </div>
-
-    <footer>© <span id="year"></span> Verified Electronics</footer>
+    <!-- EXCESS LOG -->
+    <section id="tab-log" class="section">
+      <div class="hint" style="border:1px dashed var(--line);border-radius:12px;padding:10px;margin-bottom:10px">
+        Recent upload activity (last 20 rows). This reads from <span class="mono">public.excess_log</span>.
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <button id="log-refresh" class="btn ghost">Refresh</button>
+        <span class="hint">Most recent first</span>
+      </div>
+      <div id="log-list" class="rows"></div>
+    </section>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js?v=v6"></script>
-  <script type="module">
-    const APP_VERSION = "v6-uploadfix";
-    console.info("Excess Checker:", APP_VERSION);
+  <footer style="margin:26px 2px 10px;color:var(--muted);font-size:12px;text-align:center">© <span id="year"></span> Verified Electronics</footer>
+</div>
 
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js?v=v6b"></script>
+<script type="module">
+  const APP_VERSION = "v6b-with-log";
+  console.info("Excess Checker:", APP_VERSION);
 
-    // ===== Supabase (same placeholders you’ll rotate) =====
-    const SUPABASE_URL  = "https://ijzroisggstqkfhpjndq.supabase.co";
-    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc";
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    const $ = (id)=>document.getElementById(id);
-    $("year").textContent = new Date().getFullYear();
+  const SUPABASE_URL  = "https://ijzroisggstqkfhpjndq.supabase.co";
+  const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc";
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-    // ===== Tabs =====
-    document.querySelectorAll(".tab").forEach(btn=>{
-      btn.addEventListener("click",()=>{
-        document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
-        document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
-        btn.classList.add("active");
-        document.getElementById(btn.dataset.tab).classList.add("active");
-        if (btn.dataset.tab === "tab-leader") loadLeaderboard("week");
-        if (btn.dataset.tab === "tab-vendors") VendorView.renderVendorList($("vendor-search")?.value?.trim()||"");
-      });
+  const $ = id => document.getElementById(id);
+  $("year").textContent = new Date().getFullYear();
+
+  // -------- helpers
+  const norm = s=>String(s??"").trim();
+  const lower=s=>norm(s).toLowerCase();
+  const dedupUpper = arr => [...new Set(arr.map(s=>s.trim()).filter(Boolean).map(s=>s.toUpperCase()))];
+  const CANON = s => String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+  const trimPkg = c => c.replace(/[A-Z]{1,6}$/,"");
+  const equalPN = (a,b)=>{const A=CANON(a),B=CANON(b);return !!A&&(A===B||trimPkg(A)===trimPkg(B));};
+  const extractToken = line => (String(line||"").trim().toUpperCase().split(/[,\s;]+/)[0]||"");
+  const anchorPattern = raw => {const c=CANON(raw);return c.length>=4? "%"+c.slice(0,4)+"%" : "%"+c+"%";};
+  function uuidv4(){return([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16))}
+  const todayUTC = ()=> new Date().toISOString().slice(0,10);
+  const num = v => { const s=String(v??"").replace(/[^\d.-]/g,""); const n=Number(s); return Number.isFinite(n)?n:null; };
+
+  // -------- tabs
+  document.querySelectorAll(".tab").forEach(b=>{
+    b.addEventListener("click",()=>{
+      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+      document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+      b.classList.add("active");
+      document.getElementById(b.dataset.tab).classList.add("active");
+      if (b.dataset.tab === "tab-log") loadExcessLog();
     });
+  });
 
-    // ===== Helpers =====
-    const norm = s=>String(s??"").trim();
-    const lower = s=>norm(s).toLowerCase();
-    const dedupUpper = arr => [...new Set(arr.map(s=>s.trim()).filter(Boolean).map(s=>s.toUpperCase()))];
-    const CANON = s => String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
-    const trimPkg = c => c.replace(/[A-Z]{1,6}$/, "");
-    const equalPN = (a,b)=>{ const A=CANON(a), B=CANON(b); return !!A && A===B || trimPkg(A)===trimPkg(B); };
-    const extractToken = line => (String(line||"").trim().toUpperCase().split(/[,\s;]+/)[0] || "");
-    const anchorPattern = raw => { const c=CANON(raw); return c.length>=4? "%"+c.slice(0,4)+"%" : "%"+c+"%"; };
+  // -------- stats (tolerant if summary tables don’t exist)
+  async function getDistinctVendorsPaginated(){
+    const head = await supabase.from("excess_parts").select("*",{count:"exact",head:true}).not("vendor","is",null);
+    const total=head.count||0; if(!total) return [];
+    const PAGE=10000, pages=Math.ceil(total/PAGE), uniq=new Set();
+    for(let p=0;p<pages;p++){
+      const {data}=await supabase.from("excess_parts").select("vendor").not("vendor","is",null).range(p*PAGE,Math.min(p*PAGE+PAGE-1,total-1));
+      (data||[]).forEach(r=>{const v=(r.vendor||"").trim(); if(v) uniq.add(v);});
+    }
+    return [...uniq].sort((a,b)=>a.localeCompare(b));
+  }
+  async function safeCountUploads(){
+    try{
+      const head = await supabase.from("excess_log").select("*",{count:"exact",head:true});
+      if (typeof head.count === "number") return head.count;
+    }catch{}
+    try{
+      const head = await supabase.from("excess_uploads").select("*",{count:"exact",head:true});
+      if (typeof head.count === "number") return head.count;
+    }catch{}
+    try{
+      const head = await supabase.from("excess_batches").select("*",{count:"exact",head:true});
+      if (typeof head.count === "number") return head.count;
+    }catch{}
+    return 0;
+  }
+  async function loadStats(){
+    const head = await supabase.from("excess_parts").select("*",{count:"exact",head:true});
+    $("stat-total").textContent = (head.count||0).toLocaleString();
+    const vendors = await getDistinctVendorsPaginated();
+    $("stat-vendors").textContent = vendors.length.toLocaleString();
+    $("stat-batches").textContent = (await safeCountUploads()).toLocaleString();
+  }
 
-    // ===== Stats =====
-    async function getDistinctVendorsPaginated() {
-      const head = await supabase.from("excess_parts").select("*",{count:"exact",head:true}).not("vendor","is",null);
-      const totalRows = head.count || 0;
-      if (!totalRows) return [];
-      const PAGE=10000, pages=Math.ceil(totalRows/PAGE), uniq=new Set();
-      for (let p=0;p<pages;p++){
-        const {data} = await supabase.from("excess_parts").select("vendor").not("vendor","is",null)
-          .range(p*PAGE, Math.min(p*PAGE+PAGE-1,totalRows-1));
-        (data||[]).forEach(r=>{const v=(r.vendor||"").trim(); if(v) uniq.add(v);});
+  $("btn-export-vendors").onclick = async ()=>{
+    const list = await getDistinctVendorsPaginated();
+    if (!list.length) { alert("No vendors found."); return; }
+    const csv = "Vendor\n"+list.map(v=>`"${v.replace(/"/g,'""')}"`).join("\n");
+    const url = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+    const a=document.createElement("a"); a.href=url; a.download="vendors.csv"; a.click(); URL.revokeObjectURL(url);
+  };
+
+  // -------- CSV parse helpers
+  const HDR_PART=["Part Number","MPN","PN","Part","PartNumber","Item","MPN/Part Number"];
+  const HDR_QTY=["Quantity","Qty","Q'ty","Qta","Quantità","On Hand","Stock"];
+  const HDR_VEND=["Vendor","Supplier","Seller","Company","Vendor Name","Supplier Name"];
+  const findHeader=(headers,cands)=>{const H=headers.map(h=>({raw:h,key:lower(h)})), want=cands.map(lower); const hit=H.find(h=>want.includes(h.key)); return hit?hit.raw:null;};
+  const streamParseCSV=(file,onChunk)=>new Promise((resolve,reject)=>{
+    let headers=null,total=0;
+    Papa.parse(file,{worker:true,header:true,skipEmptyLines:true,chunkSize:1024*1024,
+      chunk:(res)=>{headers=headers||(res.meta.fields||[]); const rows=res.data||[]; total+=rows.length; onChunk?.(rows,total);},
+      error:reject, complete:()=>resolve({headers:headers||[],totalRows:total})});
+  });
+
+  // -------- upload UI helpers
+  function showOtherStaff(){ $("other-staff").style.display = $("uploaded-by").value==="Other"?"block":"none"; }
+  $("uploaded-by").addEventListener("change", showOtherStaff);
+
+  async function doInserts(rows, chunk=1500){
+    for(let i=0;i<rows.length;i+=chunk){
+      const slice=rows.slice(i,i+chunk);
+      const { error } = await supabase.from("excess_parts").insert(slice);
+      if (error) throw new Error(error.message);
+      const pct=Math.round(((i+slice.length)/rows.length)*100);
+      $("up-bar").style.width=pct+"%";
+      $("up-detail").textContent = `Inserted ${i + slice.length} of ${rows.length}`;
+    }
+  }
+
+  async function tryInsertSummary(payload){
+    try{
+      const { error } = await supabase.from("excess_uploads").insert(payload);
+      if (!error) return true;
+      console.warn("summary insert (excess_uploads):", error.message);
+    }catch{}
+    try{
+      const { error } = await supabase.from("excess_batches").insert(payload);
+      if (!error) return true;
+      console.warn("summary insert (excess_batches):", error.message);
+    }catch{}
+    return false;
+  }
+
+  async function tryInsertLog(payload){
+    try{
+      const { error } = await supabase.from("excess_log").insert(payload);
+      if (!error) return true;
+      console.warn("excess_log insert:", error.message);
+    }catch{}
+    return false;
+  }
+
+  function getUploader(){
+    const sel=$("uploaded-by").value;
+    if (sel==="Other") return $("other-staff").value.trim();
+    return sel || "";
+  }
+  function resetUploadBtn(){ $("btn-upload").disabled=false; $("btn-upload").textContent="⬆️ Upload Excess"; }
+
+  // -------- upload handler
+  $("btn-upload").onclick = async ()=>{
+    const fallbackVendor=$("fallback-vendor").value.trim();
+    const uploader=getUploader();
+    const pasted=$("paste-upload").value.trim();
+    const file=$("file-upload").files?.[0];
+
+    if (!file && !pasted){ alert("Attach a CSV or paste rows first."); return; }
+    if (!uploader){ alert("Please choose who uploaded the list."); return; }
+
+    $("btn-upload").disabled=true; $("btn-upload").textContent="⏳ Uploading…";
+    $("upload-status").textContent=""; $("upload-progress-wrap").style.display="block";
+    $("up-stage").textContent="Parsing data…"; $("up-detail").textContent="Reading file/paste"; $("up-bar").style.width="5%";
+
+    const rows=[]; const batch_id=uuidv4();
+
+    if (file){
+      const collected=[]; await streamParseCSV(file, chunk=>collected.push(...chunk));
+      if (!collected.length){ alert("CSV is empty."); resetUploadBtn(); return; }
+      const headers=Object.keys(collected[0]||{}); const hPart=findHeader(headers,HDR_PART); const hQty=findHeader(headers,HDR_QTY); const hVend=findHeader(headers,HDR_VEND);
+      if (!hPart || !hQty){ alert("CSV must have Part Number and Quantity columns."); resetUploadBtn(); return; }
+      for (const r of collected){
+        const pn=norm(r[hPart]); const q=num(r[hQty]); let vendor=norm(hVend? r[hVend]:"") || fallbackVendor;
+        if (!pn || q===null) continue; rows.push({ part_number:pn, quantity:q, vendor, batch_id });
       }
-      return Array.from(uniq).sort((a,b)=>a.localeCompare(b));
-    }
-    async function loadStats(){
-      const head = await supabase.from("excess_parts").select("*",{count:"exact",head:true});
-      $("stat-total").textContent = (head.count||0).toLocaleString();
-      const vendors = await getDistinctVendorsPaginated();
-      $("stat-vendors").textContent = vendors.length.toLocaleString();
-      const up = await supabase.from("excess_uploads").select("*",{count:"exact",head:true});
-      $("stat-batches").textContent = (up.count||0).toLocaleString();
-    }
-    $("btn-export-vendors")?.addEventListener("click", async ()=>{
-      const list = await getDistinctVendorsPaginated();
-      if (!list.length){ alert("No vendors found."); return; }
-      const csv = ["Vendor", ...list.map(v=>`"${v.replace(/"/g,'""')}"`)].join("\n");
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob); const a=document.createElement("a");
-      a.href=url; a.download="vendors.csv"; a.click(); URL.revokeObjectURL(url);
-    });
-
-    // ===== Upload list (remove tab) =====
-    async function refreshUploadsUI(){
-      const list=$("upload-list"); list.innerHTML="";
-      const sel=$("rm-batch"); sel.innerHTML="";
-      const {data,error}=await supabase.from("excess_uploads")
-        .select("*").order("created_on_utc",{ascending:false}).limit(500);
-      if (error){ list.innerHTML=`<div class="row err">${error.message}</div>`; return; }
-      if (!data?.length){ list.innerHTML=`<div class="row">No uploads yet.</div>`; return; }
-      sel.appendChild(new Option("— Select an upload —",""));
-      data.forEach(r=>{
-        const label = `${r.vendor} — ${r.created_on_utc}  (${r.rows_count.toLocaleString()} rows, ${Number(r.total_qty||0).toLocaleString()} qty)`;
-        sel.appendChild(new Option(label, JSON.stringify({vendor:r.vendor,date:r.created_on_utc,rows:r.rows_count,qty:r.total_qty})));
+    } else {
+      pasted.split("\n").map(s=>s.trim()).filter(Boolean).forEach(line=>{
+        const bits=line.split(",").map(s=>s.trim());
+        const pn=bits[0]||""; const q=num(bits[1]); let vendor=(bits[2]||"").trim() || fallbackVendor;
+        if (!pn || q===null) return; rows.push({ part_number:pn, quantity:q, vendor, batch_id });
       });
-      sel.onchange=()=>{ if(!sel.value){$("rm-batch-info").textContent="";return;}
-        const v=JSON.parse(sel.value);
-        $("rm-batch-info").textContent=`Selected: ${v.vendor} on ${v.date} — ${v.rows.toLocaleString()} rows (${Number(v.qty||0).toLocaleString()} qty)`;
-        $("rm-vendor").value=v.vendor; $("rm-date").value=v.date; };
-      data.slice(0,20).forEach(r=>{
+    }
+
+    if (!rows.length){ alert("Nothing to upload after parsing — check your columns."); resetUploadBtn(); return; }
+
+    $("up-stage").textContent="Inserting parts…"; $("up-detail").textContent=`0 of ${rows.length}`; $("up-bar").style.width="10%";
+
+    try{
+      await doInserts(rows,1500);
+
+      // Optional summary
+      const created_on_utc=todayUTC();
+      const fileName=$("file-upload")?.files?.[0]?.name || null;
+      const vendors=[...new Set(rows.map(r=>r.vendor || fallbackVendor || "(unknown)"))];
+      for (const v of vendors){
+        const vr=rows.filter(r=>(r.vendor || fallbackVendor || "(unknown)")===v);
+        const payload={
+          vendor:v,
+          rows_count:vr.length,
+          total_qty: vr.reduce((a,b)=>a+(Number(b.quantity)||0),0),
+          uploaded_by:uploader||null,
+          created_on_utc,
+          batch_id
+        };
+        await tryInsertSummary(payload);
+
+        // Log row (best-effort)
+        await tryInsertLog({
+          ...payload,
+          file_name:fileName,
+          source:"web",
+          status:"success",
+          error:null
+        });
+      }
+
+      $("up-stage").textContent="Done!";
+      $("up-detail").textContent=`Inserted ${rows.length.toLocaleString()} rows.`; $("up-bar").style.width="100%";
+      $("upload-status").innerHTML=`<span class="ok">Upload complete.</span>`;
+      await loadStats(); await refreshUploadsUI(); await loadExcessLog();
+    }catch(e){
+      console.error(e);
+      $("upload-status").innerHTML=`<span class="err">Upload failed: ${e.message}</span>`;
+      // write a failed log entry (best-effort)
+      try {
+        const fileName=$("file-upload")?.files?.[0]?.name || null;
+        await tryInsertLog({
+          vendor:fallbackVendor || "(unknown)",
+          rows_count:0,
+          total_qty:0,
+          uploaded_by:getUploader() || null,
+          created_on_utc: todayUTC(),
+          batch_id: uuidv4(),
+          file_name:fileName,
+          source:"web",
+          status:"failed",
+          error:e.message
+        });
+      } catch {}
+    } finally { resetUploadBtn(); }
+  };
+
+  // -------- search
+  let __lastSearchRows__=[];
+  $("btn-search").onclick = async ()=>{
+    const pasted=$("input-parts").value.split("\n").map(s=>s.trim()).filter(Boolean);
+    let parts=dedupUpper(pasted);
+    const file=$("file-search").files?.[0];
+    if (file){
+      const collected=[]; await streamParseCSV(file,chunk=>collected.push(...chunk));
+      const headers=Object.keys(collected[0]||{}); const hPart=findHeader(headers,HDR_PART);
+      if (!hPart){ alert("CSV needs a Part Number/MPN column"); return; }
+      parts=dedupUpper([...parts, ...collected.map(r=>r[hPart])]);
+    }
+    if (!parts.length){ alert("Add some part numbers first."); return; }
+
+    $("btn-search").disabled=true; $("btn-search").textContent="⏳ Searching…"; $("btn-export-results").disabled=true;
+    const box=$("search-results"); box.innerHTML=""; __lastSearchRows__=[];
+
+    for (const rawLine of parts){
+      const token=extractToken(rawLine); const canonQ=CANON(token); if (!canonQ) continue;
+      const like=anchorPattern(token);
+      const { data, error } = await supabase.from("excess_parts").select("part_number,vendor,quantity,created_at").ilike("part_number", like).limit(5000);
+      if (error){ console.error(error); continue; }
+      const hits=(data||[]).filter(r=> equalPN(r.part_number, token));
+      if (!hits.length) continue;
+
+      const groups=hits.reduce((m,r)=>{ const k=r.part_number.toUpperCase(); (m[k]??=[]).push(r); return m; },{});
+      Object.keys(groups).sort().forEach(pn=>{
+        const rows=groups[pn]; const byVendor={}; let total=0;
+        rows.forEach(r=>{ const v=r.vendor||"(unknown)"; const q=Number(r.quantity)||0; byVendor[v]=(byVendor[v]||0)+q; total+=q; __lastSearchRows__.push({part_number:pn,vendor:v,quantity:q}); });
+        const vendorsHtml=Object.entries(byVendor).sort((a,b)=>b[1]-a[1]).map(([v,q])=>`<tr><td>${v}</td><td class="qty">${q.toLocaleString()}</td></tr>`).join("");
         const el=document.createElement("div"); el.className="row";
-        el.innerHTML=`<strong>${r.vendor}</strong> — ${r.created_on_utc}<br>Rows: <b>${r.rows_count.toLocaleString()}</b>, Total Qty: <b>${Number(r.total_qty||0).toLocaleString()}</b>`;
-        list.appendChild(el);
+        el.innerHTML=`<div><strong>${pn}</strong></div>
+          <table class="minitable"><thead><tr><th>Vendor</th><th class="qty">Quantity</th></tr></thead>
+          <tbody>${vendorsHtml}</tbody><tfoot><tr><th>Total</th><th class="qty">${total.toLocaleString()}</th></tr></tfoot></table>`;
+        box.appendChild(el);
       });
     }
+    if (!__lastSearchRows__.length) box.innerHTML=`<div class="row">No matching parts found.</div>`; else $("btn-export-results").disabled=false;
+    $("btn-search").disabled=false; $("btn-search").textContent="🔍 Check Excess";
+  };
 
-    // ===== CSV helpers =====
-    const HDR_PART = ["Part Number","MPN","PN","Part","PartNumber","Item","MPN/Part Number"];
-    const HDR_QTY  = ["Quantity","Qty","Q'ty","Qta","Quantità"];
-    const HDR_VEND = ["Vendor","Supplier","Seller","Company","Vendor Name","Supplier Name"];
-    const findHeader=(headers,cands)=>{
-      const H=headers.map(h=>({raw:h, key:lower(h)})), want=cands.map(lower);
-      const hit=H.find(h=>want.includes(h.key)); return hit?hit.raw:null;
-    };
-    const streamParseCSV=(file,onChunk)=>new Promise((resolve,reject)=>{
-      let headers=null,total=0;
-      Papa.parse(file,{worker:true,header:true,skipEmptyLines:true,chunkSize:1024*1024,
-        chunk:(res)=>{headers=headers||(res.meta.fields||[]); const rows=res.data||[]; total+=rows.length; onChunk?.(rows,total);},
-        error:reject, complete:()=>resolve({headers:headers||[],totalRows:total})});
-    });
-    const num = v => { const s=String(v??"").replace(/[^\d.-]/g,""); const n=Number(s); return Number.isFinite(n)?n:null; };
+  $("btn-export-results").onclick=()=>{
+    const rows=__lastSearchRows__; if(!rows?.length){ alert("Nothing to export yet."); return; }
+    const header="Part Number,Vendor,Quantity";
+    const body=rows.map(r=>[`"${(r.part_number||"").replace(/"/g,'""')}"`,`"${(r.vendor||"").replace(/"/g,'""')}"`,String(Number(r.quantity||0))].join(",")).join("\n");
+    const url=URL.createObjectURL(new Blob([header+"\n"+body],{type:"text/csv"}));
+    const a=document.createElement("a"); a.href=url; a.download="excess_search_results.csv"; a.click(); URL.revokeObjectURL(url);
+  };
 
-    // ====== UPLOAD HANDLER (fixed) ======
-    function uuidv4(){
-      return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-      );
+  // -------- remove / uploads list (tolerant)
+  async function refreshUploadsUI(){
+    const list=$("upload-list"); list.innerHTML="";
+    const sel=$("rm-batch"); sel.innerHTML="";
+    let data=null;
+    try{
+      const r=await supabase.from("excess_uploads").select("*").order("created_on_utc",{ascending:false}).limit(500);
+      data=r.data||[];
+    }catch{ data=null; }
+    if (!data){
+      list.innerHTML=`<div class="row">Upload summaries are not being recorded (table not present). This does not affect uploading.</div>`;
+      sel.appendChild(new Option("— No upload summaries —",""));
+      return;
     }
-    function todayUTC(){ return new Date().toISOString().slice(0,10); }
-    function getUploader(){
-      const sel=$("uploaded-by").value;
-      if (sel==="Other") return $("other-staff").value.trim();
-      return sel || "";
+    if (!data.length){
+      list.innerHTML=`<div class="row">No uploads yet.</div>`;
+      sel.appendChild(new Option("— Select an upload —",""));
+      return;
     }
-    window.toggleOtherStaff=()=>{$("other-staff").style.display=$("uploaded-by").value==="Other"?"block":"none";};
-
-    async function doInserts(table, rows, chunk=1500){
-      for (let i=0;i<rows.length;i+=chunk){
-        const slice = rows.slice(i, i+chunk);
-        const { error } = await supabase.from(table).insert(slice);
-        if (error) throw new Error(error.message);
-        // progress
-        const pct = Math.round(((i+slice.length)/rows.length)*100);
-        $("up-bar").style.width = pct+"%";
-        $("up-detail").textContent = `Inserted ${i+slice.length} of ${rows.length}`;
-      }
-    }
-
-    $("btn-upload").addEventListener("click", async ()=>{
-      const fallbackVendor = $("fallback-vendor").value.trim();
-      const uploader = getUploader();
-      const pasted = $("paste-upload").value.trim();
-      const file = $("file-upload").files?.[0];
-
-      if (!file && !pasted){ alert("Attach a CSV or paste rows first."); return; }
-      if (!uploader){ alert("Please choose who uploaded the list."); return; }
-
-      $("btn-upload").disabled = true; $("btn-upload").textContent = "⏳ Uploading…";
-      $("upload-progress-wrap").style.display = "block";
-      $("up-stage").textContent = "Parsing data…";
-      $("up-detail").textContent = "Reading file/paste";
-      $("up-bar").style.width="5%";
-
-      const rows = []; // {part_number, quantity, vendor, batch_id}
-
-      if (file){
-        let collected=[]; let headerMap=null;
-        await streamParseCSV(file, (chunk)=>{ collected.push(...chunk); });
-        if (!collected.length){ alert("CSV is empty."); resetUploadBtn(); return; }
-        const headers = Object.keys(collected[0]||{});
-        const hPart = findHeader(headers, HDR_PART);
-        const hQty  = findHeader(headers, HDR_QTY);
-        const hVend = findHeader(headers, HDR_VEND);
-
-        if (!hPart || !hQty){ alert("CSV must have Part Number and Quantity columns."); resetUploadBtn(); return; }
-
-        const batch_id = uuidv4();
-        for (const r of collected){
-          const pn = norm(r[hPart]);
-          const q  = num(r[hQty]);
-          let vendor = norm(hVend? r[hVend] : "") || fallbackVendor;
-          if (!pn || q===null) continue;
-          rows.push({ part_number: pn, quantity: q, vendor, batch_id });
-        }
-      } else {
-        // Pasted rows: "PN, Qty, Vendor?" — Vendor optional
-        const lines = pasted.split("\n").map(l=>l.trim()).filter(Boolean);
-        const batch_id = uuidv4();
-        for (const line of lines){
-          const bits = line.split(",").map(s=>s.trim());
-          const pn = bits[0]||"";
-          const q  = num(bits[1]);
-          let vendor = (bits[2]||"").trim() || fallbackVendor;
-          if (!pn || q===null) continue;
-          rows.push({ part_number: pn, quantity: q, vendor, batch_id });
-        }
-      }
-
-      if (!rows.length){ alert("Nothing to upload after parsing — check your columns."); resetUploadBtn(); return; }
-
-      $("up-stage").textContent = "Inserting parts…";
-      $("up-detail").textContent = `0 of ${rows.length}`;
-      $("up-bar").style.width="10%";
-
-      try{
-        // Insert into excess_parts in chunks
-        await doInserts("excess_parts", rows, 1500);
-
-        // Summarize for excess_uploads
-        const batch_id = rows[0].batch_id;
-        const total_qty = rows.reduce((a,b)=>a+(Number(b.quantity)||0), 0);
-        const vendors = [...new Set(rows.map(r=>r.vendor||""))];
-        const created_on_utc = todayUTC();
-
-        // If multiple vendors in one file, we record one row per vendor
-        for (const v of vendors){
-          const vRows = rows.filter(r=> (r.vendor||"")===v);
-          const vQty  = vRows.reduce((a,b)=>a+(Number(b.quantity)||0),0);
-          const summary = {
-            vendor: v || (fallbackVendor||"(unknown)"),
-            rows_count: vRows.length,
-            total_qty: vQty,
-            uploaded_by: uploader || null,
-            created_on_utc,
-            batch_id
-          };
-          const { error: upErr } = await supabase.from("excess_uploads").insert(summary);
-          if (upErr) throw new Error(upErr.message);
-        }
-
-        $("up-stage").textContent = "Done!";
-        $("up-detail").textContent = `Inserted ${rows.length.toLocaleString()} rows.`;
-        $("up-bar").style.width="100%";
-        $("upload-status").innerHTML = `<span class="ok">Upload complete.</span>`;
-
-        // Refresh UI
-        await loadStats();
-        await refreshUploadsUI();
-
-      } catch (e){
-        console.error(e);
-        $("upload-status").innerHTML = `<span class="err">Upload failed: ${e.message}</span>`;
-      } finally {
-        resetUploadBtn();
-      }
+    sel.appendChild(new Option("— Select an upload —",""));
+    data.forEach(r=>{
+      const label=`${r.vendor} — ${r.created_on_utc}  (${r.rows_count.toLocaleString()} rows, ${Number(r.total_qty||0).toLocaleString()} qty)`;
+      sel.appendChild(new Option(label, JSON.stringify({vendor:r.vendor,date:r.created_on_utc,rows:r.rows_count,qty:r.total_qty})));
     });
-
-    function resetUploadBtn(){
-      $("btn-upload").disabled = false; $("btn-upload").textContent = "⬆️ Upload Excess";
-    }
-
-    // ===== SEARCH (strict canonical equality) =====
-    let __lastSearchRows__ = [];
-    $("btn-search").addEventListener("click", async ()=>{
-      const pasted = $("input-parts").value.split("\n").map(s=>s.trim()).filter(Boolean);
-      let parts = dedupUpper(pasted);
-
-      const file = $("file-search").files?.[0];
-      if (file){
-        let collected = [];
-        await streamParseCSV(file, (chunk)=>{ collected.push(...chunk); });
-        const headers = Object.keys(collected[0]||{});
-        const hPart = findHeader(headers, HDR_PART);
-        if (!hPart){ alert("CSV needs a Part Number/MPN column"); return; }
-        parts = dedupUpper([...parts, ...collected.map(r=>r[hPart])]);
-      }
-      if (!parts.length){ alert("Add some part numbers first."); return; }
-
-      $("btn-search").disabled = true; $("btn-search").textContent = "⏳ Searching…";
-      $("btn-export-results").disabled = true;
-      const box = $("search-results"); box.innerHTML=""; __lastSearchRows__ = [];
-
-      for (const rawLine of parts){
-        const token = extractToken(rawLine);
-        const canonQ = CANON(token);
-        if (!canonQ) continue;
-
-        const like = anchorPattern(token);
-        const { data, error } = await supabase
-          .from("excess_parts")
-          .select("part_number,vendor,quantity,created_at")
-          .ilike("part_number", like)
-          .limit(5000);
-
-        if (error){ console.error(error); continue; }
-
-        const hits = (data||[]).filter(r => equalPN(r.part_number, token));
-        if (!hits.length) continue;
-
-        const groups = hits.reduce((m,r)=>{
-          const key = r.part_number.toUpperCase();
-          (m[key] ??= []).push(r);
-          return m;
-        },{});
-
-        Object.keys(groups).sort().forEach(pn=>{
-          const rows = groups[pn];
-          const byVendor = {};
-          let total = 0;
-          rows.forEach(r=>{
-            const v = r.vendor || "(unknown)";
-            const q = Number(r.quantity)||0;
-            byVendor[v] = (byVendor[v]||0) + q;
-            total += q;
-            __lastSearchRows__.push({ part_number: pn, vendor: v, quantity: q });
-          });
-          const vendorsHtml = Object.entries(byVendor)
-            .sort((a,b)=>b[1]-a[1])
-            .map(([v,q])=>`<tr><td>${v}</td><td class="qty">${q.toLocaleString()}</td></tr>`)
-            .join("");
-
-          const el = document.createElement("div");
-          el.className = "row";
-          el.innerHTML = `
-            <div><strong>${pn}</strong></div>
-            <table class="minitable">
-              <thead><tr><th>Vendor</th><th class="qty">Quantity</th></tr></thead>
-              <tbody>${vendorsHtml}</tbody>
-              <tfoot><tr><th>Total</th><th class="qty">${total.toLocaleString()}</th></tr></tfoot>
-            </table>`;
-          box.appendChild(el);
-        });
-      }
-
-      if (__lastSearchRows__.length === 0){
-        box.innerHTML = `<div class="row">No matching parts found.</div>`;
-      } else {
-        $("btn-export-results").disabled = false;
-      }
-
-      $("btn-search").disabled = false; $("btn-search").textContent = "🔍 Check Excess";
+    sel.onchange=()=>{ if(!sel.value){$("rm-batch-info").textContent="";return;}
+      const v=JSON.parse(sel.value); $("rm-batch-info").textContent=`Selected: ${v.vendor} on ${v.date} — ${v.rows.toLocaleString()} rows (${Number(v.qty||0).toLocaleString()} qty)`;
+      $("rm-vendor").value=v.vendor; $("rm-date").value=v.date; };
+    data.slice(0,20).forEach(r=>{
+      const el=document.createElement("div"); el.className="row";
+      el.innerHTML=`<strong>${r.vendor}</strong> — ${r.created_on_utc}<br>Rows: <b>${(r.rows_count||0).toLocaleString()}</b>, Total Qty: <b>${Number(r.total_qty||0).toLocaleString()}</b>`;
+      list.appendChild(el);
     });
+  }
 
-    $("btn-export-results").addEventListener("click", ()=>{
-      const rows = __lastSearchRows__ || [];
-      if (!rows.length){ alert("Nothing to export yet."); return; }
-      const header = ["Part Number","Vendor","Quantity"].join(",");
-      const body = rows.map(r=>[
-        `"${(r.part_number||"").replace(/"/g,'""')}"`,
-        `"${(r.vendor||"").replace(/"/g,'""')}"`,
-        String(Number(r.quantity||0))
-      ].join(",")).join("\n");
-      const blob = new Blob([header+"\n"+body], { type:"text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob); const a = document.createElement("a");
-      a.href = url; a.download = "excess_search_results.csv"; a.click(); URL.revokeObjectURL(url);
-    });
+  $("btn-remove").onclick = async ()=>{
+    let vendor=$("rm-vendor").value.trim(); let date=$("rm-date").value; const sel=$("rm-batch").value;
+    if (sel){ const v=JSON.parse(sel); vendor=v.vendor; date=v.date; }
+    if (!vendor || !date){ $("remove-status").innerHTML=`<span class="err">Select an upload or fill Vendor + Date.</span>`; return; }
+    $("btn-remove").disabled=true; $("btn-remove").textContent="⏳ Removing…"; $("remove-status").textContent="";
+    const { data, error } = await supabase.rpc("excess_delete_by_vendor_date", { in_vendor: vendor, in_date: date });
+    if (error){ $("remove-status").innerHTML=`<span class="err">Delete failed: ${error.message}</span>`; }
+    else { $("remove-status").innerHTML=`<span class="ok">Deleted ${Number(data||0).toLocaleString()} rows for ${vendor} on ${date}.</span>`; loadStats(); refreshUploadsUI(); }
+    $("btn-remove").disabled=false; $("btn-remove").textContent="🗑️ Remove Selected Upload";
+  };
 
-    // ===== Remove =====
-    $("btn-remove").addEventListener("click", async ()=>{
-      let vendor = $("rm-vendor").value.trim();
-      let date = $("rm-date").value;
-      const sel = $("rm-batch").value;
-      if (sel){ const v=JSON.parse(sel); vendor=v.vendor; date=v.date; }
-      if (!vendor || !date){
-        $("remove-status").innerHTML = `<span class="err">Select an upload or fill Vendor + Date.</span>`;
-        return;
+  // -------- vendors tab
+  const VendorView={selected:null,page:1,pageSize:200,totalRows:0,totalQty:0,currentPageRows:[],
+    async fetchVendors(prefix=""){ let q=supabase.from("excess_parts").select("vendor").not("vendor","is",null).limit(10000);
+      if(prefix&&prefix.length>=2) q=q.ilike("vendor",`${prefix}%`);
+      const {data}=await q; const uniq=[...new Set((data||[]).map(r=>(r.vendor||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b)); return uniq; },
+    vendorItem(v){ const el=document.createElement("div"); el.className="row"; el.style.cursor="pointer"; el.textContent=v;
+      el.onclick=()=>this.selectVendor(v); return el; },
+    async renderVendorList(prefix=""){ const box=$("vendor-list"); box.innerHTML=`<div class="row">Loading vendors…</div>`;
+      try{ const vs=await this.fetchVendors(prefix); $("vendor-count").textContent=vs.length.toLocaleString(); box.innerHTML=""; vs.forEach(v=>box.appendChild(this.vendorItem(v))); }catch(e){ box.innerHTML=`<div class="row err">${e.message}</div>`; } },
+    async selectVendor(v){ this.selected=v; this.page=1; $("vendor-title").textContent=v; $("btn-export-all").disabled=false; await this.refreshVendorStats(); await this.loadPage(); },
+    async refreshVendorStats(){ const { count }=await supabase.from("excess_parts").select("*",{count:"exact",head:true}).eq("vendor",this.selected);
+      this.totalRows=count||0; let totalQty=0,PAGE=10000,pages=Math.ceil((this.totalRows||0)/PAGE);
+      for(let p=0;p<pages;p++){ const {data}=await supabase.from("excess_parts").select("quantity").eq("vendor",this.selected).range(p*PAGE,p*PAGE+PAGE-1); (data||[]).forEach(r=> totalQty+=(Number(r.quantity)||0)); }
+      this.totalQty=totalQty; $("vendor-stats").innerHTML=`Rows: <b>${(this.totalRows||0).toLocaleString()}</b> • Total Qty: <b>${(this.totalQty||0).toLocaleString()}</b>`; },
+    async loadPage(){ const from=(this.page-1)*this.pageSize,to=from+this.pageSize-1;
+      const {data,error,count}=await supabase.from("excess_parts").select("part_number,quantity,created_at",{count:"exact"}).eq("vendor",this.selected).order("part_number",{ascending:true}).range(from,to);
+      const box=$("vendor-parts"); if(error){ box.innerHTML=`<div class="row err">${error.message}</div>`; return; }
+      this.currentPageRows=data||[]; if(typeof count==="number") this.totalRows=count;
+      box.innerHTML=this.currentPageRows.length? "" : `<div class="row">No parts for this vendor.</div>`;
+      this.currentPageRows.forEach(r=>{ const el=document.createElement("div"); el.className="row";
+        el.innerHTML=`<div><strong>${(r.part_number||"").toUpperCase()}</strong></div><div class="hint">Qty: <b>${Number(r.quantity||0).toLocaleString()}</b> • Added: ${new Date(r.created_at).toISOString().split("T")[0]}</div>`; box.appendChild(el); });
+      const pages=Math.max(1,Math.ceil((this.totalRows||0)/this.pageSize)); $("vendor-page-hint").textContent=`Page ${this.page} of ${pages} — showing ${this.currentPageRows.length.toLocaleString()} of ${this.totalRows.toLocaleString()} rows`;
+      $("vp-prev").disabled=(this.page<=1); $("vp-next").disabled=(this.page>=pages); $("btn-export-page").disabled=this.currentPageRows.length===0; },
+    async exportCurrentPage(){ const rows=this.currentPageRows; if(!rows.length) return;
+      const csv=[["Vendor","Part Number","Quantity","Created At"].join(","), ...rows.map(r=>[`"${(this.selected||"").replace(/"/g,'""')}"`,`"${(r.part_number||"").replace(/"/g,'""')}"`,String(Number(r.quantity||0)),`"${r.created_at}"`].join(","))].join("\n");
+      const url=URL.createObjectURL(new Blob([csv],{type:"text/csv"})); const a=document.createElement("a"); a.href=url; a.download=`vendor_${this.selected}_page_${this.page}.csv`; a.click(); URL.revokeObjectURL(url); },
+    async exportAll(){ const header=["Vendor","Part Number","Quantity","Created At"].join(","),PAGE=this.pageSize;
+      let csv=[header]; const pages=Math.max(1,Math.ceil((this.totalRows||0)/PAGE));
+      for(let p=1;p<=pages;p++){ const from=(p-1)*PAGE,to=from+PAGE-1;
+        const {data,error}=await supabase.from("excess_parts").select("part_number,quantity,created_at").eq("vendor",this.selected).order("part_number",{ascending:true}).range(from,to);
+        if(error){ alert(`Export failed on page ${p}: ${error.message}`); return; }
+        (data||[]).forEach(r=>{ csv.push([`"${(this.selected||"").replace(/"/g,'""')}"`,`"${(r.part_number||"").replace(/"/g,'""')}"`,String(Number(r.quantity||0)),`"${r.created_at}"`].join(",")); });
+        $("vendor-page-hint").textContent=`Exporting… ${p}/${pages}`;
       }
-      $("btn-remove").disabled = true; $("btn-remove").textContent = "⏳ Removing…";
-      $("remove-status").textContent = "";
-      const { data, error } = await supabase.rpc("excess_delete_by_vendor_date", { in_vendor: vendor, in_date: date });
-      if (error){
-        $("remove-status").innerHTML = `<span class="err">Delete failed: ${error.message}</span>`;
-      } else {
-        $("remove-status").innerHTML = `<span class="ok">Deleted ${Number(data||0).toLocaleString()} rows for ${vendor} on ${date}.</span>`;
-        loadStats(); refreshUploadsUI(); loadLeaderboard("week");
-      }
-      $("btn-remove").disabled = false; $("btn-remove").textContent = "🗑️ Remove Selected Upload";
-    });
+      const url=URL.createObjectURL(new Blob([csv.join("\n")],{type:"text/csv"})); const a=document.createElement("a"); a.href=url; a.download=`vendor_${this.selected}_ALL.csv`; a.click(); URL.revokeObjectURL(url); }
+  };
+  $("vendor-search").addEventListener("input",e=>VendorView.renderVendorList(e.target.value.trim()));
+  $("vp-prev").onclick=async ()=>{ if (VendorView.page>1){ VendorView.page--; await VendorView.loadPage(); } };
+  $("vp-next").onclick=async ()=>{ VendorView.page++; await VendorView.loadPage(); };
+  $("btn-export-page").onclick=()=>VendorView.exportCurrentPage();
+  $("btn-export-all").onclick=()=>VendorView.exportAll();
 
-    // ===== Leaderboard =====
-    async function loadLeaderboard(period="week"){
-      const { data, error } = await supabase.from("excess_batches").select("uploaded_by,batch_id,created_on_utc").limit(20000);
-      const tbody = $("leader-tbody"); tbody.innerHTML="";
-      if (error){ tbody.innerHTML = `<tr><td colspan="3">Failed to load: ${error.message}</td></tr>`; return; }
-      const counts = {};
-      (data||[]).forEach(r=>{ const n=r.uploaded_by||"(unknown)"; counts[n]=(counts[n]||0)+1; });
-      const rows = Object.entries(counts).sort((a,b)=>b[1]-a[1]).map((e,i)=>({rank:i+1,name:e[0],lists:e[1]}));
-      if (!rows.length){ tbody.innerHTML=`<tr><td colspan="3">No uploads found.</td></tr>`; return; }
-      rows.forEach(r=>{
-        const tr=document.createElement("tr");
-        tr.innerHTML=`<td>${r.rank}</td><td>${r.name}</td><td>${r.lists}</td>`;
-        tbody.appendChild(tr);
+  // -------- log tab
+  async function loadExcessLog(limit=20){
+    const box=$("log-list");
+    box.innerHTML=`<div class="row">Loading…</div>`;
+    try{
+      const { data, error } = await supabase
+        .from("excess_log")
+        .select("created_at, created_on_utc, vendor, uploaded_by, rows_count, total_qty, batch_id, file_name, status, error")
+        .order("created_at",{ascending:false})
+        .limit(limit);
+      if (error) throw error;
+      if (!data?.length){ box.innerHTML=`<div class="row">No entries yet.</div>`; return; }
+      box.innerHTML="";
+      data.forEach(r=>{
+        const d = new Date(r.created_at).toLocaleString();
+        const err = r.error ? `<div class="err mono" style="margin-top:6px">${r.error}</div>` : "";
+        const el=document.createElement("div"); el.className="row";
+        el.innerHTML = `
+          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <div>
+              <div><strong>${r.vendor}</strong> • ${r.status}</div>
+              <div class="hint">By: ${r.uploaded_by || "—"} • Batch: <span class="mono">${r.batch_id}</span></div>
+              <div class="hint">Rows: <b>${(r.rows_count||0).toLocaleString()}</b> • Qty: <b>${Number(r.total_qty||0).toLocaleString()}</b></div>
+            </div>
+            <div class="hint" style="text-align:right">
+              ${r.file_name ? `<div class="mono">${r.file_name}</div>` : ``}
+              <div>${d} (UTC: ${r.created_on_utc})</div>
+            </div>
+          </div>
+          ${err}
+        `;
+        box.appendChild(el);
       });
+    }catch(e){
+      console.error(e); box.innerHTML=`<div class="row err">Failed to load log: ${e.message}</div>`;
     }
+  }
+  $("log-refresh").addEventListener("click",()=>loadExcessLog());
 
-    // ===== Vendors tab =====
-    const VendorView = {
-      selected:null, page:1, pageSize:200, totalRows:0, totalQty:0, currentPageRows:[],
-      async fetchVendors(prefix=""){
-        let q = supabase.from("excess_parts").select("vendor").not("vendor","is", null).limit(10000);
-        if (prefix && prefix.length>=2) q=q.ilike("vendor", `${prefix}%`);
-        const { data } = await q;
-        const uniq=[...new Set((data||[]).map(r=>(r.vendor||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-        return uniq;
-      },
-      vendorItem(v){ const el=document.createElement("div"); el.className="row"; el.style.cursor="pointer"; el.textContent=v;
-        el.addEventListener("click", ()=> this.selectVendor(v)); return el; },
-      async renderVendorList(prefix=""){ const box=$("vendor-list"); box.innerHTML=`<div class="row">Loading vendors…</div>`;
-        try{ const vendors=await this.fetchVendors(prefix); $("vendor-count").textContent=vendors.length.toLocaleString();
-          box.innerHTML=""; vendors.forEach(v=>box.appendChild(this.vendorItem(v))); }catch(e){ box.innerHTML=`<div class="row err">${e.message}</div>`; }
-      },
-      async selectVendor(v){ this.selected=v; this.page=1; $("vendor-title").textContent=v; $("btn-export-all").disabled=false; await this.refreshVendorStats(); await this.loadPage(); },
-      async refreshVendorStats(){
-        const { count } = await supabase.from("excess_parts").select("*",{count:"exact",head:true}).eq("vendor", this.selected);
-        this.totalRows=count||0;
-        let totalQty=0, PAGE=10000, pages=Math.ceil((this.totalRows||0)/PAGE);
-        for (let p=0;p<pages;p++){
-          const { data } = await supabase.from("excess_parts").select("quantity").eq("vendor", this.selected).range(p*PAGE, p*PAGE+PAGE-1);
-          (data||[]).forEach(r=> totalQty += (Number(r.quantity)||0));
-        }
-        this.totalQty=totalQty;
-        $("vendor-stats").innerHTML=`Rows: <b>${(this.totalRows||0).toLocaleString()}</b> • Total Qty: <b>${(this.totalQty||0).toLocaleString()}</b>`;
-      },
-      async loadPage(){
-        const from=(this.page-1)*this.pageSize, to=from+this.pageSize-1;
-        const { data, error, count } = await supabase
-          .from("excess_parts")
-          .select("part_number,quantity,created_at",{count:"exact"})
-          .eq("vendor", this.selected).order("part_number",{ascending:true}).range(from,to);
-        const box=$("vendor-parts"); if (error){ box.innerHTML=`<div class="row err">${error.message}</div>`; return; }
-        this.currentPageRows=data||[]; if (typeof count==="number") this.totalRows=count;
-        box.innerHTML=this.currentPageRows.length? "": `<div class="row">No parts for this vendor.</div>`;
-        this.currentPageRows.forEach(r=>{
-          const el=document.createElement("div"); el.className="row";
-          el.innerHTML=`<div><strong>${(r.part_number||"").toUpperCase()}</strong></div>
-                        <div class="hint">Qty: <b>${Number(r.quantity||0).toLocaleString()}</b> • Added: ${new Date(r.created_at).toISOString().split("T")[0]}</div>`;
-          box.appendChild(el);
-        });
-        const pages=Math.max(1, Math.ceil((this.totalRows||0)/this.pageSize));
-        $("vendor-page-hint").textContent=`Page ${this.page} of ${pages} — showing ${this.currentPageRows.length.toLocaleString()} of ${this.totalRows.toLocaleString()} rows`;
-        $("vp-prev").disabled=(this.page<=1); $("vp-next").disabled=(this.page>=pages);
-        $("btn-export-page").disabled=this.currentPageRows.length===0;
-      },
-      async exportCurrentPage(){
-        const rows=this.currentPageRows; if (!rows.length) return;
-        const csv=[["Vendor","Part Number","Quantity","Created At"].join(","),
-          ...rows.map(r=>[
-            `"${(this.selected||"").replace(/"/g,'""')}"`,
-            `"${(r.part_number||"").replace(/"/g,'""')}"`,
-            String(Number(r.quantity||0)),
-            `"${r.created_at}"`
-          ].join(","))].join("\n");
-        const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
-        const url=URL.createObjectURL(blob); const a=document.createElement("a");
-        a.href=url; a.download=`vendor_${this.selected}_page_${this.page}.csv`; a.click(); URL.revokeObjectURL(url);
-      },
-      async exportAll(){
-        const header=["Vendor","Part Number","Quantity","Created At"].join(",");
-        let csvParts=[header]; const PAGE=this.pageSize;
-        const pages=Math.max(1, Math.ceil((this.totalRows||0)/PAGE));
-        for (let p=1;p<=pages;p++){
-          const from=(p-1)*PAGE, to=from+PAGE-1;
-          const { data, error } = await supabase
-            .from("excess_parts").select("part_number,quantity,created_at")
-            .eq("vendor", this.selected).order("part_number",{ascending:true}).range(from,to);
-          if (error){ alert(`Export failed on page ${p}: ${error.message}`); return; }
-          (data||[]).forEach(r=>{
-            csvParts.push([
-              `"${(this.selected||"").replace(/"/g,'""')}"`,
-              `"${(r.part_number||"").replace(/"/g,'""')}"`,
-              String(Number(r.quantity||0)),
-              `"${r.created_at}"`
-            ].join(","));
-          });
-          $("vendor-page-hint").textContent=`Exporting… ${p}/${pages}`;
-        }
-        const blob=new Blob([csvParts.join("\n")],{type:"text/csv;charset=utf-8"});
-        const url=URL.createObjectURL(blob); const a=document.createElement("a");
-        a.href=url; a.download=`vendor_${this.selected}_ALL.csv`; a.click(); URL.revokeObjectURL(url);
-      }
-    };
-    $("vendor-search")?.addEventListener("input", (e)=>VendorView.renderVendorList(e.target.value.trim()));
-    $("vp-prev")?.addEventListener("click", async ()=>{ if (VendorView.page>1){ VendorView.page--; await VendorView.loadPage(); }});
-    $("vp-next")?.addEventListener("click", async ()=>{ VendorView.page++; await VendorView.loadPage(); });
-    $("btn-export-page")?.addEventListener("click", ()=> VendorView.exportCurrentPage());
-    $("btn-export-all")?.addEventListener("click", ()=> VendorView.exportAll());
-
-    // ===== Init =====
-    loadStats();
-    refreshUploadsUI();
-    loadLeaderboard("week");
-  </script>
+  // -------- init
+  loadStats(); refreshUploadsUI(); VendorView.renderVendorList("");
+</script>
 </body>
 </html>
