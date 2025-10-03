@@ -51,7 +51,7 @@
 <div class="wrap">
   <header>
     <div class="brand">
-      <img class="logo" src="../assets/Logo_color_white_background (1).png?v=v8" alt="Verified Electronics"/>
+      <img class="logo" src="../assets/Logo_color_white_background (1).png?v=v9" alt="Verified Electronics"/>
       <h1>Excess Part Number Checker</h1>
     </div>
     <a href="/" class="btn ghost">← Back to Tools</a>
@@ -88,7 +88,7 @@
       <textarea id="input-parts" class="mono" placeholder="e.g.
 LM358DR
 STM32F103C8T6
-TPS7A4700-RGWT"></textarea>
+20-101-1068"></textarea>
       <div class="controls">
         <div>
           <input type="file" id="file-search" accept=".csv"/>
@@ -154,7 +154,7 @@ TPS7A4700-RGWT"></textarea>
     <section id="tab-remove" class="section">
       <div class="hint" style="border:1px dashed var(--line);border-radius:12px;padding:10px;margin-bottom:10px">
         Choose a prior upload (Vendor × Date) below, then click <b>Remove</b>.<br/>
-        You can also delete directly from the list using its <b>Delete</b> button.
+        You can also delete directly from the Vendors list using each vendor’s <b>Delete</b> button.
       </div>
       <div class="grid">
         <div>
@@ -239,9 +239,9 @@ TPS7A4700-RGWT"></textarea>
   <footer style="margin:26px 2px 10px;color:var(--muted);font-size:12px;text-align:center">© <span id="year"></span> Verified Electronics</footer>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js?v=v8"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js?v=v9"></script>
 <script type="module">
-  const APP_VERSION = "v8";
+  const APP_VERSION = "v9";
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
   const SUPABASE_URL  = "https://ijzroisggstqkfhpjndq.supabase.co";
@@ -251,19 +251,19 @@ TPS7A4700-RGWT"></textarea>
   const $ = id => document.getElementById(id);
   $("year").textContent = new Date().getFullYear();
 
-  // helpers
+  // -------- Helpers
   const norm = s=>String(s??"").trim();
   const lower=s=>norm(s).toLowerCase();
   const dedupUpper = arr => [...new Set(arr.map(s=>s.trim()).filter(Boolean).map(s=>s.toUpperCase()))];
   const CANON = s => String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
-  const trimPkg = c => c.replace(/[A-Z]{1,6}$/,"");        // tolerant of trailing package codes
+  const trimPkg = c => c.replace(/[A-Z]{1,6}$/,"");
   const equalPN = (a,b)=>{const A=CANON(a),B=CANON(b);return !!A&&(A===B||trimPkg(A)===trimPkg(B));};
   const extractToken = line => (String(line||"").trim().toUpperCase().split(/[,\s;]+/)[0]||"");
   function uuidv4(){return([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16))}
   const todayUTC = ()=> new Date().toISOString().slice(0,10);
   const num = v => { const s=String(v??"").replace(/[^\d.-]/g,""); const n=Number(s); return Number.isFinite(n)?n:null; };
 
-  // tabs
+  // -------- TABS
   document.querySelectorAll(".tab").forEach(b=>{
     b.addEventListener("click",()=>{
       document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
@@ -276,56 +276,66 @@ TPS7A4700-RGWT"></textarea>
     });
   });
 
-  // stats (tolerant)
-  async function getDistinctVendorsPaginated(prefix=""){
-    // Count total first
-    let head = await supabase.from("excess_parts")
-      .select("vendor",{count:"exact",head:true})
-      .not("vendor","is",null);
-    const total=head.count||0;
-    if(!total) return [];
+  // -------- RELIABLE FULL VENDOR SCAN (keyset over id)
+  async function scanAllVendors(prefix="") {
+    const uniq = new Set();
+    let lastId = 0;
+    const PAGE = 1000;
 
-    const PAGE=10000, pages=Math.ceil(total/PAGE), uniq=new Set();
-    for(let p=0;p<pages;p++){
-      let q = supabase.from("excess_parts")
-        .select("vendor")
+    while (true) {
+      const { data, error } = await supabase
+        .from("excess_parts")
+        .select("id,vendor")
         .not("vendor","is",null)
-        .range(p*PAGE, Math.min(p*PAGE+PAGE-1,total-1));
-      const {data}=await q;
-      (data||[]).forEach(r=>{
-        const v=(r.vendor||"").trim();
-        if(!v) return;
-        if (prefix && !v.toLowerCase().startsWith(prefix.toLowerCase())) return;
+        .gt("id", lastId)
+        .order("id", { ascending: true })
+        .limit(PAGE);
+
+      if (error) throw error;
+      if (!data || !data.length) break;
+
+      for (const r of data) {
+        const v = (r.vendor || "").trim();
+        if (!v) continue;
+        if (prefix && !v.toLowerCase().startsWith(prefix.toLowerCase())) continue;
         uniq.add(v);
-      });
+        if (r.id > lastId) lastId = r.id;
+      }
+      if (data.length < PAGE) break; // last page
     }
     return [...uniq].sort((a,b)=>a.localeCompare(b));
   }
+
   async function safeCountUploads(){
     try{ const head = await supabase.from("excess_log").select("*",{count:"exact",head:true}); if (typeof head.count === "number") return head.count; }catch{}
     try{ const head = await supabase.from("excess_uploads").select("*",{count:"exact",head:true}); if (typeof head.count === "number") return head.count; }catch{}
     try{ const head = await supabase.from("excess_batches").select("*",{count:"exact",head:true}); if (typeof head.count === "number") return head.count; }catch{}
     return 0;
   }
+
   async function loadStats(){
     const head = await supabase.from("excess_parts").select("*",{count:"exact",head:true});
     $("stat-total").textContent = (head.count||0).toLocaleString();
-    const vendors = await getDistinctVendorsPaginated("");
+
+    const vendors = await scanAllVendors("");   // ← full walk
     $("stat-vendors").textContent = vendors.length.toLocaleString();
+
     $("stat-batches").textContent = (await safeCountUploads()).toLocaleString();
   }
+
   $("btn-export-vendors").onclick = async ()=>{
-    const list = await getDistinctVendorsPaginated("");
+    const list = await scanAllVendors("");
     if (!list.length) { alert("No vendors found."); return; }
     const csv = "Vendor\n"+list.map(v=>`"${v.replace(/"/g,'""')}"`).join("\n");
     const url = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
     const a=document.createElement("a"); a.href=url; a.download="vendors.csv"; a.click(); URL.revokeObjectURL(url);
   };
 
-  // CSV parse
+  // -------- CSV parse
   const HDR_PART=["Part Number","MPN","PN","Part","PartNumber","Item","MPN/Part Number"];
   const HDR_QTY=["Quantity","Qty","Q'ty","Qta","Quantità","On Hand","Stock"];
   const HDR_VEND=["Vendor","Supplier","Seller","Company","Vendor Name","Supplier Name"];
+  const lower = s => String(s??"").trim().toLowerCase();
   const findHeader=(headers,cands)=>{const H=headers.map(h=>({raw:h,key:lower(h)})), want=cands.map(lower); const hit=H.find(h=>want.includes(h.key)); return hit?hit.raw:null;};
   const streamParseCSV=(file,onChunk)=>new Promise((resolve,reject)=>{
     let headers=null,total=0;
@@ -334,7 +344,7 @@ TPS7A4700-RGWT"></textarea>
       error:reject, complete:()=>resolve({headers:headers||[],totalRows:total})});
   });
 
-  // upload helpers
+  // -------- Upload
   function showOtherStaff(){ $("other-staff").style.display = $("uploaded-by").value==="Other"?"block":"none"; }
   $("uploaded-by").addEventListener("change", showOtherStaff);
 
@@ -442,7 +452,7 @@ TPS7A4700-RGWT"></textarea>
     } finally { resetUploadBtn(); }
   };
 
-  // ===== SEARCH (updated tolerant LIKE) =====
+  // -------- SEARCH (punctuation-tolerant)
   let __lastSearchRows__=[];
   $("btn-search").onclick = async ()=>{
     const pasted=$("input-parts").value.split("\n").map(s=>s.trim()).filter(Boolean);
@@ -464,8 +474,7 @@ TPS7A4700-RGWT"></textarea>
       const canonQ=CANON(token);
       if (!canonQ) continue;
 
-      // punctuation-tolerant pattern: '%2%0%1%0...' so '20-101-1068' matches
-      const likeLoose = `%${canonQ.split("").join("%")}%`;
+      const likeLoose = `%${canonQ.split("").join("%")}%`; // matches with punctuation inside
 
       const { data, error } = await supabase
         .from("excess_parts")
@@ -504,7 +513,7 @@ TPS7A4700-RGWT"></textarea>
     const a=document.createElement("a"); a.href=url; a.download="excess_search_results.csv"; a.click(); URL.revokeObjectURL(url);
   };
 
-  // RPC helpers for delete (by batch / vendor+date)
+  // -------- Delete helpers
   async function rpcDeleteByBatch(batch_id) {
     const { data, error } = await supabase.rpc("excess_delete_by_batch", { in_batch: batch_id });
     if (error) throw new Error(error.message);
@@ -515,7 +524,6 @@ TPS7A4700-RGWT"></textarea>
     if (error) throw new Error(error.message);
     return Number(data || 0);
   }
-  // Optional RPC – if you have 'excess_delete_by_vendor'. Otherwise direct delete below will handle it.
   async function rpcDeleteByVendorOnly(vendor) {
     try {
       const { data, error } = await supabase.rpc("excess_delete_by_vendor", { in_vendor: vendor });
@@ -548,10 +556,10 @@ TPS7A4700-RGWT"></textarea>
     } catch (_) {}
 
     alert(`Deleted ${removed.toLocaleString()} rows for ${v} on ${d}.`);
-    await loadStats(); await refreshUploadsUI(); await loadExcessLog();
+    await loadStats(); await refreshUploadsUI(); await loadExcessLog(); await VendorView.renderVendorList($("vendor-search").value.trim());
   }
 
-  // remove tab list + button
+  // -------- Remove tab list + button
   async function refreshUploadsUI(){
     const list = $("upload-list");
     list.innerHTML = "";
@@ -564,7 +572,7 @@ TPS7A4700-RGWT"></textarea>
         .from("excess_uploads")
         .select("vendor, created_on_utc, rows_count, total_qty, batch_id")
         .order("created_on_utc", { ascending: false })
-        .limit(500);
+        .limit(1000);
       data = r.data || [];
     } catch {
       data = null;
@@ -609,7 +617,7 @@ TPS7A4700-RGWT"></textarea>
       `;
       el.querySelector("button[data-del]")?.addEventListener("click", (e)=>{
         const meta = JSON.parse(e.currentTarget.getAttribute("data-del"));
-        handleDeleteUpload(meta).then(()=>refreshUploadsUI()); // refresh list after delete
+        handleDeleteUpload(meta).then(()=>refreshUploadsUI());
       });
       list.appendChild(el);
     });
@@ -625,38 +633,10 @@ TPS7A4700-RGWT"></textarea>
     };
   }
 
-  $("btn-remove").onclick = async ()=>{
-    const sel = $("rm-batch").value;
-    let meta = null;
-
-    if (sel) {
-      meta = JSON.parse(sel);
-    } else {
-      const vendor=$("rm-vendor").value.trim();
-      const date=$("rm-date").value;
-      if (!vendor || !date) {
-        $("remove-status").innerHTML = `<span class="err">Select an upload or fill Vendor + Date.</span>`;
-        return;
-      }
-      meta = { vendor, date, batch_id: null, rows_count: 0, total_qty: 0 };
-    }
-
-    $("btn-remove").disabled = true;
-    $("btn-remove").textContent = "⏳ Removing…";
-    $("remove-status").textContent = "";
-
-    try {
-      await handleDeleteUpload(meta);
-    } finally {
-      $("btn-remove").disabled = false;
-      $("btn-remove").textContent = "🗑️ Remove Selected Upload";
-    }
-  };
-
-  // ===== Vendors tab =====
+  // -------- Vendors tab
   const VendorView={
     selected:null,page:1,pageSize:200,totalRows:0,totalQty:0,currentPageRows:[],
-    async fetchVendorNames(prefix=""){ return await getDistinctVendorsPaginated(prefix); },
+    async fetchVendorNames(prefix=""){ return await scanAllVendors(prefix); }, // ← use keyset scan
     vendorItem(v){
       const el=document.createElement("div"); el.className="row";
       el.innerHTML=`<div class="left">${v}</div><button class="btn danger" data-v="${v}">Delete</button>`;
@@ -667,12 +647,10 @@ TPS7A4700-RGWT"></textarea>
         if(!confirm(`Delete ALL parts for vendor "${name}"? This cannot be undone.`)) return;
         let removed=0;
         try{
-          // try direct delete first
           const del = await supabase.from("excess_parts").delete().eq("vendor", name);
           if (del.error) throw del.error;
           removed = del.count || 0;
         }catch{
-          // optional: RPC fallback if you have it
           removed = await rpcDeleteByVendorOnly(name);
         }
         await supabase.from("excess_log").update({ status:"deleted" }).eq("vendor", name);
@@ -690,6 +668,7 @@ TPS7A4700-RGWT"></textarea>
         const vs=await this.fetchVendorNames(prefix);
         $("vendor-count").textContent=vs.length.toLocaleString();
         box.innerHTML="";
+        if (!vs.length){ box.innerHTML=`<div class="row">No vendors found.</div>`; return; }
         vs.forEach(v=>box.appendChild(this.vendorItem(v)));
       }catch(e){
         box.innerHTML=`<div class="row err">${e.message}</div>`;
@@ -698,7 +677,7 @@ TPS7A4700-RGWT"></textarea>
     async selectVendor(v){ this.selected=v; this.page=1; $("vendor-title").textContent=v; $("btn-export-all").disabled=false; await this.refreshVendorStats(); await this.loadPage(); },
     async refreshVendorStats(){ const { count }=await supabase.from("excess_parts").select("*",{count:"exact",head:true}).eq("vendor",this.selected);
       this.totalRows=count||0; let totalQty=0,PAGE=10000,pages=Math.ceil((this.totalRows||0)/PAGE);
-      for(let p=0;p<pages;p++){ const {data}=await supabase.from("excess_parts").select("quantity").eq("vendor",this.selected).range(p*PAGE,Math.min(p*PAGE+PAGE-1,(this.totalRows||1)-1)); (data||[]).forEach(r=> totalQty+=(Number(r.quantity)||0)); }
+      for(let p=0;p<pages;p++){ const {data}=await supabase.from("excess_parts").select("quantity").eq("vendor",this.selected).range(p*PAGE,Math.min((p+1)*PAGE-1,(this.totalRows||1)-1)); (data||[]).forEach(r=> totalQty+=(Number(r.quantity)||0)); }
       this.totalQty=totalQty; $("vendor-stats").innerHTML=`Rows: <b>${(this.totalRows||0).toLocaleString()}</b> • Total Qty: <b>${(this.totalQty||0).toLocaleString()}</b>`; },
     async loadPage(){ const from=(this.page-1)*this.pageSize,to=from+this.pageSize-1;
       const {data,error,count}=await supabase.from("excess_parts").select("part_number,quantity,created_at",{count:"exact"}).eq("vendor",this.selected).order("part_number",{ascending:true}).range(from,to);
@@ -728,7 +707,7 @@ TPS7A4700-RGWT"></textarea>
   $("btn-export-page").onclick=()=>VendorView.exportCurrentPage();
   $("btn-export-all").onclick=()=>VendorView.exportAll();
 
-  // log tab with delete button per entry
+  // -------- Log
   async function loadExcessLog(limit=20){
     const box=$("log-list");
     box.innerHTML=`<div class="row">Loading…</div>`;
@@ -755,15 +734,10 @@ TPS7A4700-RGWT"></textarea>
               ${err}
             </div>
             <div>
-              <button class="btn danger" style="padding:8px 12px" data-log='${JSON.stringify(r)}' ${r.status==="deleted"?"disabled":""}>Delete</button>
               <div class="hint" style="text-align:right">${d} (UTC: ${r.created_on_utc})</div>
             </div>
           </div>
         `;
-        el.querySelector("button[data-log]")?.addEventListener("click", async (e)=>{
-          const rec = JSON.parse(e.currentTarget.getAttribute("data-log"));
-          await handleDeleteUpload({ vendor: rec.vendor, date: rec.created_on_utc, batch_id: rec.batch_id || null, rows_count: rec.rows_count||0, total_qty: rec.total_qty||0 });
-        });
         box.appendChild(el);
       });
     }catch(e){
@@ -772,7 +746,7 @@ TPS7A4700-RGWT"></textarea>
   }
   $("log-refresh").addEventListener("click",()=>loadExcessLog());
 
-  // leaderboard (simple: count batches by uploaded_by)
+  // -------- Leaderboard
   async function loadLeaderboard(){
     const tb=$("leader-tbody"); tb.innerHTML="";
     try{
@@ -800,7 +774,7 @@ TPS7A4700-RGWT"></textarea>
     }
   }
 
-  // init
+  // -------- Init
   loadStats(); refreshUploadsUI(); VendorView.renderVendorList(""); loadLeaderboard();
 </script>
 </body>
