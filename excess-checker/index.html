@@ -316,7 +316,7 @@ STM32F103C8T6, 50, ST"></textarea>
     const $ = (id)=>document.getElementById(id);
     $("year").textContent = new Date().getFullYear();
 
-    // Tabs
+    // Tabs (fixed)
     document.querySelectorAll(".tab").forEach(btn=>{
       btn.addEventListener("click",()=>{
         document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
@@ -324,7 +324,7 @@ STM32F103C8T6, 50, ST"></textarea>
         btn.classList.add("active");
         document.getElementById(btn.dataset.tab).classList.add("active");
         if (btn.dataset.tab === "tab-leader") loadLeaderboard(currentPeriod);
-        if (btn.dataset tab === "tab-vendors") VendorView.renderVendorList($("vendor-search")?.value?.trim()||"");
+        if (btn.dataset.tab === "tab-vendors") VendorView.renderVendorList($("vendor-search")?.value?.trim()||"");
       });
     });
 
@@ -987,4 +987,3 @@ STM32F103C8T6, 50, ST"></textarea>
   </script>
 </body>
 </html>
-
