@@ -51,7 +51,7 @@
 <div class="wrap">
   <header>
     <div class="brand">
-      <img class="logo" src="../assets/Logo_color_white_background (1).png?v=v9" alt="Verified Electronics"/>
+      <img class="logo" src="../assets/Logo_color_white_background (1).png?v=v9a" alt="Verified Electronics"/>
       <h1>Excess Part Number Checker</h1>
     </div>
     <a href="/" class="btn ghost">← Back to Tools</a>
@@ -239,9 +239,9 @@ STM32F103C8T6
   <footer style="margin:26px 2px 10px;color:var(--muted);font-size:12px;text-align:center">© <span id="year"></span> Verified Electronics</footer>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js?v=v9"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js?v=v9a"></script>
 <script type="module">
-  const APP_VERSION = "v9";
+  const APP_VERSION = "v9a";
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
   const SUPABASE_URL  = "https://ijzroisggstqkfhpjndq.supabase.co";
@@ -301,7 +301,7 @@ STM32F103C8T6
         uniq.add(v);
         if (r.id > lastId) lastId = r.id;
       }
-      if (data.length < PAGE) break; // last page
+      if (data.length < PAGE) break;
     }
     return [...uniq].sort((a,b)=>a.localeCompare(b));
   }
@@ -317,7 +317,7 @@ STM32F103C8T6
     const head = await supabase.from("excess_parts").select("*",{count:"exact",head:true});
     $("stat-total").textContent = (head.count||0).toLocaleString();
 
-    const vendors = await scanAllVendors("");   // ← full walk
+    const vendors = await scanAllVendors("");   // full walk
     $("stat-vendors").textContent = vendors.length.toLocaleString();
 
     $("stat-batches").textContent = (await safeCountUploads()).toLocaleString();
@@ -335,7 +335,6 @@ STM32F103C8T6
   const HDR_PART=["Part Number","MPN","PN","Part","PartNumber","Item","MPN/Part Number"];
   const HDR_QTY=["Quantity","Qty","Q'ty","Qta","Quantità","On Hand","Stock"];
   const HDR_VEND=["Vendor","Supplier","Seller","Company","Vendor Name","Supplier Name"];
-  const lower = s => String(s??"").trim().toLowerCase();
   const findHeader=(headers,cands)=>{const H=headers.map(h=>({raw:h,key:lower(h)})), want=cands.map(lower); const hit=H.find(h=>want.includes(h.key)); return hit?hit.raw:null;};
   const streamParseCSV=(file,onChunk)=>new Promise((resolve,reject)=>{
     let headers=null,total=0;
@@ -636,7 +635,7 @@ STM32F103C8T6
   // -------- Vendors tab
   const VendorView={
     selected:null,page:1,pageSize:200,totalRows:0,totalQty:0,currentPageRows:[],
-    async fetchVendorNames(prefix=""){ return await scanAllVendors(prefix); }, // ← use keyset scan
+    async fetchVendorNames(prefix=""){ return await scanAllVendors(prefix); }, // keyset scan
     vendorItem(v){
       const el=document.createElement("div"); el.className="row";
       el.innerHTML=`<div class="left">${v}</div><button class="btn danger" data-v="${v}">Delete</button>`;
@@ -779,7 +778,3 @@ STM32F103C8T6
 </script>
 </body>
 </html>
-
-
-
-
