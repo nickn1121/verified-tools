@@ -106,7 +106,7 @@
           <div class="title">How to search</div>
           <div class="hint">
             Paste one part number per line, or upload a CSV with a <span class="mono">Part Number</span> column.
-            Matching is <b>exact (case-insensitive)</b>.
+            Matching is exact (case-insensitive) but also <b>tolerant to punctuation & packaging suffixes</b>.
           </div>
         </div>
 
@@ -324,7 +324,7 @@ STM32F103C8T6, 50, ST"></textarea>
         btn.classList.add("active");
         document.getElementById(btn.dataset.tab).classList.add("active");
         if (btn.dataset.tab === "tab-leader") loadLeaderboard(currentPeriod);
-        if (btn.dataset.tab === "tab-vendors") VendorView.renderVendorList($("vendor-search")?.value?.trim()||"");
+        if (btn.dataset tab === "tab-vendors") VendorView.renderVendorList($("vendor-search")?.value?.trim()||"");
       });
     });
 
@@ -482,9 +482,55 @@ STM32F103C8T6, 50, ST"></textarea>
     function setDetail(t){ $("up-detail").textContent = t; }
     function setBar(pct){ $("up-bar").style.width = Math.max(0, Math.min(100, pct)) + "%"; }
 
+    // ====== SEARCH NORMALIZATION HELPERS ======
+    const normalizePN = (s)=> String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+    const makeLooseIlike = (raw) => {
+      const n = normalizePN(raw);
+      if (!n) return null;
+      return "%" + n.split("").join("%") + "%";
+    };
+    function stripTailTokens(s){
+      return s
+        .replace(/\/(TR|T\/R|NOPB|G4|E4|LF|PBF|PB|R|R7|T|TZ|KG4|K|SD|BYP|BYF|BYR)(?![A-Z0-9])/i, "")
+        .replace(/-(TRPBF|TRP|TR|T\/R|NOPB|PBF|LF|G4|E4|K|R|R7|TG4|TZ|DGNR|DBTR|DCKR|DCKT|DGKR?|RGT|RGY|RHLR|RT[VWT]?R?|SQE|SQX|SQ|PWR|PW|DBVR|DBVT|DRV|DRBR|DRYR?|DMLR|RGE|RGER?|RGT[R]?)(?![A-Z0-9])/i, "")
+        .replace(/#(TRPBF|PBF)$/i,"");
+    }
+    function pnCandidates(raw){
+      if (!raw) return [];
+      const src = String(raw).trim().toUpperCase();
+      const out = new Set();
+      const push = (x)=>{ x = (x||"").trim(); if (x && x.length>=3) out.add(x); };
+
+      if (/^RESERVED|^PROGRAMMED|^NOTE/i.test(src)) {
+        const tail = (src.split(/[-–—]\s*/).pop() || "").trim();
+        if (/[A-Z0-9]/.test(tail)) push(tail);
+        return [...out];
+      }
+
+      push(src);                              // as-is
+      const preComma = src.split(",")[0];     // before comma
+      push(preComma); push(preComma.split(/\s+/)[0]);
+      push(src.replace(/\([^)]*\)/g,""));     // drop parens
+      push(src.replace(/[()]/g,""));          // collapse parens
+      push(src.replace(/:.*$/,""));           // up to colon
+      push(src.replace(/:([A-Z0-9]+).*/,"-$1"));// :K -> -K
+      push(src.replace(/,.*$/,""));           // remove trailing descriptor
+      push(stripTailTokens(src));
+      push(stripTailTokens(preComma));
+      push(src.replace(/-[A-Z0-9]+$/,""));    // remove last dash segment
+      push(preComma.replace(/-[A-Z0-9]+$/,""));
+      push(src.replace(/\/[A-Z0-9+-]+$/,"")); // remove slash tail
+      push(preComma.replace(/\/[A-Z0-9+-]+$/,""));
+      push(src.replace(/([A-Z0-9-]+)[0-9]+\.[0-9]+[A-Z0-9-]*$/,"$1")); // oscillator decimals
+      push(src.replace(/(.*?[0-9])[A-Z]+$/,"$1")); // keep until last digits
+      push(normalizePN(src));                 // pure normalized
+
+      return [...out];
+    }
+
     // ---------- SEARCH ----------
     $("btn-search").addEventListener("click", async ()=>{
-      const pasted = $("input-parts").value.split("\n");
+      const pasted = $("input-parts").value.split("\n").map(s=>s.trim()).filter(Boolean);
       let parts = dedupUpper(pasted);
 
       const file = $("file-search").files?.[0];
@@ -502,21 +548,46 @@ STM32F103C8T6, 50, ST"></textarea>
       $("btn-search").disabled = true; $("btn-search").textContent = "⏳ Searching...";
       const container = $("search-results"); container.innerHTML = "";
 
-      const queries = parts.map(p => supabase.from("excess_parts").select("*").ilike("part_number", p));
-      const results = (await Promise.all(queries)).flatMap(r => (r.data ?? []));
+      for (const raw of parts){
+        const candidates = pnCandidates(raw);
+        const picked = new Map(); // de-dup rows
 
-      if (results.length === 0){
-        container.innerHTML = `<div class="row">No matching parts found.</div>`;
-      } else {
-        // group by part
-        const byPart = results.reduce((m,r)=>{
+        for (const cand of candidates){
+          const loose = makeLooseIlike(cand);
+          const q1 = supabase.from("excess_parts").select("*").ilike("part_number", cand);
+          const q2 = loose ? supabase.from("excess_parts").select("*").ilike("part_number", loose) : null;
+
+          const [r1, r2] = await Promise.all([q1, q2]);
+          const rows = [...(r1.data||[]), ...((r2 && r2.data)||[])];
+
+          const nCand = normalizePN(cand);
+          for (const r of rows){
+            const nDb = normalizePN(r.part_number);
+            if (!nDb.includes(nCand)) continue;
+            const k = `${r.part_number}|${r.vendor}|${r.quantity}|${r.created_at}`;
+            if (!picked.has(k)) picked.set(k, r);
+          }
+
+          if (picked.size) break; // stop at first candidate producing matches
+        }
+
+        const matched = [...picked.values()];
+        if (!matched.length){
+          const el = document.createElement("div");
+          el.className = "row";
+          el.textContent = `${raw} — no matching parts found.`;
+          container.appendChild(el);
+          continue;
+        }
+
+        // group by part and render per-vendor breakdown
+        const byPart = matched.reduce((m,r)=>{
           const k = (r.part_number || "").toUpperCase();
           (m[k] ??= []).push(r);
           return m;
         }, {});
 
         Object.keys(byPart).sort().forEach(k=>{
-          // aggregate quantities by vendor
           const vendorTotals = {};
           let totalQty = 0;
           for (const r of byPart[k]) {
@@ -533,7 +604,7 @@ STM32F103C8T6, 50, ST"></textarea>
           const el = document.createElement("div");
           el.className = "row";
           el.innerHTML = `
-            <div><strong>${k}</strong></div>
+            <div><strong>${k}</strong> <span class="hint">query: ${raw}</span></div>
             <table class="minitable">
               <thead><tr><th>Vendor</th><th class="qty">Quantity</th></tr></thead>
               <tbody>${rowsHtml}</tbody>
@@ -592,10 +663,10 @@ STM32F103C8T6, 50, ST"></textarea>
       }
 
       // Pasted rows
-      const pasted = $("paste-upload").value.replace(/\r/g,"").split("\n").map(l=>l.trim()).filter(Boolean);
-      if (pasted.length){
+      const pasted2 = $("paste-upload").value.replace(/\r/g,"").split("\n").map(l=>l.trim()).filter(Boolean);
+      if (pasted2.length){
         setStage("Parsing pasted rows…");
-        pasted.forEach(line=>{
+        pasted2.forEach(line=>{
           const cols = line.split(",").map(s=>s.trim()).filter(s=>s!=="");
           if (!cols.length) return;
           const pn = (cols[0]??"").toUpperCase();
@@ -916,3 +987,4 @@ STM32F103C8T6, 50, ST"></textarea>
   </script>
 </body>
 </html>
+
