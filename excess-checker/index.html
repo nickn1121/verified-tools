@@ -21,7 +21,6 @@
     .btn{background:linear-gradient(90deg,var(--brand),var(--brand2));color:#fff;border:0;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer}
     .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
     .btn.danger{background:linear-gradient(90deg,#ef4444,#f43f5e)}
-    .btn.small{padding:6px 10px;font-size:12px}
     .btn:disabled{opacity:.55;cursor:not-allowed}
     .card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 28px rgba(17,24,39,.06);padding:18px}
     .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
@@ -46,13 +45,15 @@
     .minitable th{color:var(--muted);text-align:left}.minitable td.qty{text-align:right;font-variant-numeric:tabular-nums}
     .progress{position:relative;height:10px;border-radius:999px;background:#eee;overflow:hidden;border:1px solid var(--line);margin-top:8px}
     .progress-bar{height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2));transition:width .2s ease}
+    .vendor-row{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
+    .vendor-name{flex:1}
   </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="brand">
-      <img class="logo" src="../assets/Logo_color_white_background (1).png?v=v7" alt="Verified Electronics"/>
+      <img class="logo" src="../assets/Logo_color_white_background (1).png?v=v8" alt="Verified Electronics"/>
       <h1>Excess Part Number Checker</h1>
     </div>
     <a href="/" class="btn ghost">← Back to Tools</a>
@@ -81,15 +82,13 @@
     <!-- SEARCH -->
     <section id="tab-search" class="section active">
       <div class="hint" style="border:1px dashed var(--line);border-radius:12px;padding:10px;margin-bottom:10px">
-        Paste one part per line, or upload a CSV with a <span class="mono">Part Number</span> column.
-        Matching is exact (case-insensitive) while tolerating punctuation & common package suffixes (TR/NOPB/RGWT).
-        Letter/number order must be identical (no fuzzy reordering).
+        Paste one part per line, or upload a CSV with a <span class="mono">Part Number</span> column. Matching tolerates punctuation & common suffixes, but **order** must be identical (no fuzzy reordering).
       </div>
       <label><strong>Paste part numbers (one per line)</strong></label>
       <textarea id="input-parts" class="mono" placeholder="e.g.
 LM358DR
 STM32F103C8T6
-TPS7A4700-RGWT"></textarea>
+20-101-1068"></textarea>
       <div class="controls">
         <div>
           <input type="file" id="file-search" accept=".csv"/>
@@ -127,12 +126,8 @@ TPS7A4700-RGWT"></textarea>
           <div style="display:flex;gap:10px;align-items:center">
             <select id="uploaded-by">
               <option value="">— Select Staff —</option>
-              <option value="Nick N">Nick N</option>
-              <option value="Nick K">Nick K</option>
-              <option value="Jake B">Jake B</option>
-              <option value="Dan C">Dan C</option>
-              <option value="Emir B">Emir B</option>
-              <option value="Other">Other…</option>
+              <option>Nick N</option><option>Nick K</option><option>Jake B</option>
+              <option>Dan C</option><option>Emir B</option><option>Other</option>
             </select>
             <input type="text" id="other-staff" placeholder="Enter staff name" style="display:none;width:50%"/>
           </div>
@@ -151,11 +146,10 @@ TPS7A4700-RGWT"></textarea>
       </div>
     </section>
 
-    <!-- REMOVE (kept for now; safe to delete once you're happy with vendor-side delete) -->
+    <!-- REMOVE -->
     <section id="tab-remove" class="section">
       <div class="hint" style="border:1px dashed var(--line);border-radius:12px;padding:10px;margin-bottom:10px">
-        Choose a prior upload (Vendor × Date) below, then click <b>Remove</b>.<br/>
-        You can also delete directly from the list using its <b>Delete</b> button.
+        Choose a prior upload (Vendor × Date) below, then click <b>Remove</b>. You can also delete from the Vendors tab.
       </div>
       <div class="grid">
         <div>
@@ -192,14 +186,14 @@ TPS7A4700-RGWT"></textarea>
     <!-- VENDORS -->
     <section id="tab-vendors" class="section">
       <div class="hint" style="border:1px dashed var(--line);border-radius:12px;padding:10px;margin-bottom:10px">
-        Pick a vendor to see their parts and quantities. Use the Delete button to remove all parts for that vendor.
+        Pick a vendor to see their parts and quantities. Use the <b>Delete</b> button to remove all parts for that vendor.
       </div>
       <div class="grid">
         <div>
           <label><strong>Search vendors</strong></label>
           <input type="text" id="vendor-search" placeholder="Type to filter (leave empty to show all)"/>
           <div class="hint">Showing <span id="vendor-count">0</span> vendors</div>
-          <div id="vendor-list" class="rows" style="max-height:420px;overflow:auto"></div>
+          <div id="vendor-list" class="rows" style="max-height:480px;overflow:auto"></div>
         </div>
         <div>
           <div style="display:flex;justify-content:space-between;align-items:center">
@@ -227,7 +221,7 @@ TPS7A4700-RGWT"></textarea>
     <!-- EXCESS LOG -->
     <section id="tab-log" class="section">
       <div class="hint" style="border:1px dashed var(--line);border-radius:12px;padding:10px;margin-bottom:10px">
-        Recent upload activity (last 20 rows). This reads from <span class="mono">public.excess_log</span>.
+        Recent upload activity (last 20 rows) from <span class="mono">public.excess_log</span>.
       </div>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
         <button id="log-refresh" class="btn ghost">Refresh</button>
@@ -240,9 +234,9 @@ TPS7A4700-RGWT"></textarea>
   <footer style="margin:26px 2px 10px;color:var(--muted);font-size:12px;text-align:center">© <span id="year"></span> Verified Electronics</footer>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js?v=v7"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js?v=v8"></script>
 <script type="module">
-  const APP_VERSION = "v7";
+  const APP_VERSION = "v8";
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
   const SUPABASE_URL  = "https://ijzroisggstqkfhpjndq.supabase.co";
@@ -260,9 +254,8 @@ TPS7A4700-RGWT"></textarea>
   const trimPkg = c => c.replace(/[A-Z]{1,6}$/,"");
   const equalPN = (a,b)=>{const A=CANON(a),B=CANON(b);return !!A&&(A===B||trimPkg(A)===trimPkg(B));};
   const extractToken = line => (String(line||"").trim().toUpperCase().split(/[,\s;]+/)[0]||"");
-  const anchorPattern = raw => {const c=CANON(raw);return c.length>=4? "%"+c.slice(0,4)+"%" : "%"+c+"%";};
-  function uuidv4(){return([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16))}
   const todayUTC = ()=> new Date().toISOString().slice(0,10);
+  function uuidv4(){return([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16))}
   const num = v => { const s=String(v??"").replace(/[^\d.-]/g,""); const n=Number(s); return Number.isFinite(n)?n:null; };
 
   // tabs
@@ -274,34 +267,30 @@ TPS7A4700-RGWT"></textarea>
       document.getElementById(b.dataset.tab).classList.add("active");
       if (b.dataset.tab === "tab-log") loadExcessLog();
       if (b.dataset.tab === "tab-leader") loadLeaderboard();
+      if (b.dataset.tab === "tab-vendors") VendorView.renderVendorList($("vendor-search").value.trim());
     });
   });
 
   // stats (tolerant)
   async function getDistinctVendorsPaginated(){
-    const head = await supabase.from("excess_parts").select("*",{count:"exact",head:true}).not("vendor","is",null);
+    // count all rows, then scan in pages and dedupe vendor values
+    const head = await supabase.from("excess_parts").select("*",{count:"exact",head:true});
     const total=head.count||0; if(!total) return [];
-    const PAGE=10000, uniq=new Set();
-    for(let from=0; from<total; from+=PAGE){
-      const to = Math.min(from+PAGE-1,total-1);
-      const {data}=await supabase.from("excess_parts").select("vendor").not("vendor","is",null).range(from,to);
+    const PAGE=10000, pages=Math.ceil(total/PAGE), uniq=new Set();
+    for(let p=0;p<pages;p++){
+      const {data} = await supabase.from("excess_parts")
+        .select("vendor").range(p*PAGE, Math.min((p+1)*PAGE-1, total-1));
       (data||[]).forEach(r=>{const v=(r.vendor||"").trim(); if(v) uniq.add(v);});
     }
     return [...uniq].sort((a,b)=>a.localeCompare(b));
   }
   async function safeCountUploads(){
-    try{
-      const head = await supabase.from("excess_log").select("*",{count:"exact",head:true});
-      if (typeof head.count === "number") return head.count;
-    }catch{}
-    try{
-      const head = await supabase.from("excess_uploads").select("*",{count:"exact",head:true});
-      if (typeof head.count === "number") return head.count;
-    }catch{}
-    try{
-      const head = await supabase.from("excess_batches").select("*",{count:"exact",head:true});
-      if (typeof head.count === "number") return head.count;
-    }catch{}
+    for (const t of ["excess_log","excess_uploads","excess_batches"]) {
+      try{
+        const head = await supabase.from(t).select("*",{count:"exact",head:true});
+        if (typeof head.count==="number") return head.count;
+      }catch{}
+    }
     return 0;
   }
   async function loadStats(){
@@ -331,7 +320,7 @@ TPS7A4700-RGWT"></textarea>
       error:reject, complete:()=>resolve({headers:headers||[],totalRows:total})});
   });
 
-  // upload (unchanged core)
+  // upload helpers
   function showOtherStaff(){ $("other-staff").style.display = $("uploaded-by").value==="Other"?"block":"none"; }
   $("uploaded-by").addEventListener("change", showOtherStaff);
 
@@ -345,20 +334,14 @@ TPS7A4700-RGWT"></textarea>
       $("up-detail").textContent = `Inserted ${i + slice.length} of ${rows.length}`;
     }
   }
-
   async function tryInsertSummary(payload){
-    try{ const { error } = await supabase.from("excess_uploads").insert(payload);
-      if (!error) return true;
-    }catch{}
-    try{ const { error } = await supabase.from("excess_batches").insert(payload);
-      if (!error) return true;
-    }catch{}
+    for (const t of ["excess_uploads","excess_batches"]) {
+      try{ const { error } = await supabase.from(t).insert(payload); if (!error) return true; }catch{}
+    }
     return false;
   }
   async function tryInsertLog(payload){
-    try{ const { error } = await supabase.from("excess_log").insert(payload);
-      if (!error) return true;
-    }catch{}
+    try{ const { error } = await supabase.from("excess_log").insert(payload); if (!error) return true; }catch{}
     return false;
   }
   function getUploader(){ const sel=$("uploaded-by").value; if (sel==="Other") return $("other-staff").value.trim(); return sel || ""; }
@@ -423,30 +406,47 @@ TPS7A4700-RGWT"></textarea>
       $("up-stage").textContent="Done!";
       $("up-detail").textContent=`Inserted ${rows.length.toLocaleString()} rows.`; $("up-bar").style.width="100%";
       $("upload-status").innerHTML=`<span class="ok">Upload complete.</span>`;
-      await loadStats(); await refreshUploadsUI(); await loadExcessLog(); await VendorView.reloadAll();
+      await loadStats(); await refreshUploadsUI(); await loadExcessLog(); VendorView.renderVendorList($("vendor-search").value.trim());
     }catch(e){
       console.error(e);
       $("upload-status").innerHTML=`<span class="err">Upload failed: ${e.message}</span>`;
       try {
         const fileName=$("file-upload")?.files?.[0]?.name || null;
         await tryInsertLog({
-          vendor:fallbackVendor || "(unknown)",
-          rows_count:0,
-          total_qty:0,
-          uploaded_by:getUploader() || null,
-          created_on_utc: todayUTC(),
-          batch_id: uuidv4(),
-          file_name:fileName,
-          source:"web",
-          status:"failed",
-          error:e.message
+          vendor:fallbackVendor || "(unknown)", rows_count:0, total_qty:0,
+          uploaded_by:getUploader() || null, created_on_utc: todayUTC(),
+          batch_id: uuidv4(), file_name:fileName, source:"web", status:"failed", error:e.message
         });
       } catch {}
     } finally { resetUploadBtn(); }
   };
 
-  // search
+  // SEARCH (more tolerant querying)
   let __lastSearchRows__=[];
+  async function queryPartsByToken(token){
+    const canon = CANON(token);
+    const first4 = canon.slice(0,4);
+    const patterns = [];
+    if (first4) patterns.push(`%${first4}%`);
+    patterns.push(`%${token}%`);
+    const noPunct = token.replace(/[^A-Za-z0-9]/g,"");
+    if (noPunct && noPunct!==token) patterns.push(`%${noPunct}%`);
+
+    const seen = new Set(); const out=[];
+    for (const pat of patterns){
+      const { data, error } = await supabase
+        .from("excess_parts").select("part_number,vendor,quantity,created_at")
+        .ilike("part_number", pat).limit(10000);
+      if (error) continue;
+      for (const r of (data||[])) {
+        const key = `${(r.part_number||"").toUpperCase()}|${r.vendor||""}|${r.quantity||0}`;
+        if (!seen.has(key)) { seen.add(key); out.push(r); }
+      }
+      if (out.length) break; // first hit is usually enough
+    }
+    return out;
+  }
+
   $("btn-search").onclick = async ()=>{
     const pasted=$("input-parts").value.split("\n").map(s=>s.trim()).filter(Boolean);
     let parts=dedupUpper(pasted);
@@ -463,10 +463,9 @@ TPS7A4700-RGWT"></textarea>
     const box=$("search-results"); box.innerHTML=""; __lastSearchRows__=[];
 
     for (const rawLine of parts){
-      const token=extractToken(rawLine); const canonQ=CANON(token); if (!canonQ) continue;
-      const like=anchorPattern(token);
-      const { data, error } = await supabase.from("excess_parts").select("part_number,vendor,quantity,created_at").ilike("part_number", like).limit(5000);
-      if (error){ console.error(error); continue; }
+      const token=extractToken(rawLine);
+      if (!token) continue;
+      const data = await queryPartsByToken(token);
       const hits=(data||[]).filter(r=> equalPN(r.part_number, token));
       if (!hits.length) continue;
 
@@ -504,32 +503,30 @@ TPS7A4700-RGWT"></textarea>
     if (error) throw new Error(error.message);
     return Number(data || 0);
   }
-  async function deleteVendorAll(vendor){
-    let removed = 0;
-    try{
-      const { data, error } = await supabase.rpc("excess_delete_by_vendor", { in_vendor: vendor });
-      if (error) throw error;
-      removed = Number(data || 0);
-    }catch(_){
-      // fallback direct delete
-      const { error, count } = await supabase.from("excess_parts").delete().eq("vendor", vendor).select("*",{count:"exact"});
-      if (error) throw error;
-      removed = Number(count || 0);
-    }
-    try { await supabase.from("excess_log").update({ status:"deleted" }).eq("vendor", vendor).eq("status","success"); } catch(_){}
-    return removed;
+  async function fallbackDeleteByVendor(vendor){
+    const { data, error } = await supabase.from("excess_parts").delete().eq("vendor", vendor);
+    if (error) throw new Error(error.message);
+    return Number(data?.length||0);
   }
 
   async function handleDeleteUpload(meta) {
     const v = meta.vendor || "(unknown)";
     const d = meta.date || "—";
-    const msg = `Delete ALL parts for:\n\nVendor: ${v}\nDate:   ${d}\n\nThis cannot be undone. Continue?`;
+    const msg = meta.deleteAllForVendor
+      ? `Delete ALL parts for vendor:\n\n${v}\n\nThis cannot be undone. Continue?`
+      : `Delete ALL parts for:\n\nVendor: ${v}\nDate:   ${d}\n\nThis cannot be undone. Continue?`;
     if (!confirm(msg)) return;
 
     let removed = 0;
     try {
-      if (meta.batch_id) removed = await rpcDeleteByBatch(meta.batch_id);
-      else removed = await rpcDeleteByVendorDate(v, d);
+      if (meta.deleteAllForVendor) {
+        // Prefer vendor+date RPC if available, otherwise full vendor delete
+        try { removed = await rpcDeleteByVendorDate(v, d); }
+        catch { removed = await fallbackDeleteByVendor(v); }
+      } else {
+        if (meta.batch_id) removed = await rpcDeleteByBatch(meta.batch_id);
+        else removed = await rpcDeleteByVendorDate(v, d);
+      }
     } catch (e) {
       alert(`Delete failed: ${e.message}`);
       return;
@@ -539,15 +536,16 @@ TPS7A4700-RGWT"></textarea>
       if (meta.batch_id) {
         await supabase.from("excess_log").update({ status: "deleted" }).eq("batch_id", meta.batch_id);
       } else {
-        await supabase.from("excess_log").update({ status: "deleted" }).eq("vendor", v).eq("created_on_utc", d);
+        await supabase.from("excess_log").update({ status: "deleted" }).eq("vendor", v);
       }
     } catch (_) {}
 
-    alert(`Deleted ${removed.toLocaleString()} rows for ${v} on ${d}.`);
-    await loadStats(); await refreshUploadsUI(); await loadExcessLog(); await VendorView.reloadAll();
+    alert(`Deleted ${removed.toLocaleString()} rows for "${v}".`);
+    await loadStats(); await refreshUploadsUI(); await loadExcessLog(); await VendorView.renderVendorList($("vendor-search").value.trim());
+    if (VendorView.selected===v) { VendorView.selected=null; $("vendor-title").textContent="—"; $("vendor-stats").textContent="Select a vendor"; $("vendor-parts").innerHTML=""; }
   }
 
-  // REMOVE TAB — list (with log fallback)
+  // remove tab list + button
   async function refreshUploadsUI(){
     const list = $("upload-list");
     list.innerHTML = "";
@@ -566,28 +564,8 @@ TPS7A4700-RGWT"></textarea>
       data = null;
     }
 
-    if (!data || data.length === 0) {
-      try {
-        const r = await supabase
-          .from("excess_log")
-          .select("vendor, created_on_utc, rows_count, total_qty, batch_id, status")
-          .eq("status", "success")
-          .order("created_on_utc", { ascending: false })
-          .limit(500);
-        data = (r.data || []).map(x => ({
-          vendor: x.vendor,
-          created_on_utc: x.created_on_utc,
-          rows_count: x.rows_count,
-          total_qty: x.total_qty,
-          batch_id: x.batch_id || null
-        }));
-      } catch {
-        data = null;
-      }
-    }
-
     if (!data) {
-      list.innerHTML = `<div class="row">Upload summaries could not be read.</div>`;
+      list.innerHTML = `<div class="row">Upload summaries are not being recorded. You can still remove by Vendor + Date using the big button.</div>`;
       sel.appendChild(new Option("— No upload summaries —",""));
       return;
     }
@@ -602,11 +580,11 @@ TPS7A4700-RGWT"></textarea>
       const payload = {
         vendor: r.vendor,
         date:   r.created_on_utc,
-        rows_count: r.rows_count || 0,
-        total_qty:  r.total_qty  || 0,
+        rows_count: r.rows_count,
+        total_qty:  r.total_qty,
         batch_id:   r.batch_id || null
       };
-      const label = `${payload.date} (${(payload.rows_count||0).toLocaleString()} rows, ${Number(payload.total_qty||0).toLocaleString()} qty)` + (payload.batch_id ? ` — batch ${payload.batch_id}` : ``);
+      const label = `${payload.date} (${payload.rows_count.toLocaleString()} rows, ${Number(payload.total_qty||0).toLocaleString()} qty)` + (payload.batch_id ? ` — batch ${payload.batch_id}` : ``);
       sel.appendChild(new Option(label, JSON.stringify(payload)));
 
       const el = document.createElement("div");
@@ -615,11 +593,11 @@ TPS7A4700-RGWT"></textarea>
         <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
           <div>
             <div><strong>${payload.vendor}</strong> — ${payload.date}</div>
-            <div class="hint">Rows: <b>${(payload.rows_count||0).toLocaleString()}</b> • Total Qty: <b>${Number(payload.total_qty||0).toLocaleString()}</b></div>
+            <div class="hint">Rows: <b>${payload.rows_count.toLocaleString()}</b> • Total Qty: <b>${Number(payload.total_qty||0).toLocaleString()}</b></div>
             ${payload.batch_id ? `<div class="hint mono">Batch: ${payload.batch_id}</div>` : ``}
           </div>
           <div>
-            <button class="btn danger small" data-del='${JSON.stringify(payload)}'>Delete</button>
+            <button class="btn danger" style="padding:8px 12px" data-del='${JSON.stringify(payload)}'>Delete</button>
           </div>
         </div>
       `;
@@ -634,13 +612,12 @@ TPS7A4700-RGWT"></textarea>
       if (!sel.value) { $("rm-batch-info").textContent = ""; return; }
       const v = JSON.parse(sel.value);
       $("rm-batch-info").textContent =
-        `Selected: ${v.vendor} on ${v.date} — ${(v.rows_count||0).toLocaleString()} rows (${Number(v.total_qty||0).toLocaleString()} qty)` +
+        `Selected: ${v.vendor} on ${v.date} — ${v.rows_count.toLocaleString()} rows (${Number(v.total_qty||0).toLocaleString()} qty)` +
         (v.batch_id ? ` — batch ${v.batch_id}` : ``);
       $("rm-vendor").value = v.vendor;
       $("rm-date").value   = v.date;
     };
   }
-
   $("btn-remove").onclick = async ()=>{
     const sel = $("rm-batch").value;
     let meta = null;
@@ -669,60 +646,45 @@ TPS7A4700-RGWT"></textarea>
     }
   };
 
-  // VENDORS TAB (ALL vendors + delete buttons)
+  // VENDORS (paginated ALL + delete buttons)
   const VendorView={
-    cache:[], selected:null, page:1, pageSize:200, totalRows:0, totalQty:0, currentPageRows:[],
-    async loadAllVendors(){
-      const vendors = await getDistinctVendorsPaginated();
-      this.cache = vendors;
-      return vendors;
+    selected:null,page:1,pageSize:200,totalRows:0,totalQty:0,currentPageRows:[],
+    async fetchAllVendorsPaginated(prefix=""){
+      const head = await supabase.from("excess_parts").select("*",{count:"exact",head:true});
+      const total=head.count||0; if(!total) return [];
+      const PAGE=10000, pages=Math.ceil(total/PAGE), uniq=new Set();
+      for(let p=0;p<pages;p++){
+        let q = supabase.from("excess_parts").select("vendor").range(p*PAGE, Math.min((p+1)*PAGE-1, total-1));
+        const {data} = await q;
+        (data||[]).forEach(r=>{
+          const v=(r.vendor||"").trim();
+          if(!v) return;
+          if (prefix && !v.toLowerCase().startsWith(prefix.toLowerCase())) return;
+          uniq.add(v);
+        });
+      }
+      return [...uniq].sort((a,b)=>a.localeCompare(b));
     },
-    async reloadAll(){
-      await this.loadAllVendors();
-      this.renderVendorList($("vendor-search").value.trim());
-    },
-    vendorItem(v){
-      const el=document.createElement("div");
-      el.className="row";
-      el.style.cursor="pointer";
-      el.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-          <span>${v}</span>
-          <button class="btn danger small" data-del="${v}">Delete</button>
-        </div>`;
-      // select vendor on row click
-      el.addEventListener("click",(e)=>{
-        if (e.target && e.target.matches("button[data-del]")) return; // handled below
-        this.selectVendor(v);
-      });
-      // delete vendor
-      el.querySelector("button[data-del]").addEventListener("click", async (e)=>{
+    vendorItem(v){ const el=document.createElement("div"); el.className="row vendor-row";
+      el.innerHTML=`<div class="vendor-name">${v}</div><button class="btn danger" data-vendor="${v}">Delete</button>`;
+      el.querySelector(".vendor-name").onclick=()=>this.selectVendor(v);
+      el.querySelector("button[data-vendor]")?.addEventListener("click", async (e)=>{
         e.stopPropagation();
-        if (!confirm(`Delete ALL parts for vendor:\n\n${v}\n\nThis cannot be undone. Continue?`)) return;
-        try{
-          const removed = await deleteVendorAll(v);
-          alert(`Deleted ${removed.toLocaleString()} rows for ${v}.`);
-          await loadStats();
-          await this.reloadAll();
-          if (this.selected===v){ this.selected=null; $("vendor-title").textContent="—"; $("vendor-stats").textContent="Select a vendor"; $("vendor-parts").innerHTML=""; }
-        }catch(err){
-          alert(`Delete failed: ${err.message}`);
-        }
+        await handleDeleteUpload({ vendor:v, deleteAllForVendor:true });
       });
-      return el;
-    },
-    renderVendorList(prefix=""){
-      const box=$("vendor-list");
-      const term = prefix.trim().toLowerCase();
-      const list = term ? this.cache.filter(v=>v.toLowerCase().includes(term)) : this.cache.slice();
-      $("vendor-count").textContent = list.length.toLocaleString();
-      box.innerHTML = list.length ? "" : `<div class="row">No vendors found.</div>`;
-      list.forEach(v=>box.appendChild(this.vendorItem(v)));
-    },
+      return el; },
+    async renderVendorList(prefix=""){ const box=$("vendor-list"); box.innerHTML=`<div class="row">Loading vendors…</div>`;
+      try{
+        const vs=await this.fetchAllVendorsPaginated(prefix);
+        $("vendor-count").textContent=vs.length.toLocaleString();
+        box.innerHTML="";
+        if(!vs.length){ box.innerHTML=`<div class="row">No vendors found.</div>`; return; }
+        vs.forEach(v=>box.appendChild(this.vendorItem(v)));
+      }catch(e){ box.innerHTML=`<div class="row err">${e.message}</div>`; } },
     async selectVendor(v){ this.selected=v; this.page=1; $("vendor-title").textContent=v; $("btn-export-all").disabled=false; await this.refreshVendorStats(); await this.loadPage(); },
     async refreshVendorStats(){ const { count }=await supabase.from("excess_parts").select("*",{count:"exact",head:true}).eq("vendor",this.selected);
       this.totalRows=count||0; let totalQty=0,PAGE=10000,pages=Math.ceil((this.totalRows||0)/PAGE);
-      for(let p=0;p<pages;p++){ const {data}=await supabase.from("excess_parts").select("quantity").eq("vendor",this.selected).range(p*PAGE,Math.min((p*PAGE)+PAGE-1,(this.totalRows||1)-1)); (data||[]).forEach(r=> totalQty+=(Number(r.quantity)||0)); }
+      for(let p=0;p<pages;p++){ const {data}=await supabase.from("excess_parts").select("quantity").eq("vendor",this.selected).range(p*PAGE,Math.min(p*PAGE+PAGE-1,(this.totalRows||0)-1)); (data||[]).forEach(r=> totalQty+=(Number(r.quantity)||0)); }
       this.totalQty=totalQty; $("vendor-stats").innerHTML=`Rows: <b>${(this.totalRows||0).toLocaleString()}</b> • Total Qty: <b>${(this.totalQty||0).toLocaleString()}</b>`; },
     async loadPage(){ const from=(this.page-1)*this.pageSize,to=from+this.pageSize-1;
       const {data,error,count}=await supabase.from("excess_parts").select("part_number,quantity,created_at",{count:"exact"}).eq("vendor",this.selected).order("part_number",{ascending:true}).range(from,to);
@@ -779,7 +741,7 @@ TPS7A4700-RGWT"></textarea>
               ${err}
             </div>
             <div>
-              <button class="btn danger small" data-log='${JSON.stringify(r)}' ${r.status==="deleted"?"disabled":""}>Delete</button>
+              <button class="btn danger" style="padding:8px 12px" data-log='${JSON.stringify(r)}' ${r.status==="deleted"?"disabled":""}>Delete</button>
               <div class="hint" style="text-align:right">${d} (UTC: ${r.created_on_utc})</div>
             </div>
           </div>
@@ -825,9 +787,10 @@ TPS7A4700-RGWT"></textarea>
   }
 
   // init
-  loadStats(); refreshUploadsUI(); await VendorView.loadAllVendors(); VendorView.renderVendorList(""); loadLeaderboard();
+  loadStats(); refreshUploadsUI(); VendorView.renderVendorList(""); loadLeaderboard();
 </script>
 </body>
 </html>
+
 
 
