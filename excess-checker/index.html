@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <title>Excess Part Number Checker — Verified Electronics</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root{
@@ -21,6 +20,7 @@
     a.btn,button.btn{appearance:none}
     .btn{background:linear-gradient(90deg,var(--brand),var(--brand2));color:#fff;border:0;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer}
     .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+    .btn.danger{background:linear-gradient(90deg,#ef4444,#f43f5e)}
     .btn:disabled{opacity:.55;cursor:not-allowed}
     .card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 28px rgba(17,24,39,.06);padding:18px}
     .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
@@ -51,7 +51,7 @@
 <div class="wrap">
   <header>
     <div class="brand">
-      <img class="logo" src="../assets/Logo_color_white_background (1).png?v=v6b" alt="Verified Electronics"/>
+      <img class="logo" src="../assets/Logo_color_white_background (1).png?v=v7" alt="Verified Electronics"/>
       <h1>Excess Part Number Checker</h1>
     </div>
     <a href="/" class="btn ghost">← Back to Tools</a>
@@ -153,7 +153,8 @@ TPS7A4700-RGWT"></textarea>
     <!-- REMOVE -->
     <section id="tab-remove" class="section">
       <div class="hint" style="border:1px dashed var(--line);border-radius:12px;padding:10px;margin-bottom:10px">
-        Choose a prior upload (Vendor × Date) below, then click <b>Remove</b>.
+        Choose a prior upload (Vendor × Date) below, then click <b>Remove</b>.<br/>
+        You can also delete directly from the list using its <b>Delete</b> button.
       </div>
       <div class="grid">
         <div>
@@ -179,9 +180,6 @@ TPS7A4700-RGWT"></textarea>
 
     <!-- LEADERBOARD -->
     <section id="tab-leader" class="section">
-      <div class="hint" style="border:1px dashed var(--line);border-radius:12px;padding:10px;margin-bottom:10px">
-        Counts lists per employee using <span class="mono">batch_id</span>.
-      </div>
       <div class="rows">
         <table style="width:100%;border-collapse:separate;border-spacing:0 8px">
           <thead><tr><th>#</th><th>Employee</th><th>Lists</th></tr></thead>
@@ -241,11 +239,9 @@ TPS7A4700-RGWT"></textarea>
   <footer style="margin:26px 2px 10px;color:var(--muted);font-size:12px;text-align:center">© <span id="year"></span> Verified Electronics</footer>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js?v=v6b"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js?v=v7"></script>
 <script type="module">
-  const APP_VERSION = "v6b-with-log";
-  console.info("Excess Checker:", APP_VERSION);
-
+  const APP_VERSION = "v7";
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
   const SUPABASE_URL  = "https://ijzroisggstqkfhpjndq.supabase.co";
@@ -255,7 +251,7 @@ TPS7A4700-RGWT"></textarea>
   const $ = id => document.getElementById(id);
   $("year").textContent = new Date().getFullYear();
 
-  // -------- helpers
+  // helpers
   const norm = s=>String(s??"").trim();
   const lower=s=>norm(s).toLowerCase();
   const dedupUpper = arr => [...new Set(arr.map(s=>s.trim()).filter(Boolean).map(s=>s.toUpperCase()))];
@@ -268,7 +264,7 @@ TPS7A4700-RGWT"></textarea>
   const todayUTC = ()=> new Date().toISOString().slice(0,10);
   const num = v => { const s=String(v??"").replace(/[^\d.-]/g,""); const n=Number(s); return Number.isFinite(n)?n:null; };
 
-  // -------- tabs
+  // tabs
   document.querySelectorAll(".tab").forEach(b=>{
     b.addEventListener("click",()=>{
       document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
@@ -276,10 +272,11 @@ TPS7A4700-RGWT"></textarea>
       b.classList.add("active");
       document.getElementById(b.dataset.tab).classList.add("active");
       if (b.dataset.tab === "tab-log") loadExcessLog();
+      if (b.dataset.tab === "tab-leader") loadLeaderboard();
     });
   });
 
-  // -------- stats (tolerant if summary tables don’t exist)
+  // stats (tolerant)
   async function getDistinctVendorsPaginated(){
     const head = await supabase.from("excess_parts").select("*",{count:"exact",head:true}).not("vendor","is",null);
     const total=head.count||0; if(!total) return [];
@@ -312,7 +309,6 @@ TPS7A4700-RGWT"></textarea>
     $("stat-vendors").textContent = vendors.length.toLocaleString();
     $("stat-batches").textContent = (await safeCountUploads()).toLocaleString();
   }
-
   $("btn-export-vendors").onclick = async ()=>{
     const list = await getDistinctVendorsPaginated();
     if (!list.length) { alert("No vendors found."); return; }
@@ -321,7 +317,7 @@ TPS7A4700-RGWT"></textarea>
     const a=document.createElement("a"); a.href=url; a.download="vendors.csv"; a.click(); URL.revokeObjectURL(url);
   };
 
-  // -------- CSV parse helpers
+  // CSV parse
   const HDR_PART=["Part Number","MPN","PN","Part","PartNumber","Item","MPN/Part Number"];
   const HDR_QTY=["Quantity","Qty","Q'ty","Qta","Quantità","On Hand","Stock"];
   const HDR_VEND=["Vendor","Supplier","Seller","Company","Vendor Name","Supplier Name"];
@@ -333,7 +329,7 @@ TPS7A4700-RGWT"></textarea>
       error:reject, complete:()=>resolve({headers:headers||[],totalRows:total})});
   });
 
-  // -------- upload UI helpers
+  // upload
   function showOtherStaff(){ $("other-staff").style.display = $("uploaded-by").value==="Other"?"block":"none"; }
   $("uploaded-by").addEventListener("change", showOtherStaff);
 
@@ -349,36 +345,23 @@ TPS7A4700-RGWT"></textarea>
   }
 
   async function tryInsertSummary(payload){
-    try{
-      const { error } = await supabase.from("excess_uploads").insert(payload);
+    try{ const { error } = await supabase.from("excess_uploads").insert(payload);
       if (!error) return true;
-      console.warn("summary insert (excess_uploads):", error.message);
     }catch{}
-    try{
-      const { error } = await supabase.from("excess_batches").insert(payload);
+    try{ const { error } = await supabase.from("excess_batches").insert(payload);
       if (!error) return true;
-      console.warn("summary insert (excess_batches):", error.message);
     }catch{}
     return false;
   }
-
   async function tryInsertLog(payload){
-    try{
-      const { error } = await supabase.from("excess_log").insert(payload);
+    try{ const { error } = await supabase.from("excess_log").insert(payload);
       if (!error) return true;
-      console.warn("excess_log insert:", error.message);
     }catch{}
     return false;
   }
-
-  function getUploader(){
-    const sel=$("uploaded-by").value;
-    if (sel==="Other") return $("other-staff").value.trim();
-    return sel || "";
-  }
+  function getUploader(){ const sel=$("uploaded-by").value; if (sel==="Other") return $("other-staff").value.trim(); return sel || ""; }
   function resetUploadBtn(){ $("btn-upload").disabled=false; $("btn-upload").textContent="⬆️ Upload Excess"; }
 
-  // -------- upload handler
   $("btn-upload").onclick = async ()=>{
     const fallbackVendor=$("fallback-vendor").value.trim();
     const uploader=getUploader();
@@ -418,7 +401,6 @@ TPS7A4700-RGWT"></textarea>
     try{
       await doInserts(rows,1500);
 
-      // Optional summary
       const created_on_utc=todayUTC();
       const fileName=$("file-upload")?.files?.[0]?.name || null;
       const vendors=[...new Set(rows.map(r=>r.vendor || fallbackVendor || "(unknown)"))];
@@ -433,15 +415,7 @@ TPS7A4700-RGWT"></textarea>
           batch_id
         };
         await tryInsertSummary(payload);
-
-        // Log row (best-effort)
-        await tryInsertLog({
-          ...payload,
-          file_name:fileName,
-          source:"web",
-          status:"success",
-          error:null
-        });
+        await tryInsertLog({ ...payload, file_name:fileName, source:"web", status:"success", error:null });
       }
 
       $("up-stage").textContent="Done!";
@@ -451,7 +425,6 @@ TPS7A4700-RGWT"></textarea>
     }catch(e){
       console.error(e);
       $("upload-status").innerHTML=`<span class="err">Upload failed: ${e.message}</span>`;
-      // write a failed log entry (best-effort)
       try {
         const fileName=$("file-upload")?.files?.[0]?.name || null;
         await tryInsertLog({
@@ -470,7 +443,7 @@ TPS7A4700-RGWT"></textarea>
     } finally { resetUploadBtn(); }
   };
 
-  // -------- search
+  // search
   let __lastSearchRows__=[];
   $("btn-search").onclick = async ()=>{
     const pasted=$("input-parts").value.split("\n").map(s=>s.trim()).filter(Boolean);
@@ -510,7 +483,6 @@ TPS7A4700-RGWT"></textarea>
     if (!__lastSearchRows__.length) box.innerHTML=`<div class="row">No matching parts found.</div>`; else $("btn-export-results").disabled=false;
     $("btn-search").disabled=false; $("btn-search").textContent="🔍 Check Excess";
   };
-
   $("btn-export-results").onclick=()=>{
     const rows=__lastSearchRows__; if(!rows?.length){ alert("Nothing to export yet."); return; }
     const header="Part Number,Vendor,Quantity";
@@ -519,52 +491,148 @@ TPS7A4700-RGWT"></textarea>
     const a=document.createElement("a"); a.href=url; a.download="excess_search_results.csv"; a.click(); URL.revokeObjectURL(url);
   };
 
-  // -------- remove / uploads list (tolerant)
+  // RPC helpers for delete
+  async function rpcDeleteByBatch(batch_id) {
+    const { data, error } = await supabase.rpc("excess_delete_by_batch", { in_batch: batch_id });
+    if (error) throw new Error(error.message);
+    return Number(data || 0);
+  }
+  async function rpcDeleteByVendorDate(vendor, date) {
+    const { data, error } = await supabase.rpc("excess_delete_by_vendor_date", { in_vendor: vendor, in_date: date });
+    if (error) throw new Error(error.message);
+    return Number(data || 0);
+  }
+
+  async function handleDeleteUpload(meta) {
+    const v = meta.vendor || "(unknown)";
+    const d = meta.date || "—";
+    const msg = `Delete ALL parts for:\n\nVendor: ${v}\nDate:   ${d}\n\nThis cannot be undone. Continue?`;
+    if (!confirm(msg)) return;
+
+    let removed = 0;
+    try {
+      if (meta.batch_id) removed = await rpcDeleteByBatch(meta.batch_id);
+      else removed = await rpcDeleteByVendorDate(v, d);
+    } catch (e) {
+      alert(`Delete failed: ${e.message}`);
+      return;
+    }
+
+    try {
+      if (meta.batch_id) {
+        await supabase.from("excess_log").update({ status: "deleted" }).eq("batch_id", meta.batch_id);
+      } else {
+        await supabase.from("excess_log").update({ status: "deleted" }).eq("vendor", v).eq("created_on_utc", d);
+      }
+    } catch (_) {}
+
+    alert(`Deleted ${removed.toLocaleString()} rows for ${v} on ${d}.`);
+    await loadStats(); await refreshUploadsUI(); await loadExcessLog();
+  }
+
+  // remove tab list + button
   async function refreshUploadsUI(){
-    const list=$("upload-list"); list.innerHTML="";
-    const sel=$("rm-batch"); sel.innerHTML="";
-    let data=null;
-    try{
-      const r=await supabase.from("excess_uploads").select("*").order("created_on_utc",{ascending:false}).limit(500);
-      data=r.data||[];
-    }catch{ data=null; }
-    if (!data){
-      list.innerHTML=`<div class="row">Upload summaries are not being recorded (table not present). This does not affect uploading.</div>`;
+    const list = $("upload-list");
+    list.innerHTML = "";
+    const sel = $("rm-batch");
+    sel.innerHTML = "";
+
+    let data = null;
+    try {
+      const r = await supabase
+        .from("excess_uploads")
+        .select("vendor, created_on_utc, rows_count, total_qty, batch_id")
+        .order("created_on_utc", { ascending: false })
+        .limit(500);
+      data = r.data || [];
+    } catch {
+      data = null;
+    }
+
+    if (!data) {
+      list.innerHTML = `<div class="row">Upload summaries are not being recorded. You can still remove by Vendor + Date using the big button.</div>`;
       sel.appendChild(new Option("— No upload summaries —",""));
       return;
     }
-    if (!data.length){
-      list.innerHTML=`<div class="row">No uploads yet.</div>`;
+    if (!data.length) {
+      list.innerHTML = `<div class="row">No uploads yet.</div>`;
       sel.appendChild(new Option("— Select an upload —",""));
       return;
     }
+
     sel.appendChild(new Option("— Select an upload —",""));
     data.forEach(r=>{
-      const label=`${r.vendor} — ${r.created_on_utc}  (${r.rows_count.toLocaleString()} rows, ${Number(r.total_qty||0).toLocaleString()} qty)`;
-      sel.appendChild(new Option(label, JSON.stringify({vendor:r.vendor,date:r.created_on_utc,rows:r.rows_count,qty:r.total_qty})));
-    });
-    sel.onchange=()=>{ if(!sel.value){$("rm-batch-info").textContent="";return;}
-      const v=JSON.parse(sel.value); $("rm-batch-info").textContent=`Selected: ${v.vendor} on ${v.date} — ${v.rows.toLocaleString()} rows (${Number(v.qty||0).toLocaleString()} qty)`;
-      $("rm-vendor").value=v.vendor; $("rm-date").value=v.date; };
-    data.slice(0,20).forEach(r=>{
-      const el=document.createElement("div"); el.className="row";
-      el.innerHTML=`<strong>${r.vendor}</strong> — ${r.created_on_utc}<br>Rows: <b>${(r.rows_count||0).toLocaleString()}</b>, Total Qty: <b>${Number(r.total_qty||0).toLocaleString()}</b>`;
+      const payload = {
+        vendor: r.vendor,
+        date:   r.created_on_utc,
+        rows_count: r.rows_count,
+        total_qty:  r.total_qty,
+        batch_id:   r.batch_id || null
+      };
+      const label = `${payload.date} (${payload.rows_count.toLocaleString()} rows, ${Number(payload.total_qty||0).toLocaleString()} qty)` + (payload.batch_id ? ` — batch ${payload.batch_id}` : ``);
+      sel.appendChild(new Option(label, JSON.stringify(payload)));
+
+      const el = document.createElement("div");
+      el.className = "row";
+      el.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+          <div>
+            <div><strong>${payload.vendor}</strong> — ${payload.date}</div>
+            <div class="hint">Rows: <b>${payload.rows_count.toLocaleString()}</b> • Total Qty: <b>${Number(payload.total_qty||0).toLocaleString()}</b></div>
+            ${payload.batch_id ? `<div class="hint mono">Batch: ${payload.batch_id}</div>` : ``}
+          </div>
+          <div>
+            <button class="btn danger" style="padding:8px 12px" data-del='${JSON.stringify(payload)}'>Delete</button>
+          </div>
+        </div>
+      `;
+      el.querySelector("button[data-del]")?.addEventListener("click", (e)=>{
+        const meta = JSON.parse(e.currentTarget.getAttribute("data-del"));
+        handleDeleteUpload(meta);
+      });
       list.appendChild(el);
     });
+
+    sel.onchange = () => {
+      if (!sel.value) { $("rm-batch-info").textContent = ""; return; }
+      const v = JSON.parse(sel.value);
+      $("rm-batch-info").textContent =
+        `Selected: ${v.vendor} on ${v.date} — ${v.rows_count.toLocaleString()} rows (${Number(v.total_qty||0).toLocaleString()} qty)` +
+        (v.batch_id ? ` — batch ${v.batch_id}` : ``);
+      $("rm-vendor").value = v.vendor;
+      $("rm-date").value   = v.date;
+    };
   }
 
   $("btn-remove").onclick = async ()=>{
-    let vendor=$("rm-vendor").value.trim(); let date=$("rm-date").value; const sel=$("rm-batch").value;
-    if (sel){ const v=JSON.parse(sel); vendor=v.vendor; date=v.date; }
-    if (!vendor || !date){ $("remove-status").innerHTML=`<span class="err">Select an upload or fill Vendor + Date.</span>`; return; }
-    $("btn-remove").disabled=true; $("btn-remove").textContent="⏳ Removing…"; $("remove-status").textContent="";
-    const { data, error } = await supabase.rpc("excess_delete_by_vendor_date", { in_vendor: vendor, in_date: date });
-    if (error){ $("remove-status").innerHTML=`<span class="err">Delete failed: ${error.message}</span>`; }
-    else { $("remove-status").innerHTML=`<span class="ok">Deleted ${Number(data||0).toLocaleString()} rows for ${vendor} on ${date}.</span>`; loadStats(); refreshUploadsUI(); }
-    $("btn-remove").disabled=false; $("btn-remove").textContent="🗑️ Remove Selected Upload";
+    const sel = $("rm-batch").value;
+    let meta = null;
+
+    if (sel) {
+      meta = JSON.parse(sel);
+    } else {
+      const vendor=$("rm-vendor").value.trim();
+      const date=$("rm-date").value;
+      if (!vendor || !date) {
+        $("remove-status").innerHTML = `<span class="err">Select an upload or fill Vendor + Date.</span>`;
+        return;
+      }
+      meta = { vendor, date, batch_id: null, rows_count: 0, total_qty: 0 };
+    }
+
+    $("btn-remove").disabled = true;
+    $("btn-remove").textContent = "⏳ Removing…";
+    $("remove-status").textContent = "";
+
+    try {
+      await handleDeleteUpload(meta);
+    } finally {
+      $("btn-remove").disabled = false;
+      $("btn-remove").textContent = "🗑️ Remove Selected Upload";
+    }
   };
 
-  // -------- vendors tab
+  // vendors tab
   const VendorView={selected:null,page:1,pageSize:200,totalRows:0,totalQty:0,currentPageRows:[],
     async fetchVendors(prefix=""){ let q=supabase.from("excess_parts").select("vendor").not("vendor","is",null).limit(10000);
       if(prefix&&prefix.length>=2) q=q.ilike("vendor",`${prefix}%`);
@@ -606,7 +674,7 @@ TPS7A4700-RGWT"></textarea>
   $("btn-export-page").onclick=()=>VendorView.exportCurrentPage();
   $("btn-export-all").onclick=()=>VendorView.exportAll();
 
-  // -------- log tab
+  // log tab with delete
   async function loadExcessLog(limit=20){
     const box=$("log-list");
     box.innerHTML=`<div class="row">Loading…</div>`;
@@ -627,16 +695,21 @@ TPS7A4700-RGWT"></textarea>
           <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
             <div>
               <div><strong>${r.vendor}</strong> • ${r.status}</div>
-              <div class="hint">By: ${r.uploaded_by || "—"} • Batch: <span class="mono">${r.batch_id}</span></div>
+              <div class="hint">By: ${r.uploaded_by || "—"} • Batch: <span class="mono">${r.batch_id || "—"}</span></div>
               <div class="hint">Rows: <b>${(r.rows_count||0).toLocaleString()}</b> • Qty: <b>${Number(r.total_qty||0).toLocaleString()}</b></div>
+              ${r.file_name ? `<div class="hint mono">${r.file_name}</div>` : ``}
+              ${err}
             </div>
-            <div class="hint" style="text-align:right">
-              ${r.file_name ? `<div class="mono">${r.file_name}</div>` : ``}
-              <div>${d} (UTC: ${r.created_on_utc})</div>
+            <div>
+              <button class="btn danger" style="padding:8px 12px" data-log='${JSON.stringify(r)}' ${r.status==="deleted"?"disabled":""}>Delete</button>
+              <div class="hint" style="text-align:right">${d} (UTC: ${r.created_on_utc})</div>
             </div>
           </div>
-          ${err}
         `;
+        el.querySelector("button[data-log]")?.addEventListener("click", async (e)=>{
+          const rec = JSON.parse(e.currentTarget.getAttribute("data-log"));
+          await handleDeleteUpload({ vendor: rec.vendor, date: rec.created_on_utc, batch_id: rec.batch_id || null, rows_count: rec.rows_count||0, total_qty: rec.total_qty||0 });
+        });
         box.appendChild(el);
       });
     }catch(e){
@@ -645,8 +718,37 @@ TPS7A4700-RGWT"></textarea>
   }
   $("log-refresh").addEventListener("click",()=>loadExcessLog());
 
-  // -------- init
-  loadStats(); refreshUploadsUI(); VendorView.renderVendorList("");
+  // leaderboard (simple: count rows in excess_uploads by uploaded_by)
+  async function loadLeaderboard(){
+    const tb=$("leader-tbody"); tb.innerHTML="";
+    try{
+      const { data } = await supabase
+        .from("excess_uploads")
+        .select("uploaded_by, batch_id")
+        .order("uploaded_by", { ascending: true })
+        .limit(20000);
+      const map=new Map();
+      (data||[]).forEach(r=>{
+        const who=(r.uploaded_by||"—").trim()||"—";
+        const set = map.get(who) || new Set();
+        set.add(r.batch_id);
+        map.set(who,set);
+      });
+      const rows=[...map.entries()].map(([who,set])=>({who,lists:set.size})).sort((a,b)=>b.lists-a.lists);
+      rows.forEach((r,i)=>{
+        const tr=document.createElement("tr");
+        tr.innerHTML=`<td>${i+1}</td><td>${r.who}</td><td>${r.lists.toLocaleString()}</td>`;
+        tb.appendChild(tr);
+      });
+      if (!rows.length) tb.innerHTML=`<tr><td colspan="3">No data yet.</td></tr>`;
+    }catch(e){
+      tb.innerHTML=`<tr><td colspan="3" class="err">${e.message}</td></tr>`;
+    }
+  }
+
+  // init
+  loadStats(); refreshUploadsUI(); VendorView.renderVendorList(""); loadLeaderboard();
 </script>
 </body>
 </html>
+
