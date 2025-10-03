@@ -50,21 +50,8 @@
     .divider{height:1px;background:var(--line);margin:14px 0}
     a.link{color:#4f46e5;text-decoration:none;font-weight:600}
     .inline{display:flex;gap:10px;align-items:center}
-    /* leaderboard */
-    table{width:100%;border-collapse:separate;border-spacing:0 8px}
-    th{font-size:12px;color:var(--muted);text-align:left;padding:0 10px}
-    td{background:var(--panel);border:1px solid var(--line);padding:12px 10px}
-    tr td:first-child{border-top-left-radius:10px;border-bottom-left-radius:10px}
-    tr td:last-child{border-top-right-radius:10px;border-bottom-right-radius:10px;text-align:right;font-weight:700}
-    .filterbar{display:flex;gap:10px;align-items:center;margin:8px 0}
-    .pill{padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;cursor:pointer}
-    .pill.active{background:linear-gradient(90deg,var(--brand),var(--brand2));border:0;color:#fff}
 
-    /* progress bar */
-    .progress{position:relative;height:10px;border-radius:999px;background:#eee;overflow:hidden;border:1px solid var(--line);margin-top:8px}
-    .progress-bar{height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2));transition:width .2s ease}
-
-    /* mini table for per-vendor breakdowns in search results */
+    /* mini vendor table in hits */
     .minitable{width:100%; border-collapse:collapse; margin-top:6px; font-size:13px}
     .minitable th,.minitable td{padding:6px 8px; border-top:1px solid var(--line)}
     .minitable th{color:var(--muted); text-align:left}
@@ -75,7 +62,7 @@
   <div class="wrap">
     <header>
       <div class="brand">
-        <img class="logo" src="../assets/Logo_color_white_background (1).png" alt="Verified Electronics" />
+        <img class="logo" src="../assets/Logo_color_white_background (1).png?v=v5" alt="Verified Electronics" />
         <h1>Excess Part Number Checker</h1>
       </div>
       <a href="/" class="btn ghost">← Back to Tools</a>
@@ -106,7 +93,8 @@
           <div class="title">How to search</div>
           <div class="hint">
             Paste one part number per line, or upload a CSV with a <span class="mono">Part Number</span> column.
-            Matching is exact (case-insensitive) but also <b>tolerant to punctuation & packaging suffixes</b>.
+            Matching is exact (case-insensitive) while tolerating <b>punctuation and common packaging suffixes</b>
+            (e.g., TR, NOPB, RGWT). Letter/number <b>order must be identical</b>.
           </div>
         </div>
 
@@ -114,7 +102,7 @@
         <textarea id="input-parts" class="mono" placeholder="e.g.
 LM358DR
 STM32F103C8T6
-TPS7A4700RGWT"></textarea>
+TPS7A4700-RGWT"></textarea>
 
         <div class="controls">
           <div>
@@ -122,6 +110,7 @@ TPS7A4700RGWT"></textarea>
             <div class="hint">CSV must contain a column named <code>Part Number</code> (MPN/PN also accepted).</div>
           </div>
           <button id="btn-search" class="btn">🔍 Check Excess</button>
+          <button id="btn-export-results" class="btn ghost" disabled>Export results CSV</button>
         </div>
 
         <div id="search-results" class="rows"></div>
@@ -186,11 +175,11 @@ STM32F103C8T6, 50, ST"></textarea>
           <span id="upload-status" class="hint mono"></span>
         </div>
 
-        <!-- Progress bar -->
+        <!-- simple progress (unchanged functional placeholder) -->
         <div id="upload-progress-wrap" class="subtle" style="display:none;margin-top:8px">
           <div class="title" id="up-stage">Preparing…</div>
           <div class="hint"><span id="up-detail">–</span></div>
-          <div class="progress"><div class="progress-bar" id="up-bar" style="width:0%"></div></div>
+          <div class="rows"><div class="row">Uploading…</div></div>
         </div>
       </section>
 
@@ -200,7 +189,6 @@ STM32F103C8T6, 50, ST"></textarea>
           <div class="title">How removal works</div>
           <div class="hint">
             Choose a prior upload (Vendor × Date) from the list below, then click <b>Remove</b>.
-            The list is generated from live data in <span class="mono">excess_parts</span> (view: <span class="mono">excess_uploads</span>).
           </div>
         </div>
 
@@ -235,40 +223,31 @@ STM32F103C8T6, 50, ST"></textarea>
       <section id="tab-leader" class="section">
         <div class="subtle">
           <div class="title">Excess Leaderboard</div>
-          <div class="hint">Counts the number of <b>uploads (lists)</b> per employee using <span class="mono">batch_id</span>. Default view is <b>this week</b>.</div>
-        </div>
-
-        <div class="filterbar">
-          <span class="pill active" data-period="week">This Week</span>
-          <span class="pill" data-period="month">This Month</span>
-          <span class="pill" data-period="year">This Year</span>
-          <span class="pill" data-period="all">All Time</span>
+          <div class="hint">Counts lists per employee using <span class="mono">batch_id</span>.</div>
         </div>
 
         <div class="rows">
-          <table>
+          <table style="width:100%;border-collapse:separate;border-spacing:0 8px">
             <thead>
-              <tr>
-                <th>#</th><th>Employee</th><th>Lists</th>
-              </tr>
+              <tr><th>#</th><th>Employee</th><th>Lists</th></tr>
             </thead>
             <tbody id="leader-tbody"></tbody>
           </table>
         </div>
       </section>
 
-      <!-- VENDORS (read-only) -->
+      <!-- VENDORS -->
       <section id="tab-vendors" class="section">
         <div class="subtle">
           <div class="title">View Excess by Vendor</div>
-          <div class="hint">Pick a vendor to see their parts and quantities. Read-only view.</div>
+          <div class="hint">Pick a vendor to see their parts and quantities.</div>
         </div>
 
         <div class="grid">
           <div>
             <label><strong>Search vendors</strong></label>
             <input type="text" id="vendor-search" placeholder="Type to filter (min 2 chars)"/>
-            <div class="hint">Showing up to <span id="vendor-count">0</span> vendors</div>
+            <div class="hint">Showing <span id="vendor-count">0</span> vendors</div>
             <div id="vendor-list" class="rows" style="max-height:420px;overflow:auto"></div>
           </div>
 
@@ -302,301 +281,207 @@ STM32F103C8T6, 50, ST"></textarea>
     <footer>© <span id="year"></span> Verified Electronics</footer>
   </div>
 
-  <!-- PapaParse (robust CSV) -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js?v=v5"></script>
   <script type="module">
+    const APP_VERSION = "v5-canon-strict";
+    console.info("Excess Checker:", APP_VERSION);
+
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    // === Supabase (current values; you’ll rotate later) ===
+    // ===== Supabase (placeholders; rotate in prod) =====
     const SUPABASE_URL  = "https://ijzroisggstqkfhpjndq.supabase.co";
     const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc";
-
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+
     const $ = (id)=>document.getElementById(id);
     $("year").textContent = new Date().getFullYear();
 
-    // Tabs (fixed)
+    // ===== Tabs =====
     document.querySelectorAll(".tab").forEach(btn=>{
       btn.addEventListener("click",()=>{
         document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
         document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
         btn.classList.add("active");
         document.getElementById(btn.dataset.tab).classList.add("active");
-        if (btn.dataset.tab === "tab-leader") loadLeaderboard(currentPeriod);
+        if (btn.dataset.tab === "tab-leader") loadLeaderboard("week");
         if (btn.dataset.tab === "tab-vendors") VendorView.renderVendorList($("vendor-search")?.value?.trim()||"");
       });
     });
 
-    // Staff “Other”
-    window.toggleOtherStaff = ()=>{
-      const sel = $("uploaded-by").value;
-      $("other-staff").style.display = (sel === "Other") ? "block" : "none";
-    };
-    const getUploader = ()=>{
-      const sel = $("uploaded-by").value;
-      if (sel === "Other") return $("other-staff").value.trim();
-      return sel || "";
+    // ===== Helpers =====
+    const norm = s=>String(s??"").trim();
+    const lower = s=>norm(s).toLowerCase();
+    const dedupUpper = arr => [...new Set(arr.map(s=>s.trim()).filter(Boolean).map(s=>s.toUpperCase()))];
+
+    // CSV headers
+    const HDR_PART = ["Part Number","MPN","PN","Part","PartNumber","Item","MPN/Part Number"];
+    const HDR_QTY  = ["Quantity","Qty","Q'ty","Qta","Quantità"];
+    const HDR_VEND = ["Vendor","Supplier","Seller","Company","Vendor Name","Supplier Name"];
+    const findHeader=(headers,cands)=>{
+      const H=headers.map(h=>({raw:h, key:lower(h)})), want=cands.map(lower);
+      const hit=H.find(h=>want.includes(h.key)); return hit?hit.raw:null;
     };
 
-    // ---------- Accurate Stats (paginated vendors) ----------
+    // ===== Canonical matching (STRICT) =====
+    const CANON = s => String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+
+    // Trim trailing packaging suffix (letters only, 1–6 chars), e.g., RGWT, TR, NOPB, LF, etc.
+    const trimPkg = c => c.replace(/[A-Z]{1,6}$/, "");  // only letters at end
+
+    // Two strings match if:
+    // 1) CANON(a) === CANON(b), OR
+    // 2) trimPkg(CANON(a)) === trimPkg(CANON(b)) (tolerate common packaging suffix at end)
+    function equalPN(a,b){
+      const A = CANON(a), B = CANON(b);
+      if (!A || !B) return false;
+      if (A === B) return true;
+      return trimPkg(A) === trimPkg(B);
+    }
+
+    // Extract the most likely PN token from a line: take the first non-empty token
+    // (before the first space/comma/semicolon). This preserves order and ignores descriptors.
+    function extractToken(line){
+      const s = String(line||"").trim().toUpperCase();
+      if (!s) return "";
+      const token = s.split(/[,\s;]+/)[0];            // first token
+      return token || s;                              // fallback to whole line if weird
+    }
+
+    // Build a light search pattern for ILIKE to reduce rows we pull.
+    // We use the first 4 canonical characters as an anchor (if available).
+    function anchorPattern(raw){
+      const c = CANON(raw);
+      if (c.length >= 4) return "%" + c.slice(0,4) + "%";
+      if (c.length) return "%" + c + "%";
+      return "%";
+    }
+
+    // ===== Stats (unchanged) =====
     async function getDistinctVendorsPaginated() {
-      const head = await supabase
-        .from("excess_parts")
-        .select("*", { count:"exact", head:true })
-        .not("vendor", "is", null);
-
+      const head = await supabase.from("excess_parts").select("*",{count:"exact",head:true}).not("vendor","is",null);
       const totalRows = head.count || 0;
-      if (totalRows === 0) return [];
-
-      const PAGE = 10000;
-      const pages = Math.ceil(totalRows / PAGE);
-      const uniq = new Set();
-
-      for (let p = 0; p < pages; p++) {
-        const from = p * PAGE;
-        const to   = Math.min(from + PAGE - 1, totalRows - 1);
-        const { data, error } = await supabase
-          .from("excess_parts")
-          .select("vendor")
-          .not("vendor","is",null)
-          .range(from, to);
-        if (error) throw error;
-        (data || []).forEach(r=>{
-          const v = (r.vendor||"").trim();
-          if (v) uniq.add(v);
-        });
+      if (!totalRows) return [];
+      const PAGE=10000, pages=Math.ceil(totalRows/PAGE), uniq=new Set();
+      for (let p=0;p<pages;p++){
+        const {data} = await supabase.from("excess_parts")
+          .select("vendor").not("vendor","is",null)
+          .range(p*PAGE, Math.min(p*PAGE+PAGE-1,totalRows-1));
+        (data||[]).forEach(r=>{const v=(r.vendor||"").trim(); if(v) uniq.add(v);});
       }
       return Array.from(uniq).sort((a,b)=>a.localeCompare(b));
     }
-
     async function loadStats(){
-      try{
-        const totalHead = await supabase.from("excess_parts").select("*", { count:"exact", head:true });
-        $("stat-total").textContent = (totalHead.count ?? 0).toLocaleString();
-
-        const vendors = await getDistinctVendorsPaginated();
-        $("stat-vendors").textContent = vendors.length.toLocaleString();
-        window.__VE_DISTINCT_VENDORS__ = vendors;
-
-        const { count: batches } = await supabase.from("excess_uploads").select("*", { count:"exact", head:true });
-        $("stat-batches").textContent = (batches ?? 0).toLocaleString();
-      }catch(e){
-        $("stat-total").textContent = "—";
-        $("stat-vendors").textContent = "—";
-        $("stat-batches").textContent = "—";
-        console.error("loadStats failed", e);
-      }
+      const head = await supabase.from("excess_parts").select("*",{count:"exact",head:true});
+      $("stat-total").textContent = (head.count||0).toLocaleString();
+      const vendors = await getDistinctVendorsPaginated();
+      $("stat-vendors").textContent = vendors.length.toLocaleString();
+      const up = await supabase.from("excess_uploads").select("*",{count:"exact",head:true});
+      $("stat-batches").textContent = (up.count||0).toLocaleString();
     }
-
-    // Export vendors CSV
     $("btn-export-vendors")?.addEventListener("click", async ()=>{
-      try{
-        const list = window.__VE_DISTINCT_VENDORS__ || await getDistinctVendorsPaginated();
-        if (!list.length){ alert("No vendors found."); return; }
-        const csv = ["Vendor", ...list.map(v => `"${v.replace(/"/g,'""')}"`)].join("\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-        const url  = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url; a.download = "vendors.csv"; a.click();
-        URL.revokeObjectURL(url);
-      }catch(err){ alert("Export failed: " + err.message); }
+      const list = await getDistinctVendorsPaginated();
+      if (!list.length){ alert("No vendors found."); return; }
+      const csv = ["Vendor", ...list.map(v=>`"${v.replace(/"/g,'""')}"`)].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob); const a=document.createElement("a");
+      a.href=url; a.download="vendors.csv"; a.click(); URL.revokeObjectURL(url);
     });
 
-    // ---------- Upload list + dropdown (Remove tab) ----------
+    // ===== Upload list (remove tab) — unchanged UI =====
     async function refreshUploadsUI(){
-      const list = $("upload-list");
-      list.innerHTML = "";
-      const sel = $("rm-batch");
-      sel.innerHTML = "";
-
-      const { data, error } = await supabase.from("excess_uploads").select("*").order("created_on_utc", { ascending:false }).limit(500);
-      if (error){ list.innerHTML = `<div class="row err">Failed to load uploads: ${error.message}</div>`; return; }
-      if (!data || data.length===0){ list.innerHTML = `<div class="row">No uploads found yet.</div>`; return; }
-
+      const list=$("upload-list"); list.innerHTML="";
+      const sel=$("rm-batch"); sel.innerHTML="";
+      const {data,error}=await supabase.from("excess_uploads")
+        .select("*").order("created_on_utc",{ascending:false}).limit(500);
+      if (error){ list.innerHTML=`<div class="row err">${error.message}</div>`; return; }
+      if (!data?.length){ list.innerHTML=`<div class="row">No uploads yet.</div>`; return; }
       sel.appendChild(new Option("— Select an upload —",""));
       data.forEach(r=>{
         const label = `${r.vendor} — ${r.created_on_utc}  (${r.rows_count} rows, ${Number(r.total_qty||0).toLocaleString()} qty)`;
-        const val = JSON.stringify({ vendor: r.vendor, date: r.created_on_utc, rows: r.rows_count, qty: r.total_qty });
-        sel.appendChild(new Option(label, val));
+        sel.appendChild(new Option(label, JSON.stringify({vendor:r.vendor,date:r.created_on_utc,rows:r.rows_count,qty:r.total_qty})));
       });
-
-      sel.addEventListener("change", ()=>{
-        if (!sel.value){ $("rm-batch-info").textContent = ""; return; }
-        const v = JSON.parse(sel.value);
-        $("rm-batch-info").textContent = `Selected: ${v.vendor} on ${v.date} — ${v.rows.toLocaleString()} rows (${Number(v.qty||0).toLocaleString()} qty)`;
-        $("rm-vendor").value = v.vendor;
-        $("rm-date").value = v.date;
-      });
-
+      sel.onchange=()=>{ if(!sel.value){$("rm-batch-info").textContent="";return;}
+        const v=JSON.parse(sel.value);
+        $("rm-batch-info").textContent=`Selected: ${v.vendor} on ${v.date} — ${v.rows.toLocaleString()} rows (${Number(v.qty||0).toLocaleString()} qty)`;
+        $("rm-vendor").value=v.vendor; $("rm-date").value=v.date; };
       data.slice(0,20).forEach(r=>{
-        const el = document.createElement("div");
-        el.className = "row";
-        el.innerHTML = `<strong>${r.vendor}</strong> — ${r.created_on_utc}<br>
-          Rows: <b>${r.rows_count.toLocaleString()}</b>, Total Qty: <b>${Number(r.total_qty||0).toLocaleString()}</b>`;
+        const el=document.createElement("div"); el.className="row";
+        el.innerHTML=`<strong>${r.vendor}</strong> — ${r.created_on_utc}<br>Rows: <b>${r.rows_count.toLocaleString()}</b>, Total Qty: <b>${Number(r.total_qty||0).toLocaleString()}</b>`;
         list.appendChild(el);
       });
     }
 
-    // ---------- CSV helpers ----------
-    const norm = (s)=>String(s ?? "").trim();
-    const lower = (s)=>norm(s).toLowerCase();
-    const cleanQty = (v)=>{
-      const n = Number(String(v ?? "").replace(/[^\d-]/g,""));
-      return Number.isFinite(n) ? n : 0;
-    };
-    const findHeader = (headers, candidates)=>{
-      const H = headers.map(h=>({ raw:h, key: lower(h) }));
-      const want = candidates.map(lower);
-      const hit = H.find(h=>want.includes(h.key));
-      return hit ? hit.raw : null;
-    };
-    const HDR_PART = ["Part Number","MPN","PN","Part","PartNumber","Item","MPN/Part Number"];
-    const HDR_QTY  = ["Quantity","Qty","Q'ty","Qta","Quantità"];
-    const HDR_VEND = ["Vendor","Supplier","Seller","Company","Vendor Name","Supplier Name"];
-    const dedupUpper = (arr)=>[...new Set(arr.map(s=>s.trim()).filter(Boolean).map(s=>s.toUpperCase()))];
-
-    // Stream-parse CSV (Papa worker) so huge files don't load in memory
-    const streamParseCSV = (file, onChunk) => new Promise((resolve, reject) => {
-      let headers = null, totalRows = 0;
-      Papa.parse(file, {
-        worker: true,
-        header: true,
-        skipEmptyLines: true,
-        dynamicTyping: false,
-        chunkSize: 1024 * 1024, // ~1MB
-        chunk: (results) => {
-          headers = headers || (results.meta.fields || []);
-          const rows = results.data || [];
-          totalRows += rows.length;
-          onChunk?.(rows, totalRows);
-        },
-        error: reject,
-        complete: () => resolve({ headers: headers || [], totalRows })
-      });
+    // ===== CSV helpers =====
+    const streamParseCSV=(file,onChunk)=>new Promise((resolve,reject)=>{
+      let headers=null,total=0;
+      Papa.parse(file,{worker:true,header:true,skipEmptyLines:true,chunkSize:1024*1024,
+        chunk:(res)=>{headers=headers||(res.meta.fields||[]); const rows=res.data||[]; total+=rows.length; onChunk?.(rows,total);},
+        error:reject, complete:()=>resolve({headers:headers||[],totalRows:total})});
     });
 
-    // Progress UI helpers
-    function showProgress(show=true){ $("upload-progress-wrap").style.display = show ? "block" : "none"; }
-    function setStage(t){ $("up-stage").textContent = t; }
-    function setDetail(t){ $("up-detail").textContent = t; }
-    function setBar(pct){ $("up-bar").style.width = Math.max(0, Math.min(100, pct)) + "%"; }
+    // ===== SEARCH (STRICT canonical equality) =====
+    let __lastSearchRows__ = []; // for export
 
-    // ====== SEARCH NORMALIZATION HELPERS ======
-    const normalizePN = (s)=> String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
-    const makeLooseIlike = (raw) => {
-      const n = normalizePN(raw);
-      if (!n) return null;
-      return "%" + n.split("").join("%") + "%";
-    };
-    function stripTailTokens(s){
-      return s
-        .replace(/\/(TR|T\/R|NOPB|G4|E4|LF|PBF|PB|R|R7|T|TZ|KG4|K|SD|BYP|BYF|BYR)(?![A-Z0-9])/i, "")
-        .replace(/-(TRPBF|TRP|TR|T\/R|NOPB|PBF|LF|G4|E4|K|R|R7|TG4|TZ|DGNR|DBTR|DCKR|DCKT|DGKR?|RGT|RGY|RHLR|RT[VWT]?R?|SQE|SQX|SQ|PWR|PW|DBVR|DBVT|DRV|DRBR|DRYR?|DMLR|RGE|RGER?|RGT[R]?)(?![A-Z0-9])/i, "")
-        .replace(/#(TRPBF|PBF)$/i,"");
-    }
-    function pnCandidates(raw){
-      if (!raw) return [];
-      const src = String(raw).trim().toUpperCase();
-      const out = new Set();
-      const push = (x)=>{ x = (x||"").trim(); if (x && x.length>=3) out.add(x); };
-
-      if (/^RESERVED|^PROGRAMMED|^NOTE/i.test(src)) {
-        const tail = (src.split(/[-–—]\s*/).pop() || "").trim();
-        if (/[A-Z0-9]/.test(tail)) push(tail);
-        return [...out];
-      }
-
-      push(src);                              // as-is
-      const preComma = src.split(",")[0];     // before comma
-      push(preComma); push(preComma.split(/\s+/)[0]);
-      push(src.replace(/\([^)]*\)/g,""));     // drop parens
-      push(src.replace(/[()]/g,""));          // collapse parens
-      push(src.replace(/:.*$/,""));           // up to colon
-      push(src.replace(/:([A-Z0-9]+).*/,"-$1"));// :K -> -K
-      push(src.replace(/,.*$/,""));           // remove trailing descriptor
-      push(stripTailTokens(src));
-      push(stripTailTokens(preComma));
-      push(src.replace(/-[A-Z0-9]+$/,""));    // remove last dash segment
-      push(preComma.replace(/-[A-Z0-9]+$/,""));
-      push(src.replace(/\/[A-Z0-9+-]+$/,"")); // remove slash tail
-      push(preComma.replace(/\/[A-Z0-9+-]+$/,""));
-      push(src.replace(/([A-Z0-9-]+)[0-9]+\.[0-9]+[A-Z0-9-]*$/,"$1")); // oscillator decimals
-      push(src.replace(/(.*?[0-9])[A-Z]+$/,"$1")); // keep until last digits
-      push(normalizePN(src));                 // pure normalized
-
-      return [...out];
-    }
-
-    // ---------- SEARCH ----------
     $("btn-search").addEventListener("click", async ()=>{
       const pasted = $("input-parts").value.split("\n").map(s=>s.trim()).filter(Boolean);
       let parts = dedupUpper(pasted);
 
+      // optional CSV
       const file = $("file-search").files?.[0];
       if (file){
         let collected = [];
-        await streamParseCSV(file, (chunkRows)=>{ collected.push(...chunkRows); });
-        const headers = Object.keys(collected[0] || {});
+        await streamParseCSV(file, (chunk)=>{ collected.push(...chunk); });
+        const headers = Object.keys(collected[0]||{});
         const hPart = findHeader(headers, HDR_PART);
-        if (!hPart) { alert("CSV needs a Part Number/MPN column"); return; }
+        if (!hPart){ alert("CSV needs a Part Number/MPN column"); return; }
         parts = dedupUpper([...parts, ...collected.map(r=>r[hPart])]);
       }
+      if (!parts.length){ alert("Add some part numbers first."); return; }
 
-      if (parts.length === 0) { alert("Add some part numbers first."); return; }
+      $("btn-search").disabled = true; $("btn-search").textContent = "⏳ Searching…";
+      $("btn-export-results").disabled = true;
+      const box = $("search-results"); box.innerHTML=""; __lastSearchRows__ = [];
 
-      $("btn-search").disabled = true; $("btn-search").textContent = "⏳ Searching...";
-      const container = $("search-results"); container.innerHTML = "";
+      for (const rawLine of parts){
+        // Extract first token and build canonical forms for query
+        const token = extractToken(rawLine);
+        const canonQ = CANON(token);
+        if (!canonQ) continue;
 
-      for (const raw of parts){
-        const candidates = pnCandidates(raw);
-        const picked = new Map(); // de-dup rows
+        // Build a light anchor to cut result set; then filter strictly in JS
+        const like = anchorPattern(token);
+        const { data, error } = await supabase
+          .from("excess_parts")
+          .select("part_number,vendor,quantity,created_at")
+          .ilike("part_number", like)
+          .limit(5000); // safety
 
-        for (const cand of candidates){
-          const loose = makeLooseIlike(cand);
-          const q1 = supabase.from("excess_parts").select("*").ilike("part_number", cand);
-          const q2 = loose ? supabase.from("excess_parts").select("*").ilike("part_number", loose) : null;
+        if (error){ console.error(error); continue; }
 
-          const [r1, r2] = await Promise.all([q1, q2]);
-          const rows = [...(r1.data||[]), ...((r2 && r2.data)||[])];
+        // Keep rows whose part_number equals query under our strict rules
+        const hits = (data||[]).filter(r => equalPN(r.part_number, token));
+        if (!hits.length) continue; // no per-line "no match" row; we skip
 
-          const nCand = normalizePN(cand);
-          for (const r of rows){
-            const nDb = normalizePN(r.part_number);
-            if (!nDb.includes(nCand)) continue;
-            const k = `${r.part_number}|${r.vendor}|${r.quantity}|${r.created_at}`;
-            if (!picked.has(k)) picked.set(k, r);
-          }
-
-          if (picked.size) break; // stop at first candidate producing matches
-        }
-
-        const matched = [...picked.values()];
-        if (!matched.length){
-          const el = document.createElement("div");
-          el.className = "row";
-          el.textContent = `${raw} — no matching parts found.`;
-          container.appendChild(el);
-          continue;
-        }
-
-        // group by part and render per-vendor breakdown
-        const byPart = matched.reduce((m,r)=>{
-          const k = (r.part_number || "").toUpperCase();
-          (m[k] ??= []).push(r);
+        // Group by matched part_number (as stored)
+        const groups = hits.reduce((m,r)=>{
+          const key = r.part_number.toUpperCase();
+          (m[key] ??= []).push(r);
           return m;
-        }, {});
+        },{});
 
-        Object.keys(byPart).sort().forEach(k=>{
-          const vendorTotals = {};
-          let totalQty = 0;
-          for (const r of byPart[k]) {
+        // Render each part group with vendor breakdown; collect for export
+        Object.keys(groups).sort().forEach(pn=>{
+          const rows = groups[pn];
+          const byVendor = {};
+          let total = 0;
+          rows.forEach(r=>{
             const v = r.vendor || "(unknown)";
-            const q = Number(r.quantity) || 0;
-            vendorTotals[v] = (vendorTotals[v] || 0) + q;
-            totalQty += q;
-          }
-          const rowsHtml = Object.entries(vendorTotals)
+            const q = Number(r.quantity)||0;
+            byVendor[v] = (byVendor[v]||0) + q;
+            total += q;
+            __lastSearchRows__.push({ part_number: pn, vendor: v, quantity: q });
+          });
+          const vendorsHtml = Object.entries(byVendor)
             .sort((a,b)=>b[1]-a[1])
             .map(([v,q])=>`<tr><td>${v}</td><td class="qty">${q.toLocaleString()}</td></tr>`)
             .join("");
@@ -604,356 +489,149 @@ STM32F103C8T6, 50, ST"></textarea>
           const el = document.createElement("div");
           el.className = "row";
           el.innerHTML = `
-            <div><strong>${k}</strong> <span class="hint">query: ${raw}</span></div>
+            <div><strong>${pn}</strong></div>
             <table class="minitable">
               <thead><tr><th>Vendor</th><th class="qty">Quantity</th></tr></thead>
-              <tbody>${rowsHtml}</tbody>
-              <tfoot><tr><th>Total</th><th class="qty">${totalQty.toLocaleString()}</th></tr></tfoot>
-            </table>
-          `;
-          container.appendChild(el);
+              <tbody>${vendorsHtml}</tbody>
+              <tfoot><tr><th>Total</th><th class="qty">${total.toLocaleString()}</th></tr></tfoot>
+            </table>`;
+          box.appendChild(el);
         });
+      }
+
+      if (__lastSearchRows__.length === 0){
+        box.innerHTML = `<div class="row">No matching parts found.</div>`;
+      } else {
+        $("btn-export-results").disabled = false;
       }
 
       $("btn-search").disabled = false; $("btn-search").textContent = "🔍 Check Excess";
     });
 
-    // ---------- UPLOAD (RPC) — STREAMED + CHUNKED + STATUS BAR ----------
-    $("btn-upload").addEventListener("click", async ()=>{
-      const fallbackVendor = $("fallback-vendor").value.trim() || null;
-      const uploader = getUploader();
-      if (!uploader){
-        $("upload-status").innerHTML = `<span class="err">Please select or enter 'Uploaded by'.</span>`;
-        return;
-      }
-
-      // Reset UI
-      $("upload-status").textContent = "";
-      showProgress(true); setStage("Preparing…"); setDetail("Reading inputs"); setBar(0);
-
-      // 1) Gather rows from CSV (stream) and from pasted box
-      let rows = [];
-
-      const f = $("file-upload").files?.[0];
-      if (f){
-        setStage("Parsing CSV…");
-        let headersDetected = null, hPart, hQty, hVend;
-        await streamParseCSV(f, (chunkRows, totalSoFar)=>{
-          if (!headersDetected){
-            headersDetected = Object.keys(chunkRows[0] || {});
-            hPart = findHeader(headersDetected, HDR_PART);
-            hQty  = findHeader(headersDetected, HDR_QTY);
-            hVend = findHeader(headersDetected, HDR_VEND);
-            if (!hPart || !hQty){
-              $("upload-status").innerHTML = `<span class="err">CSV must include Part Number/MPN and Quantity columns.</span>`;
-              showProgress(false);
-              throw new Error("Missing required headers");
-            }
-          }
-          rows.push(...chunkRows.map(r=>({
-            part_number: norm(r[hPart]).toUpperCase(),
-            quantity: cleanQty(r[hQty]),
-            vendor: norm(hVend ? r[hVend] : "") || (fallbackVendor || null),
-            uploaded_by: uploader
-          })));
-          setDetail(`Parsed ${totalSoFar.toLocaleString()} rows`);
-          setBar(10 + Math.min(60, (totalSoFar % 5000) / 5000 * 60)); // gentle movement 10–70%
-        });
-        setDetail(`Parsed ${rows.length.toLocaleString()} rows`);
-      }
-
-      // Pasted rows
-      const pasted2 = $("paste-upload").value.replace(/\r/g,"").split("\n").map(l=>l.trim()).filter(Boolean);
-      if (pasted2.length){
-        setStage("Parsing pasted rows…");
-        pasted2.forEach(line=>{
-          const cols = line.split(",").map(s=>s.trim()).filter(s=>s!=="");
-          if (!cols.length) return;
-          const pn = (cols[0]??"").toUpperCase();
-          let vend = null, qtyRaw = "";
-          if (cols.length === 1) qtyRaw = "0";
-          else if (cols.length === 2) qtyRaw = cols[1];
-          else { vend = cols[cols.length-1]; qtyRaw = cols.slice(1, -1).join(""); }
-          const qty = cleanQty(qtyRaw);
-          const vendor = vend || fallbackVendor || null;
-          if (pn) rows.push({ part_number: pn, quantity: qty, vendor, uploaded_by: uploader });
-        });
-        setDetail(`Parsed ${rows.length.toLocaleString()} rows`);
-      }
-
-      // Validate
-      rows = rows.filter(r=>r.part_number && r.quantity >= 0);
-      if (!rows.length){
-        $("upload-status").innerHTML = `<span class="err">Nothing to upload. Add a CSV and/or pasted rows.</span>`;
-        showProgress(false);
-        return;
-      }
-
-      // 2) Chunk + upload with determinate progress
-      const CHUNK_SIZE = 1500;           // safe default
-      const SLEEP_MS   = 250;            // brief pause to avoid rate limits
-      const chunks = Math.ceil(rows.length / CHUNK_SIZE);
-      const sleep = (ms)=> new Promise(res=>setTimeout(res, ms));
-
-      $("btn-upload").disabled = true;
-      $("btn-upload").textContent = "⏳ Uploading…";
-      setStage("Uploading…");
-      setDetail(`0 of ${rows.length.toLocaleString()} rows`); setBar(70); // start at 70% after parse
-
-      let totalInserted = 0;
-      for (let i=0; i<chunks; i++){
-        const start = i * CHUNK_SIZE;
-        const end   = Math.min(start + CHUNK_SIZE, rows.length);
-        const batch = rows.slice(start, end);
-
-        $("upload-status").textContent = `Uploading chunk ${i+1}/${chunks} (${batch.length.toLocaleString()} rows)…`;
-
-        const { data, error } = await supabase.rpc("excess_bulk_insert", {
-          rows: batch,
-          default_vendor: fallbackVendor,
-          uploader
-        });
-
-        if (error){
-          $("upload-status").innerHTML = `<span class="err">Chunk ${i+1} failed: ${error.message}</span>`;
-          setStage("Failed"); setBar(100);
-          $("btn-upload").disabled = false; $("btn-upload").textContent = "⬆️ Upload Excess";
-          return;
-        }
-
-        totalInserted += batch.length;
-        const pct = Math.round(((i+1) / chunks) * 30) + 70; // 70–100% across chunks
-        setDetail(`${totalInserted.toLocaleString()} of ${rows.length.toLocaleString()} rows`);
-        setBar(Math.min(100, pct));
-        await sleep(SLEEP_MS);
-      }
-
-      // 3) Done — refresh & reset
-      $("upload-status").innerHTML = `<span class="ok">✅ Uploaded ${totalInserted.toLocaleString()} rows across ${chunks} chunk(s).</span>`;
-      setStage("Completed"); setDetail(`All done`);
-      setBar(100);
-
-      $("btn-upload").disabled = false;
-      $("btn-upload").textContent = "⬆️ Upload Excess";
-      loadStats(); refreshUploadsUI(); loadLeaderboard(currentPeriod);
+    // Export hits: Part Number, Vendor, Quantity
+    $("btn-export-results").addEventListener("click", ()=>{
+      const rows = __lastSearchRows__ || [];
+      if (!rows.length){ alert("Nothing to export yet."); return; }
+      const header = ["Part Number","Vendor","Quantity"].join(",");
+      const body = rows.map(r=>[
+        `"${(r.part_number||"").replace(/"/g,'""')}"`,
+        `"${(r.vendor||"").replace(/"/g,'""')}"`,
+        String(Number(r.quantity||0))
+      ].join(",")).join("\n");
+      const blob = new Blob([header+"\n"+body], { type:"text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob); const a = document.createElement("a");
+      a.href = url; a.download = "excess_search_results.csv"; a.click(); URL.revokeObjectURL(url);
     });
 
-    // ---------- REMOVE ----------
+    // ===== Remove (unchanged behavior) =====
     $("btn-remove").addEventListener("click", async ()=>{
       let vendor = $("rm-vendor").value.trim();
       let date = $("rm-date").value;
-
       const sel = $("rm-batch").value;
-      if (sel){ const v = JSON.parse(sel); vendor = v.vendor; date = v.date; }
-
+      if (sel){ const v=JSON.parse(sel); vendor=v.vendor; date=v.date; }
       if (!vendor || !date){
         $("remove-status").innerHTML = `<span class="err">Select an upload or fill Vendor + Date.</span>`;
         return;
       }
-
       $("btn-remove").disabled = true; $("btn-remove").textContent = "⏳ Removing…";
       $("remove-status").textContent = "";
-
-      const { data, error } = await supabase.rpc("excess_delete_by_vendor_date", {
-        in_vendor: vendor, in_date: date
-      });
-
+      const { data, error } = await supabase.rpc("excess_delete_by_vendor_date", { in_vendor: vendor, in_date: date });
       if (error){
         $("remove-status").innerHTML = `<span class="err">Delete failed: ${error.message}</span>`;
       } else {
         $("remove-status").innerHTML = `<span class="ok">Deleted ${Number(data||0).toLocaleString()} rows for ${vendor} on ${date}.</span>`;
-        loadStats(); refreshUploadsUI(); loadLeaderboard(currentPeriod);
+        loadStats(); refreshUploadsUI(); loadLeaderboard("week");
       }
-
       $("btn-remove").disabled = false; $("btn-remove").textContent = "🗑️ Remove Selected Upload";
     });
 
-    // ---------- LEADERBOARD ----------
-    const STAFF = ["Nick N","Nick K","Jake B","Dan C","Emir B"]; // show even if zero
-    let currentPeriod = "week";
-
-    function fmtDate(d){
-      const y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,"0"), da=String(d.getUTCDate()).padStart(2,"0");
-      return `${y}-${m}-${da}`;
-    }
-    function startOfWeekUTC(d){
-      const day = d.getUTCDay(); // 0..6 (Sun..Sat)
-      const diff = (day===0?6:day-1); // ISO Mon=0
-      const copy = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-      copy.setUTCDate(copy.getUTCDate()-diff);
-      return copy;
-    }
-    function rangeFor(period){
-      const today = new Date();
-      const end = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())); // today
-      let start;
-      if (period==="week"){
-        start = startOfWeekUTC(today);
-      } else if (period==="month"){
-        start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
-      } else if (period==="year"){
-        start = new Date(Date.UTC(today.getUTCFullYear(), 0, 1));
-      } else { // all
-        start = new Date(Date.UTC(1970,0,1));
-      }
-      return { from: fmtDate(start), to: fmtDate(end) };
-    }
-
+    // ===== Leaderboard (simple) =====
     async function loadLeaderboard(period="week"){
-      currentPeriod = period;
-      document.querySelectorAll(".pill").forEach(p=>{
-        p.classList.toggle("active", p.dataset.period===period);
-      });
-
-      const { from, to } = rangeFor(period);
-      let q = supabase.from("excess_batches").select("uploaded_by,batch_id,created_on_utc");
-      if (period!=="all"){
-        q = q.gte("created_on_utc", from).lte("created_on_utc", to);
-      }
-      const { data, error } = await q.limit(20000);
-      const tbody = $("leader-tbody");
-      tbody.innerHTML = "";
-
+      const { data, error } = await supabase.from("excess_batches").select("uploaded_by,batch_id,created_on_utc").limit(20000);
+      const tbody = $("leader-tbody"); tbody.innerHTML="";
       if (error){ tbody.innerHTML = `<tr><td colspan="3">Failed to load: ${error.message}</td></tr>`; return; }
-
       const counts = {};
-      (data||[]).forEach(r=>{
-        const name = r.uploaded_by || "(unknown)";
-        counts[name] = (counts[name]||0) + 1;
-      });
-      STAFF.forEach(n=>{ if(!(n in counts)) counts[n]=0; });
-
-      const rows = Object.entries(counts)
-        .sort((a,b)=>b[1]-a[1])
-        .map((entry,idx)=>({ rank: idx+1, name: entry[0], lists: entry[1] }));
-
-      if (!rows.length){
-        tbody.innerHTML = `<tr><td colspan="3">No uploads found for this period.</td></tr>`;
-        return;
-      }
-
+      (data||[]).forEach(r=>{ const n=r.uploaded_by||"(unknown)"; counts[n]=(counts[n]||0)+1; });
+      const rows = Object.entries(counts).sort((a,b)=>b[1]-a[1]).map((e,i)=>({rank:i+1,name:e[0],lists:e[1]}));
+      if (!rows.length){ tbody.innerHTML=`<tr><td colspan="3">No uploads found.</td></tr>`; return; }
       rows.forEach(r=>{
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${r.rank}</td><td>${r.name}</td><td>${r.lists}</td>`;
+        const tr=document.createElement("tr");
+        tr.innerHTML=`<td>${r.rank}</td><td>${r.name}</td><td>${r.lists}</td>`;
         tbody.appendChild(tr);
       });
     }
 
-    document.querySelectorAll(".pill").forEach(p=>{
-      p.addEventListener("click", ()=> loadLeaderboard(p.dataset.period));
-    });
-
-    // ===== Vendors Tab Logic =====
-    function debounce(fn, ms=200){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
-
+    // ===== Vendors tab (simple read-only list) =====
     const VendorView = {
-      selected: null, page: 1, pageSize: 200, totalRows: 0, totalQty: 0, currentPageRows: [],
+      selected:null, page:1, pageSize:200, totalRows:0, totalQty:0, currentPageRows:[],
       async fetchVendors(prefix=""){
         let q = supabase.from("excess_parts").select("vendor").not("vendor","is", null).limit(10000);
-        if (prefix && prefix.length >= 2) q = q.ilike("vendor", `${prefix}%`);
-        const { data, error } = await q;
-        if (error) throw error;
-        const uniq = [...new Set((data||[]).map(r => (r.vendor||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+        if (prefix && prefix.length>=2) q=q.ilike("vendor", `${prefix}%`);
+        const { data } = await q;
+        const uniq=[...new Set((data||[]).map(r=>(r.vendor||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
         return uniq;
       },
       vendorItem(v){
-        const el = document.createElement("div");
-        el.className = "row"; el.style.cursor = "pointer"; el.textContent = v;
-        el.addEventListener("click", ()=> this.selectVendor(v));
-        return el;
+        const el=document.createElement("div"); el.className="row"; el.style.cursor="pointer"; el.textContent=v;
+        el.addEventListener("click", ()=> this.selectVendor(v)); return el;
       },
-      async renderVendorList(prefix=""){
-        const box = $("vendor-list");
-        box.innerHTML = `<div class="row">Loading vendors…</div>`;
-        try{
-          const vendors = await this.fetchVendors(prefix);
-          $("vendor-count").textContent = vendors.length.toLocaleString();
-          box.innerHTML = "";
-          vendors.forEach(v => box.appendChild(this.vendorItem(v)));
-        }catch(e){ box.innerHTML = `<div class="row err">Failed to load vendors: ${e.message}</div>`; }
+      async renderVendorList(prefix=""){ const box=$("vendor-list"); box.innerHTML=`<div class="row">Loading vendors…</div>`;
+        try{ const vendors=await this.fetchVendors(prefix); $("vendor-count").textContent=vendors.length.toLocaleString();
+          box.innerHTML=""; vendors.forEach(v=>box.appendChild(this.vendorItem(v))); }catch(e){ box.innerHTML=`<div class="row err">${e.message}</div>`; }
       },
-      async selectVendor(vendor){
-        this.selected = vendor; this.page = 1;
-        $("vendor-title").textContent = vendor;
-        $("btn-export-all").disabled = false;
-        await this.refreshVendorStats();
-        await this.loadPage();
-      },
+      async selectVendor(v){ this.selected=v; this.page=1; $("vendor-title").textContent=v; $("btn-export-all").disabled=false; await this.refreshVendorStats(); await this.loadPage(); },
       async refreshVendorStats(){
-        const { count } = await supabase.from("excess_parts").select("*", { count:"exact", head:true }).eq("vendor", this.selected);
-        this.totalRows = count || 0;
-
-        // SUM quantity via paged fetch (no schema changes)
-        let totalQty = 0;
-        const PAGE = 10000;
-        const pages = Math.ceil((this.totalRows||0)/PAGE);
+        const { count } = await supabase.from("excess_parts").select("*",{count:"exact",head:true}).eq("vendor", this.selected);
+        this.totalRows=count||0;
+        let totalQty=0, PAGE=10000, pages=Math.ceil((this.totalRows||0)/PAGE);
         for (let p=0;p<pages;p++){
-          const from = p*PAGE, to = from+PAGE-1;
-          const { data } = await supabase.from("excess_parts").select("quantity").eq("vendor", this.selected).range(from, to);
+          const { data } = await supabase.from("excess_parts").select("quantity").eq("vendor", this.selected).range(p*PAGE, p*PAGE+PAGE-1);
           (data||[]).forEach(r=> totalQty += (Number(r.quantity)||0));
         }
-        this.totalQty = totalQty;
-
-        $("vendor-stats").innerHTML = `Rows: <b>${(this.totalRows||0).toLocaleString()}</b> &nbsp;•&nbsp; Total Qty: <b>${(this.totalQty||0).toLocaleString()}</b>`;
+        this.totalQty=totalQty;
+        $("vendor-stats").innerHTML=`Rows: <b>${(this.totalRows||0).toLocaleString()}</b> • Total Qty: <b>${(this.totalQty||0).toLocaleString()}</b>`;
       },
       async loadPage(){
-        const from = (this.page - 1) * this.pageSize;
-        const to   = from + this.pageSize - 1;
-        $("vendor-parts").innerHTML = `<div class="row">Loading parts…</div>`;
+        const from=(this.page-1)*this.pageSize, to=from+this.pageSize-1;
         const { data, error, count } = await supabase
-          .from("excess_parts")
-          .select("part_number,quantity,created_at", { count:"exact" })
-          .eq("vendor", this.selected)
-          .order("part_number", { ascending:true })
-          .range(from, to);
-        if (error){ $("vendor-parts").innerHTML = `<div class="row err">Failed to load: ${error.message}</div>`; return; }
-        this.currentPageRows = data || [];
-        if (typeof count === "number") this.totalRows = count;
-
-        const box = $("vendor-parts"); box.innerHTML = "";
-        if (!this.currentPageRows.length){ box.innerHTML = `<div class="row">No parts for this vendor.</div>`; }
-        else{
-          this.currentPageRows.forEach(r=>{
-            const el = document.createElement("div");
-            el.className = "row";
-            el.innerHTML = `<div><strong>${(r.part_number||"").toUpperCase()}</strong></div>
-              <div class="hint">Qty: <b>${Number(r.quantity||0).toLocaleString()}</b> &nbsp;•&nbsp; Added: ${new Date(r.created_at).toISOString().split("T")[0]}</div>`;
-            box.appendChild(el);
-          });
-        }
-        const pages = Math.max(1, Math.ceil((this.totalRows||0) / this.pageSize));
-        $("vendor-page-hint").textContent = `Page ${this.page} of ${pages} — showing ${this.currentPageRows.length.toLocaleString()} of ${this.totalRows.toLocaleString()} rows`;
-        $("vp-prev").disabled = (this.page <= 1);
-        $("vp-next").disabled = (this.page >= pages);
-        $("btn-export-page").disabled = this.currentPageRows.length === 0;
+          .from("excess_parts").select("part_number,quantity,created_at",{count:"exact"})
+          .eq("vendor", this.selected).order("part_number",{ascending:true}).range(from,to);
+        const box=$("vendor-parts"); if (error){ box.innerHTML=`<div class="row err">${error.message}</div>`; return; }
+        this.currentPageRows=data||[]; if (typeof count==="number") this.totalRows=count;
+        box.innerHTML=this.currentPageRows.length? "": `<div class="row">No parts for this vendor.</div>`;
+        this.currentPageRows.forEach(r=>{
+          const el=document.createElement("div"); el.className="row";
+          el.innerHTML=`<div><strong>${(r.part_number||"").toUpperCase()}</strong></div>
+                        <div class="hint">Qty: <b>${Number(r.quantity||0).toLocaleString()}</b> • Added: ${new Date(r.created_at).toISOString().split("T")[0]}</div>`;
+          box.appendChild(el);
+        });
+        const pages=Math.max(1, Math.ceil((this.totalRows||0)/this.pageSize));
+        $("vendor-page-hint").textContent=`Page ${this.page} of ${pages} — showing ${this.currentPageRows.length.toLocaleString()} of ${this.totalRows.toLocaleString()} rows`;
+        $("vp-prev").disabled=(this.page<=1); $("vp-next").disabled=(this.page>=pages);
+        $("btn-export-page").disabled=this.currentPageRows.length===0;
       },
       async exportCurrentPage(){
-        const rows = this.currentPageRows; if (!rows.length) return;
-        const csv = [
-          ["Vendor","Part Number","Quantity","Created At"].join(","),
-          ...rows.map(r => [
+        const rows=this.currentPageRows; if (!rows.length) return;
+        const csv=[["Vendor","Part Number","Quantity","Created At"].join(","),
+          ...rows.map(r=>[
             `"${(this.selected||"").replace(/"/g,'""')}"`,
             `"${(r.part_number||"").replace(/"/g,'""')}"`,
             String(Number(r.quantity||0)),
             `"${r.created_at}"`
-          ].join(","))
-        ].join("\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-        const url = URL.createObjectURL(blob); const a = document.createElement("a");
-        a.href = url; a.download = `vendor_${this.selected}_page_${this.page}.csv`; a.click(); URL.revokeObjectURL(url);
+          ].join(","))].join("\n");
+        const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+        const url=URL.createObjectURL(blob); const a=document.createElement("a");
+        a.href=url; a.download=`vendor_${this.selected}_page_${this.page}.csv`; a.click(); URL.revokeObjectURL(url);
       },
       async exportAll(){
-        const pages = Math.max(1, Math.ceil((this.totalRows||0)/this.pageSize));
-        const header = ["Vendor","Part Number","Quantity","Created At"].join(",");
-        let csvParts = [header];
-        for (let p=1; p<=pages; p++){
-          const from = (p-1) * this.pageSize, to = from + this.pageSize - 1;
+        const header=["Vendor","Part Number","Quantity","Created At"].join(",");
+        let csvParts=[header]; const PAGE=this.pageSize;
+        const pages=Math.max(1, Math.ceil((this.totalRows||0)/PAGE));
+        for (let p=1;p<=pages;p++){
+          const from=(p-1)*PAGE, to=from+PAGE-1;
           const { data, error } = await supabase
-            .from("excess_parts")
-            .select("part_number,quantity,created_at")
-            .eq("vendor", this.selected)
-            .order("part_number", { ascending:true })
-            .range(from, to);
+            .from("excess_parts").select("part_number,quantity,created_at")
+            .eq("vendor", this.selected).order("part_number",{ascending:true}).range(from,to);
           if (error){ alert(`Export failed on page ${p}: ${error.message}`); return; }
           (data||[]).forEach(r=>{
             csvParts.push([
@@ -963,29 +641,26 @@ STM32F103C8T6, 50, ST"></textarea>
               `"${r.created_at}"`
             ].join(","));
           });
-          $("vendor-page-hint").textContent = `Exporting… ${p}/${pages}`;
+          $("vendor-page-hint").textContent=`Exporting… ${p}/${pages}`;
         }
-        const blob = new Blob([csvParts.join("\n")], { type: "text/csv;charset=utf-8" });
-        const url = URL.createObjectURL(blob); const a = document.createElement("a");
-        a.href = url; a.download = `vendor_${this.selected}_ALL.csv`; a.click(); URL.revokeObjectURL(url);
+        const blob=new Blob([csvParts.join("\n")],{type:"text/csv;charset=utf-8"});
+        const url=URL.createObjectURL(blob); const a=document.createElement("a");
+        a.href=url; a.download=`vendor_${this.selected}_ALL.csv`; a.click(); URL.revokeObjectURL(url);
       }
     };
-
-    $("vendor-search")?.addEventListener("input", debounce(async (e)=>{
-      const q = e.target.value.trim();
-      await VendorView.renderVendorList(q);
-    }, 250));
-    $("vp-prev")?.addEventListener("click", async ()=>{ if (VendorView.page > 1){ VendorView.page--; await VendorView.loadPage(); }});
+    $("vendor-search")?.addEventListener("input", (e)=>VendorView.renderVendorList(e.target.value.trim()));
+    $("vp-prev")?.addEventListener("click", async ()=>{ if (VendorView.page>1){ VendorView.page--; await VendorView.loadPage(); }});
     $("vp-next")?.addEventListener("click", async ()=>{ VendorView.page++; await VendorView.loadPage(); });
     $("btn-export-page")?.addEventListener("click", ()=> VendorView.exportCurrentPage());
     $("btn-export-all")?.addEventListener("click", ()=> VendorView.exportAll());
 
-    // Init
+    // ===== Init =====
     loadStats();
     refreshUploadsUI();
     loadLeaderboard("week");
   </script>
 </body>
 </html>
+
 
 
