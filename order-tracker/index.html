@@ -3,11 +3,13 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Live Order Tracking — Verified Electronics</title>
+<title>Order Tracker — Verified Electronics</title>
 <link rel="icon" href="data:;base64,iVBORw0KGgo="/>
+
+<!-- ====== Styles ====== -->
 <style>
   :root{
-    --brand:#6f57e9; --ink:#1e2330; --muted:#6d7486;
+    --brand:#6f57e9; --ink:#1f2432; --muted:#6d7486;
     --bg:#f6f7fb; --card:#fff; --line:#e9e9ef;
     --green:#12a274; --purple:#3b2eca;
   }
@@ -25,7 +27,7 @@
   h1{font-size:26px;margin:0;font-weight:800}
   .sub{color:var(--muted);margin-top:2px}
 
-  .toolbar{display:grid;grid-template-columns:1fr 190px 170px 170px auto auto;gap:10px;margin:16px 0}
+  .toolbar{position:sticky;top:8px;z-index:5;background:var(--bg);display:grid;grid-template-columns:1fr 190px 170px 170px auto auto;gap:10px;margin:16px 0}
   .input,.select,.btn, textarea{height:36px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:0 12px;font:inherit}
   .input{width:100%}
   textarea{height:auto;padding:10px 12px;resize:vertical}
@@ -38,6 +40,9 @@
   .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
   .btn.primary:hover{filter:brightness(.97)}
   .btn.ghost{background:#fff}
+  .mini{height:32px}
+
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
   .table-card{border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden}
   .table-wrap{overflow:auto}
@@ -62,6 +67,7 @@
   .ie.editing select{display:inline-block}
   .ie.editing .chip{display:none}
 
+  /* dialogs */
   dialog{border:0;padding:0;margin:0 auto;max-width:1400px;width:98vw}
   dialog::backdrop{background:rgba(17,17,33,.35)}
   .modal{display:flex;flex-direction:column;max-height:92vh;border-radius:18px;overflow:hidden;background:#fff}
@@ -74,8 +80,6 @@
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr}
   .section{margin:14px 0 6px;font-weight:800;color:#262b3a}
   .note{font-size:12px;color:var(--muted);margin-bottom:4px}
-  .mini{height:32px}
-  .row{display:flex;gap:8px;align-items:center}
 
   .tbl{width:100%;border-collapse:collapse;table-layout:fixed}
   .tbl th,.tbl td{border:1px solid #ececf3;padding:8px;text-align:left;white-space:nowrap}
@@ -97,272 +101,299 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+  /* ====== Supabase init (rotate later) ====== */
   const SUPABASE_URL = 'https://ijzroisggstqkfhpjndq.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  /* add apikey/authorization to any direct fetch to Supabase REST */
+  /* ensure REST fetches carry apikey/auth */
   (function(){
-    const realFetch = window.fetch.bind(window);
-    window.fetch = (input, init = {}) => {
-      const url = typeof input === 'string' ? input : input?.url || '';
-      if (url.startsWith(SUPABASE_URL)) {
-        const h = new Headers(init.headers || {});
-        if (!h.has('apikey')) h.set('apikey', SUPABASE_ANON_KEY);
-        if (!h.has('Authorization')) h.set('Authorization', `Bearer ${SUPABASE_ANON_KEY}`);
-        init = { ...init, headers: h };
+    const f=window.fetch.bind(window);
+    window.fetch=(i,init={})=>{
+      const url=typeof i==='string'?i:i?.url||'';
+      if(url.startsWith(SUPABASE_URL)){
+        const h=new Headers(init.headers||{});
+        if(!h.has('apikey')) h.set('apikey', SUPABASE_ANON_KEY);
+        if(!h.has('Authorization')) h.set('Authorization','Bearer '+SUPABASE_ANON_KEY);
+        init={...init,headers:h};
       }
-      return realFetch(input, init);
+      return f(i,init);
     };
   })();
 </script>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified">
-      <div>
-        <h1>Order Tracker</h1>
-        <div class="sub">Multi-part orders with date codes, priority, requested-by date, tests, multi-leg shipping costs, partial shipments, files & GP.</div>
-      </div>
-    </header>
-
-    <div class="toolbar">
-      <input id="q" class="input" placeholder="Search: customer, part number, order id..."/>
-      <select id="fltSales" class="select"><option value="">All salespeople</option></select>
-      <select id="fltStatus" class="select"><option value="">All status</option><option>New</option><option>Open</option><option>Closed</option></select>
-      <select id="fltPriority" class="select"><option value="">All priorities</option><option>High</option><option>Normal</option><option>Low</option></select>
-      <button id="btnNew" class="btn" type="button" onclick="openModal(null)">+ New Order</button>
-      <button id="btnCsv" class="btn ghost" type="button">Export CSV</button>
+<div class="wrap">
+  <header>
+    <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified">
+    <div>
+      <h1>Order Tracker</h1>
+      <div class="sub">Multi-part orders with date codes, priority, requested-by date, tests, multi-leg shipping costs, partial shipments, files & GP.</div>
     </div>
+  </header>
 
-    <div class="table-card">
-      <div class="table-wrap">
-        <table id="tbl">
-          <thead>
-            <tr>
-              <th>View</th>
-              <th>Customer</th>
-              <th>Part(s)</th>
-              <th>Sales</th>
-              <th>Total Qty</th>
-              <th>Avg Unit $</th>
-              <th>Sell</th>
-              <th>GP</th>
-              <th>Priority</th>
-              <th>Status</th>
-              <th>Order Date</th>
-              <th>Requested by</th>
-              <th>Age</th>
-              <th>Tests</th>
-              <th>Vendor</th>
-              <th>Incoterm</th>
-              <th>Terms</th>
-              <th>Shipped</th>
-              <th>Invoiced</th>
-              <th>Files</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
+  <!-- DASHBOARD -->
+  <div id="dash" class="row" style="margin:12px 0; gap:10px">
+    <div class="card" style="flex:1; min-width:220px"><h3>Open Orders</h3><div class="pad mono"><span id="dOpen">0</span></div></div>
+    <div class="card" style="flex:1; min-width:220px"><h3>Revenue (Filtered)</h3><div class="pad mono"><span id="dRev">$0.00</span></div></div>
+    <div class="card" style="flex:1; min-width:220px"><h3>Gross Profit (Filtered)</h3><div class="pad mono"><span id="dGP">$0.00</span> <span class="muted mono">(<span id="dGPPct">0%</span>)</span></div></div>
+    <div class="card" style="flex:1; min-width:220px"><h3>Avg Age</h3><div class="pad mono"><span id="dAge">-</span></div></div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <input id="q" class="input" placeholder="Search: customer, part number, order id..."/>
+    <select id="fltSales" class="select"><option value="">All salespeople</option></select>
+    <select id="fltStatus" class="select"><option value="">All status</option><option>New</option><option>Open</option><option>Closed</option></select>
+    <select id="fltPriority" class="select"><option value="">All priorities</option><option>High</option><option selected>Normal</option><option>Low</option></select>
+    <button class="btn" type="button" onclick="openModal(null)">+ New Order</button>
+    <button id="btnCsv" class="btn ghost" type="button">Export CSV</button>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-wrap">
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th>View</th><th>Customer</th><th>Part(s)</th><th>Sales</th>
+            <th>Total Qty</th><th>Avg Unit $</th><th>Sell</th><th>GP</th>
+            <th>Priority</th><th>Status</th><th>Order Date</th><th>Requested by</th>
+            <th>Age</th><th>Tests</th><th>Vendor</th><th>Incoterm</th><th>Terms</th>
+            <th>Shipped</th><th>Invoiced</th><th>Files</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ====== EDIT / NEW MODAL ====== -->
+<dialog id="dlg">
+  <div class="modal">
+    <header><div class="head"><strong id="dlgTitle">New Order</strong><button id="btnClose" class="btn ghost mini" type="button">✕</button></div></header>
+    <div class="content">
+      <input type="hidden" id="orderId"/>
+
+      <div class="section">SALES — what Sales enters</div>
+      <div class="grid3">
+        <div><div class="note">Salesperson</div><select id="salesperson" class="select mini"></select></div>
+        <div><div class="note">Customer</div><input id="customer" class="input mini"/></div>
+        <div><div class="note">Priority</div><select id="priority" class="select mini"><option>High</option><option selected>Normal</option><option>Low</option></select></div>
+
+        <div><div class="note">Status</div><select id="status" class="select mini"><option>New</option><option>Open</option><option>Closed</option></select></div>
+        <div><div class="note">Order Date</div><input id="order_date" type="date" class="input mini"/></div>
+        <div><div class="note">Requested by</div><input id="requested_by" type="date" class="input mini"/></div>
+
+        <div>
+          <div class="note">Payment Terms</div>
+          <div class="row">
+            <select id="payment_terms" class="select mini" style="flex:1">
+              <option>Net 5</option><option>Net 10</option><option>Net 15</option><option>Net 20</option>
+              <option>Net 30</option><option>Net 40</option><option>Net 50</option><option>Net 60</option><option>Net 90</option>
+              <option value="Other">Other…</option>
+            </select>
+            <input id="payment_terms_other" class="input mini" placeholder="If Other…" style="flex:1;display:none"/>
+          </div>
+        </div>
+        <div>
+          <div class="note">Payment Method</div>
+          <div class="row">
+            <select id="payment_method" class="select mini" style="flex:1">
+              <option>Bank Transfer</option><option>Credit Card</option><option>PayPal</option>
+              <option value="Other">Other…</option>
+            </select>
+            <input id="payment_method_other" class="input mini" placeholder="If Other…" style="flex:1;display:none"/>
+          </div>
+        </div>
+        <div>
+          <div class="note">Incoterm</div>
+          <div class="row">
+            <select id="incoterm" class="select mini" style="flex:1">
+              <option>DAP</option><option>DDP</option><option>EXW</option><option>CIP</option><option>FOB</option>
+              <option value="Other">Other…</option>
+            </select>
+            <input id="incoterm_other" class="input mini" placeholder="If Other…" style="flex:1;display:none"/>
+          </div>
+        </div>
+
+        <div><div class="note">Invoice Date</div><input id="invoice_date" type="date" class="input mini"/></div>
+        <div><div class="note">Due Date</div><input id="due_date" type="date" class="input mini"/></div>
+        <div>
+          <div class="note">Currency</div>
+          <select id="currency" class="select mini">
+            <option value="USD" selected>USD ($)</option><option value="GBP">GBP (£)</option><option value="EUR">EUR (€)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section">Testing — requirements & center</div>
+      <div class="row" id="testsLine" style="flex-wrap:wrap;gap:14px">
+        <label><input type="checkbox" value="No test" id="tNone"> No test</label>
+        <label><input type="checkbox" value="EVI"> EVI</label>
+        <label><input type="checkbox" value="Solderability"> Solderability</label>
+        <label><input type="checkbox" value="Electrical"> Electrical</label>
+        <label><input type="checkbox" value="Other" id="tOther"> Other</label>
+        <input id="tests_other" class="input mini" placeholder="Describe other test…" style="max-width:340px"/>
+        <div style="flex:1"></div>
+        <div style="min-width:240px">
+          <div class="note">Test Center</div>
+          <select id="test_center" class="select mini" style="min-width:240px">
+            <option>GETs HK</option><option>GETs Shenzhen</option><option>GETs US</option>
+            <option>White Horse US</option><option>White Horse China</option><option>White Horse EU</option>
+            <option value="Other">Other…</option>
+          </select>
+        </div>
+        <div style="min-width:280px">
+          <div class="note">Customer PO (file)</div>
+          <input id="file_po" type="file" class="input mini" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"/>
+        </div>
+      </div>
+
+      <div class="section">Line Items — parts, date codes & pricing</div>
+      <div class="hscroll">
+        <table class="tbl" id="itemsTbl">
+          <thead><tr>
+            <th style="width:26%">Part Number</th>
+            <th style="width:18%">Date Codes</th>
+            <th style="width:10%">Qty</th>
+            <th style="width:16%">Unit Sell</th>
+            <th style="width:16%">Unit Cost</th>
+            <th style="width:8%"></th>
+          </tr></thead>
+          <tbody id="itemsBody"></tbody>
         </table>
+      </div>
+      <div class="right"><button id="addItem" class="btn mini" type="button">+ Add item</button></div>
+
+      <div class="section">PURCHASING — what Purchasing updates</div>
+      <div class="grid3">
+        <div><div class="note">Vendor</div><input id="vendor" class="input mini"/></div>
+        <div><div class="note">Test Report (file)</div><input id="file_test" type="file" class="input mini" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"/></div>
+        <div><div class="note">Notes</div><textarea id="notes" rows="2" class="input mini" placeholder="Internal notes..."></textarea></div>
+      </div>
+
+      <div class="section">Shipments — legs & partials (unified)</div>
+      <div class="hscroll">
+        <table class="tbl" id="shipTbl">
+          <thead><tr>
+            <th style="width:10%">Kind</th><th style="width:12%">Date</th><th style="width:10%">Qty</th>
+            <th style="width:15%">From</th><th style="width:15%">To</th><th style="width:12%">Method</th>
+            <th style="width:10%">Ref</th><th style="width:12%">Courier</th><th style="width:16%">Tracking</th><th style="width:10%">Cost</th>
+            <th style="width:6%"></th>
+          </tr></thead>
+          <tbody id="shipBody"></tbody>
+        </table>
+      </div>
+      <div class="right"><button id="addShip" class="btn mini" type="button">+ Add shipment/leg</button></div>
+
+      <div class="grid3" style="margin-top:12px">
+        <div><div class="note">Extra shipping cost</div><input id="shipping_cost_extra" type="number" step="0.01" class="input mini mono" placeholder="0.00"/></div>
+        <div><div class="note">Test cost</div><input id="test_cost" type="number" step="0.01" class="input mini mono" placeholder="0.00"/></div>
+        <div></div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h3>Financial Summary</h3>
+        <div class="pad">
+          <div class="kv">
+            <div>Total Qty</div><div id="finQty" class="mono">0</div>
+            <div>Sell (Revenue)</div><div id="finSell" class="mono">$0.00</div>
+            <div>Item Cost</div><div id="finItemCost" class="mono">$0.00</div>
+            <div>Shipping Cost</div><div id="finShipCost" class="mono">$0.00</div>
+            <div>Test Cost</div><div id="finTestCost" class="mono">$0.00</div>
+            <div>Total Cost</div><div id="finTotalCost" class="mono">$0.00</div>
+            <div>GP</div><div id="finGP" class="mono">$0.00</div>
+            <div>GP %</div><div id="finGPPct" class="mono">0%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="right" style="margin-top:10px">
+        <button id="btnDelete" class="btn ghost" type="button">Delete</button>
+        <button id="btnSave" class="btn primary" type="button">Save</button>
       </div>
     </div>
   </div>
+</dialog>
 
-  <!-- EDIT / NEW MODAL -->
-  <dialog id="dlg">
-    <div class="modal">
-      <header><div class="head"><strong id="dlgTitle">New Order</strong><button id="btnClose" class="btn ghost mini" type="button">✕</button></div></header>
-      <div class="content">
-        <input type="hidden" id="orderId"/>
+<!-- ====== VIEW SUMMARY (shows Generate buttons) ====== -->
+<dialog id="viewDlg">
+  <div class="modal">
+    <header><div class="head"><strong>Order Summary</strong><button class="btn ghost mini" type="button" onclick="$('viewDlg').close()">✕</button></div></header>
+    <div class="content"><div id="viewBody" class="summary"></div></div>
+  </div>
+</dialog>
 
-        <div class="section">SALES — what Sales enters</div>
-        <div class="grid3">
-          <div><div class="note">Salesperson</div><select id="salesperson" class="select mini"></select></div>
-          <div><div class="note">Customer</div><input id="customer" class="input mini"/></div>
-          <div><div class="note">Priority</div><select id="priority" class="select mini"><option>High</option><option selected>Normal</option><option>Low</option></select></div>
-
-          <div><div class="note">Status</div><select id="status" class="select mini"><option>New</option><option>Open</option><option>Closed</option></select></div>
-          <div><div class="note">Order Date</div><input id="order_date" type="date" class="input mini"/></div>
-          <div><div class="note">Requested by</div><input id="requested_by" type="date" class="input mini"/></div>
-
-          <div>
-            <div class="note">Payment Terms</div>
-            <div class="row">
-              <select id="payment_terms" class="select mini" style="flex:1">
-                <option>Net 5</option><option>Net 10</option><option>Net 15</option><option>Net 20</option>
-                <option>Net 30</option><option>Net 40</option><option>Net 50</option><option>Net 60</option><option>Net 90</option>
-                <option value="Other">Other…</option>
-              </select>
-              <input id="payment_terms_other" class="input mini" placeholder="If Other…" style="flex:1;display:none"/>
-            </div>
-          </div>
-          <div>
-            <div class="note">Payment Method</div>
-            <div class="row">
-              <select id="payment_method" class="select mini" style="flex:1">
-                <option>Bank Transfer</option><option>Credit Card</option><option>PayPal</option>
-                <option value="Other">Other…</option>
-              </select>
-              <input id="payment_method_other" class="input mini" placeholder="If Other…" style="flex:1;display:none"/>
-            </div>
-          </div>
-          <div>
-            <div class="note">Incoterm</div>
-            <div class="row">
-              <select id="incoterm" class="select mini" style="flex:1">
-                <option>DAP</option><option>DDP</option><option>EXW</option><option>CIP</option><option>FOB</option>
-                <option value="Other">Other…</option>
-              </select>
-              <input id="incoterm_other" class="input mini" placeholder="If Other…" style="flex:1;display:none"/>
-            </div>
-          </div>
-
-          <div><div class="note">Invoice Date</div><input id="invoice_date" type="date" class="input mini"/></div>
-          <div><div class="note">Due Date</div><input id="due_date" type="date" class="input mini"/></div>
-          <div>
-            <div class="note">Currency</div>
-            <select id="currency" class="select mini">
-              <option value="USD" selected>USD ($)</option>
-              <option value="GBP">GBP (£)</option>
-              <option value="EUR">EUR (€)</option>
-            </select>
+<!-- ====== DOCUMENTS MODAL (iframe) ====== -->
+<dialog id="docsDlg">
+  <div class="modal">
+    <header>
+      <div class="head">
+        <div class="row">
+          <strong>Generate Document</strong>
+          <div id="docTabs" class="row" style="gap:6px">
+            <button class="btn mini ghost" type="button" data-doc="so">Order Confirmation</button>
+            <button class="btn mini ghost" type="button" data-doc="invoice">Invoice</button>
+            <button class="btn mini ghost" type="button" data-doc="pt">Picking Ticket</button>
+            <button class="btn mini ghost" type="button" data-doc="ci">Commercial Invoice</button>
+            <button class="btn mini ghost" type="button" data-doc="rma">RMA</button>
           </div>
         </div>
-
-        <div class="section">Testing — requirements & center</div>
-        <div class="row" id="testsLine" style="flex-wrap:wrap;gap:14px">
-          <label><input type="checkbox" value="No test" id="tNone"> No test</label>
-          <label><input type="checkbox" value="EVI"> EVI</label>
-          <label><input type="checkbox" value="Solderability"> Solderability</label>
-          <label><input type="checkbox" value="Electrical"> Electrical</label>
-          <label><input type="checkbox" value="Other" id="tOther"> Other</label>
-          <input id="tests_other" class="input mini" placeholder="Describe other test…" style="max-width:340px"/>
-          <div style="flex:1"></div>
-          <div style="min-width:240px">
-            <div class="note">Test Center</div>
-            <select id="test_center" class="select mini" style="min-width:240px">
-              <option>GETs HK</option><option>GETs Shenzhen</option><option>GETs US</option>
-              <option>White Horse US</option><option>White Horse China</option><option>White Horse EU</option>
-              <option value="Other">Other…</option>
-            </select>
-          </div>
-          <div style="min-width:280px">
-            <div class="note">Customer PO (file)</div>
-            <input id="file_po" type="file" class="input mini" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"/>
-          </div>
-        </div>
-
-        <div class="section">Line Items — parts, date codes & pricing</div>
-        <div class="hscroll">
-          <table class="tbl" id="itemsTbl">
-            <thead><tr>
-              <th style="width:26%">Part Number</th>
-              <th style="width:18%">Date Codes</th>
-              <th style="width:10%">Qty</th>
-              <th style="width:16%">Unit Sell</th>
-              <th style="width:16%">Unit Cost</th>
-              <th style="width:8%"></th>
-            </tr></thead>
-            <tbody id="itemsBody"></tbody>
-          </table>
-        </div>
-        <div class="right"><button id="addItem" class="btn mini" type="button">+ Add item</button></div>
-
-        <div class="section">PURCHASING — what Purchasing updates</div>
-        <div class="grid3">
-          <div>
-            <div class="note">Vendor</div>
-            <input id="vendor" class="input mini"/>
-          </div>
-          <div>
-            <div class="note">Test Report (file)</div>
-            <input id="file_test" type="file" class="input mini" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"/>
-          </div>
-          <div>
-            <div class="note">Notes</div>
-            <!-- CHANGED: textarea for notes -->
-            <textarea id="notes" rows="2" class="input mini" placeholder="Internal notes..."></textarea>
-          </div>
-        </div>
-
-        <div class="section">Shipments — legs & partials (unified)</div>
-        <div class="hscroll">
-          <table class="tbl" id="shipTbl">
-            <thead><tr>
-              <th style="width:10%">Kind</th>
-              <th style="width:12%">Date</th>
-              <th style="width:10%">Qty</th>
-              <th style="width:15%">From</th>
-              <th style="width:15%">To</th>
-              <th style="width:12%">Method</th>
-              <th style="width:10%">Ref</th>
-              <th style="width:12%">Courier</th>
-              <th style="width:16%">Tracking</th>
-              <th style="width:10%">Cost</th>
-              <th style="width:6%"></th>
-            </tr></thead>
-            <tbody id="shipBody"></tbody>
-          </table>
-        </div>
-        <div class="right"><button id="addShip" class="btn mini" type="button">+ Add shipment/leg</button></div>
-
-        <div class="grid3" style="margin-top:12px">
-          <div>
-            <div class="note">Extra shipping cost</div>
-            <input id="shipping_cost_extra" type="number" step="0.01" class="input mini mono" placeholder="0.00"/>
-          </div>
-          <div>
-            <div class="note">Test cost</div>
-            <input id="test_cost" type="number" step="0.01" class="input mini mono" placeholder="0.00"/>
-          </div>
-          <div></div>
-        </div>
-
-        <!-- CHANGED: Financial summary box -->
-        <div class="card" style="margin-top:12px">
-          <h3>Financial Summary</h3>
-          <div class="pad">
-            <div class="kv">
-              <div>Total Qty</div><div id="finQty" class="mono">0</div>
-              <div>Sell (Revenue)</div><div id="finSell" class="mono">$0.00</div>
-              <div>Item Cost</div><div id="finItemCost" class="mono">$0.00</div>
-              <div>Shipping Cost</div><div id="finShipCost" class="mono">$0.00</div>
-              <div>Test Cost</div><div id="finTestCost" class="mono">$0.00</div>
-              <div>Total Cost</div><div id="finTotalCost" class="mono">$0.00</div>
-              <div>GP</div><div id="finGP" class="mono">$0.00</div>
-              <div>GP %</div><div id="finGPPct" class="mono">0%</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="right" style="margin-top:10px">
-          <button id="btnDelete" class="btn ghost" type="button">Delete</button>
-          <button id="btnSave" class="btn primary" type="button">Save</button>
-        </div>
+        <button class="btn ghost mini" type="button" onclick="$('docsDlg').close()">✕</button>
       </div>
+    </header>
+    <div class="content" style="padding:0">
+      <iframe id="docsFrame" style="width:100%;height:80vh;border:0"></iframe>
     </div>
-  </dialog>
+  </div>
+</dialog>
 
-  <!-- VIEW SUMMARY MODAL -->
-  <dialog id="viewDlg">
-    <div class="modal">
-      <header><div class="head"><strong>Order Summary</strong><button class="btn ghost mini" type="button" onclick="$('viewDlg').close()">✕</button></div></header>
-      <div class="content"><div id="viewBody" class="summary"></div></div>
+<!-- ====== PREFLIGHT (collect missing details before generating) ====== -->
+<dialog id="preDlg">
+  <div class="modal">
+    <header><div class="head"><strong>Pre-flight Details</strong><button class="btn ghost mini" type="button" onclick="$('preDlg').close()">✕</button></div></header>
+    <div class="content">
+      <div class="section">Basics</div>
+      <div class="grid3">
+        <div><div class="note">Currency</div><select id="pf_currency" class="select mini"><option>USD</option><option>GBP</option><option>EUR</option></select></div>
+        <div><div class="note">Incoterm</div><input id="pf_incoterm" class="input mini" placeholder="DAP / DDP / EXW / ..."/></div>
+        <div><div class="note">Payment Terms</div><input id="pf_terms" class="input mini" placeholder="Net 30 / ..."/></div>
+      </div>
+
+      <div class="section">Addresses</div>
+      <div class="grid2">
+        <div><div class="note">Seller (from)</div><textarea id="pf_from" rows="4" class="input mini" placeholder="Verified Electronics&#10;Address line&#10;City, Country"></textarea></div>
+        <div><div class="note">Buyer (sold to)</div><textarea id="pf_soldto" rows="4" class="input mini" placeholder="Customer&#10;Billing address"></textarea></div>
+        <div><div class="note">Ship To</div><textarea id="pf_shipto" rows="4" class="input mini" placeholder="Customer&#10;Shipping address"></textarea></div>
+        <div><div class="note">Return To (RMA)</div><textarea id="pf_return" rows="4" class="input mini" placeholder="Verified Electronics&#10;Returns address"></textarea></div>
+      </div>
+
+      <div class="section">Commercial Invoice Extras (optional)</div>
+      <div class="grid3">
+        <div><div class="note">Freight</div><input id="pf_freight" type="number" step="0.01" class="input mini mono" placeholder="0.00"/></div>
+        <div><div class="note">Insurance</div><input id="pf_ins" type="number" step="0.01" class="input mini mono" placeholder="0.00"/></div>
+        <div><div class="note">Other</div><input id="pf_other" type="number" step="0.01" class="input mini mono" placeholder="0.00"/></div>
+      </div>
+
+      <div class="right" style="margin-top:10px"><button class="btn primary mini" type="button" id="pfConfirm">Generate</button></div>
     </div>
-  </dialog>
+  </div>
+</dialog>
 
+<!-- ====== Scripts ====== -->
 <script>
-/* ---------- helpers ---------- */
+/* -------- tiny utils -------- */
 const $ = id => document.getElementById(id);
 const SALESTEAM = ['Nick N','Dan C','Emir B','Nick K','Jake B'];
 const todayStr = () => new Date().toISOString().slice(0,10);
 const curSym = c => ({USD:'$',GBP:'£',EUR:'€'})[c||'USD'] || '$';
 const fmt = n => (n==null||isNaN(n))?'-':Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtInt = n => (n==null||isNaN(n))?'-':Number(n).toLocaleString();
+const esc = s => (s??'').toString().replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
 
-/* ---------- data layer ---------- */
+/* -------- data layer -------- */
 const supa = {
   state:{orders:[]},
   getOrders(){return this.state.orders;},
@@ -407,7 +438,7 @@ const supa = {
         currency:r.currency||'USD',
         tests:r.tests||'', test_center:r.test_center||'',
         vendor:r.vendor, incoterm:r.incoterm, notes:r.notes,
-        is_shipped:r.is_shipped ?? null, is_invoiced:r.is_invoiced ?? null,
+        is_shipped:r.is_shipped ?? false, is_invoiced:r.is_invoiced ?? false,
         shipping_cost_extra:r.shipping_cost_extra||0, test_cost:r.test_cost||0,
         items, shipments, files
       };
@@ -425,7 +456,9 @@ const supa = {
       tests:rec.tests, test_center:rec.test_center,
       vendor:rec.vendor, incoterm:rec.incoterm,
       shipping_cost_extra:rec.shipping_cost_extra, test_cost:rec.test_cost,
-      notes:rec.notes
+      notes:rec.notes,
+      is_shipped: rec.is_shipped ?? false,
+      is_invoiced: rec.is_invoiced ?? false
     };
     const {data:up, error:e1} = await supabase.from('orders').upsert(header).select().single();
     if(e1) throw e1;
@@ -460,7 +493,7 @@ const supa = {
       })));
     }
 
-    // Optional flags (update only if columns exist)
+    // persist flags (no-op if columns missing)
     await this.quickUpdate(order_id, 'is_shipped', rec.is_shipped, true);
     await this.quickUpdate(order_id, 'is_invoiced', rec.is_invoiced, true);
 
@@ -503,7 +536,7 @@ const supa = {
   }
 };
 
-/* ---------- modal item helpers ---------- */
+/* -------- item/ship rows -------- */
 function button(txt,cls,click){const b=document.createElement('button');b.textContent=txt;b.className='btn mini '+(cls||'');b.type='button';b.onclick=click;return b;}
 
 function addItemRow(v={part_number:'',date_codes:'',qty:'',unit_sell:'',unit_cost:''}){
@@ -526,7 +559,6 @@ function itemsFromDOM(){
     return {part_number:pn,date_codes:dc,qty:Number(qty||0),unit_sell:Number(us||0),unit_cost:Number(uc||0)};
   }).filter(Boolean);
 }
-
 function addShipRow(v={kind:'Leg',date:'',qty:'',from:'',to:'',method:'',ref:'',courier:'',tracking:'',cost:''}){
   const tr=document.createElement('tr');
   tr.innerHTML=`
@@ -582,7 +614,28 @@ function totals(o){
   return {revenue,cost,gp,gpPct,qty,avgUnit,itemCost,shipCost,testCost};
 }
 
-/* ---------- render list (fixed View button) ---------- */
+/* -------- dashboard -------- */
+function renderDashboard(rows){
+  if(!rows.length){
+    $('dOpen').textContent='0'; $('dRev').textContent='$0.00';
+    $('dGP').textContent='$0.00'; $('dGPPct').textContent='0%'; $('dAge').textContent='-'; return;
+  }
+  const sym = curSym(rows[0]?.currency||'USD');
+  let rev=0, gp=0, days=0, open=0, dated=0;
+  rows.forEach(o=>{
+    const t=totals(o); rev+=t.revenue; gp+=t.gp;
+    if((o.status||'')!=='Closed') open++;
+    if(o.order_date){ dated++; days += Math.max(0, Math.floor((Date.now()-new Date(o.order_date))/86400000)); }
+  });
+  const avgAge = dated? Math.round(days/dated) : 0;
+  $('dOpen').textContent = fmtInt(open);
+  $('dRev').textContent  = sym + fmt(rev);
+  $('dGP').textContent   = sym + fmt(gp);
+  $('dGPPct').textContent= rev? fmt((gp/rev)*100)+'%' : '0%';
+  $('dAge').textContent  = dated? `${avgAge} d` : '-';
+}
+
+/* -------- inline select cell -------- */
 function makeInlineSelectCell(order, field, options){
   const wrap = document.createElement('div'); wrap.className='ie';
   const chip = document.createElement('span'); chip.className='chip'; chip.textContent = order[field] || '-';
@@ -592,13 +645,14 @@ function makeInlineSelectCell(order, field, options){
 
   const startEdit=()=>{ wrap.classList.add('editing'); sel.focus(); };
   btn.onclick=startEdit; chip.style.cursor='pointer'; chip.onclick=startEdit;
-  sel.onchange=async()=>{ try{ await supa.quickUpdate(order.id, field, sel.value); await supa.loadOrders(); render(); }catch(e){ alert('Update failed'); console.error(e); } };
+  sel.onchange=async()=>{ try{ await supa.quickUpdate(order.id, field, sel.value); chip.textContent=sel.value; wrap.classList.remove('editing'); }catch(e){ alert('Update failed'); console.error(e); } };
   sel.onblur=()=>wrap.classList.remove('editing');
 
   wrap.append(chip, btn, sel);
   return wrap;
 }
 
+/* -------- render list -------- */
 function render(){
   const q=$('q').value.toLowerCase(), sSales=$('fltSales').value, sStat=$('fltStatus').value, sPri=$('fltPriority').value;
   const rows=supa.getOrders().filter(o=>{
@@ -611,6 +665,11 @@ function render(){
   });
 
   const tb=$('tbody'); tb.innerHTML='';
+
+  if(!rows.length){
+    tb.innerHTML = `<tr><td colspan="21" class="muted" style="text-align:center;padding:40px">No orders. Click “+ New Order”.</td></tr>`;
+    renderDashboard(rows); return;
+  }
 
   rows.forEach(o=>{
     const {revenue,gp,gpPct,qty,avgUnit} = totals(o);
@@ -646,23 +705,20 @@ function render(){
     // Inline Status
     td=document.createElement('td'); td.appendChild(makeInlineSelectCell(o,'status',['New','Open','Closed'])); tr.appendChild(td);
 
-    // Dates, age, tests, vendor, incoterm
-    const tail = [
-      o.order_date||'-',
-      o.requested_by||'-',
-      ageDays(o.order_date),
-      o.tests||'-',
-      o.vendor||'-',
-      o.incoterm||'-'
-    ];
+    // Dates / misc
+    const tail=[o.order_date||'-', o.requested_by||'-', ageDays(o.order_date), o.tests||'-', o.vendor||'-', o.incoterm||'-'];
     tail.forEach(val=>{ const td=document.createElement('td'); td.textContent=val; tr.appendChild(td); });
 
     // Inline Terms
     td=document.createElement('td'); td.appendChild(makeInlineSelectCell(o,'payment_terms',['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90'])); tr.appendChild(td);
 
-    // Shipped / Invoiced
-    const mkChk=(name,val)=>{ const c=document.createElement('input'); c.type='checkbox'; c.checked=!!val;
-      c.onchange=async()=>{ try{ await supa.quickUpdate(o.id,name,c.checked,true);}catch(e){ console.warn(e);} };
+    // Shipped/Invoiced (persist)
+    const mkChk=(name,val)=>{ 
+      const c=document.createElement('input'); c.type='checkbox'; c.checked=!!val;
+      c.onchange=async()=>{ 
+        try{ await supa.quickUpdate(o.id,name,c.checked,true); o[name]=c.checked; }
+        catch(e){ console.warn(e); c.checked=!c.checked; }
+      };
       return c;
     };
     td=document.createElement('td'); td.appendChild(mkChk('is_shipped',o.is_shipped)); tr.appendChild(td);
@@ -670,21 +726,39 @@ function render(){
 
     // Files
     td=document.createElement('td');
-    td.innerHTML = [poUrl?`<a class="link" target="_blank" href="${poUrl}">PO</a>`:'', testUrl?`<a class="link" target="_blank" href="${testUrl}">Test</a>`:''].filter(Boolean).join(' · ')||'';
+    td.innerHTML=[poUrl?`<a class="link" target="_blank" href="${poUrl}">PO</a>`:'', testUrl?`<a class="link" target="_blank" href="${testUrl}">Test</a>`:''].filter(Boolean).join(' · ')||'';
     tr.appendChild(td);
 
     // Actions
     td=document.createElement('td'); td.className='actions';
     td.appendChild(button('Edit','ghost',()=>openModal(o)));
+    td.appendChild(button('Clone','ghost',()=>cloneOrder(o)));
+    td.appendChild(button('Docs','ghost',()=>openDocsPreflight(o,'so')));
     td.appendChild(button('Delete','ghost',async()=>{ if(!confirm('Delete this order?'))return; await supa.deleteOrder(o.id); await supa.loadOrders(); render(); }));
     tr.appendChild(td);
 
     tb.appendChild(tr);
   });
+
+  renderDashboard(rows);
 }
 
-/* ---------- modal open/collect/save ---------- */
-let _snapshot = null;
+/* -------- clone -------- */
+async function cloneOrder(o){
+  const clone = structuredClone(o);
+  delete clone.id;
+  clone.status='New';
+  clone.order_date=todayStr();
+  clone.requested_by = clone.requested_by || '';
+  clone.invoice_date=null; clone.due_date=null;
+  clone.is_shipped=false; clone.is_invoiced=false;
+  await supa.saveOrder(clone, null);
+  await supa.loadOrders(); render();
+  alert('Order cloned.');
+}
+
+/* -------- modal I/O -------- */
+let _snapshot=null;
 function snapshotRecord(rec){ const {id, ...rest}=rec||{}; return JSON.stringify(rest); }
 
 function openModal(o){
@@ -711,7 +785,6 @@ function openModal(o){
 
   $('invoice_date').value = o?.invoice_date || '';
   $('due_date').value = o?.due_date || '';
-
   $('currency').value = o?.currency || 'USD';
 
   [...$('testsLine').querySelectorAll('input[type="checkbox"]')].forEach(cb=>cb.checked=false);
@@ -724,22 +797,20 @@ function openModal(o){
   $('test_center').value = (['GETs HK','GETs Shenzhen','GETs US','White Horse US','White Horse China','White Horse EU'].includes(o?.test_center)) ? o.test_center : 'Other';
 
   $('vendor').value = o?.vendor || '';
-  $('notes').value  = o?.notes  || '';  // CHANGED: textarea
+  $('notes').value  = o?.notes  || '';
 
   $('itemsBody').innerHTML=''; (o?.items?.length?o.items:[{}]).forEach(addItemRow);
   $('shipBody').innerHTML=''; (o?.shipments||[]).forEach(addShipRow);
 
   $('shipping_cost_extra').value = o?.shipping_cost_extra ?? '';
   $('test_cost').value = o?.test_cost ?? '';
-
   $('file_po').value=''; $('file_test').value='';
 
   $('btnDelete').style.display = o?.id ? '' : 'none';
 
-  // After prefill, snapshot for dirty check and show
   _snapshot = snapshotRecord(collectRecord(true));
   $('dlg').showModal();
-  recalcFinance(); // CHANGED: compute on open
+  recalcFinance();
 }
 
 function collectRecord(preview=false){
@@ -780,12 +851,11 @@ function collectRecord(preview=false){
     shipping_cost_extra:Number($('shipping_cost_extra').value||0),
     test_cost:Number($('test_cost').value||0),
     notes:$('notes').value.trim()||null,
-    is_shipped:false,
-    is_invoiced:false
+    is_shipped:false, is_invoiced:false
   };
 }
 
-/* auto-due from invoice + terms */
+/* auto due date */
 function autoDue(){
   const inv=$('invoice_date').value, t=$('payment_terms').value, tother=$('payment_terms_other').value.trim();
   const src = t==='Other'? tother : t;
@@ -798,22 +868,17 @@ $('invoice_date').addEventListener('change',autoDue);
 $('payment_method').addEventListener('change',()=>{ $('payment_method_other').style.display = $('payment_method').value==='Other' ? '' : 'none'; });
 $('incoterm').addEventListener('change',()=>{ $('incoterm_other').style.display = $('incoterm').value==='Other' ? '' : 'none'; });
 
-/* guard against accidental close if dirty */
 function maybeCloseDialog(){
   const nowSnap = snapshotRecord(collectRecord(true));
-  if(nowSnap!==_snapshot){
-    if(!confirm('Discard changes?')) return false;
-  }
+  if(nowSnap!==_snapshot){ if(!confirm('Discard changes?')) return false; }
   $('dlg').close(); return true;
 }
 $('btnClose').onclick=()=>maybeCloseDialog();
-$('dlg').addEventListener('cancel', (e)=>{ const ok = maybeCloseDialog(); if(!ok) e.preventDefault(); });
+$('dlg').addEventListener('cancel',(e)=>{ const ok=maybeCloseDialog(); if(!ok) e.preventDefault(); });
 
-/* add rows */
 $('addItem').onclick=()=>addItemRow({});
 $('addShip').onclick=()=>addShipRow({});
 
-/* live finance summary (delegated) */
 ['itemsBody','shipBody'].forEach(id=>{
   $(id).addEventListener('input',recalcFinance);
   $(id).addEventListener('change',recalcFinance);
@@ -835,7 +900,6 @@ function recalcFinance(){
   $('finGPPct').textContent = fmt(t.gpPct)+'%';
 }
 
-/* save / delete */
 $('btnSave').onclick=async()=>{
   const rec=collectRecord();
   if(!rec.customer){alert('Customer is required');return;}
@@ -843,10 +907,8 @@ $('btnSave').onclick=async()=>{
   const uploads={};
   if($('file_po').files[0]) uploads.po = $('file_po').files[0];
   if($('file_test').files[0]) uploads.test_report = $('file_test').files[0];
-  try{
-    await supa.saveOrder(rec,uploads);
-    await supa.loadOrders(); render(); $('dlg').close();
-  }catch(e){console.error(e); alert('Save failed. See console.');}
+  try{ await supa.saveOrder(rec,uploads); await supa.loadOrders(); render(); $('dlg').close(); }
+  catch(e){ console.error(e); alert('Save failed. See console.'); }
 };
 $('btnDelete').onclick=async()=>{
   const id=$('orderId').value; if(!id) return;
@@ -854,8 +916,10 @@ $('btnDelete').onclick=async()=>{
   await supa.deleteOrder(id); await supa.loadOrders(); render(); $('dlg').close();
 };
 
-/* filters & CSV */
-['q','fltSales','fltStatus','fltPriority'].forEach(id=>$(id).addEventListener('input',render));
+/* -------- filters & CSV -------- */
+let _searchTimer=null;
+$('q').addEventListener('input',()=>{ clearTimeout(_searchTimer); _searchTimer=setTimeout(render,250); });
+['fltSales','fltStatus','fltPriority'].forEach(id=>$(id).addEventListener('input',render));
 $('btnCsv').onclick=()=>{
   const head=[...document.querySelectorAll('#tbl thead th')].map(th=>th.innerText);
   const rows=[...document.querySelectorAll('#tbody tr')].map(tr=>[...tr.children].map(td=>td.innerText.replace(/\s+/g,' ').trim()));
@@ -863,34 +927,123 @@ $('btnCsv').onclick=()=>{
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='orders.csv'; a.click();
 };
 
-/* view summary */
-function openView(o){
-  const {revenue,gp,gpPct,qty,avgUnit,itemCost,shipCost,testCost,cost} = totals(o);
-  const sym = curSym(o.currency);
-  const files = window._sessionFiles?.[o.id]||{};
-  const partsRows = (o.items||[]).map(i=>`
-    <tr><td>${i.part_number||''}</td><td>${i.date_codes||''}</td><td class="mono">${fmtInt(i.qty)}</td>
-    <td class="mono">${sym}${fmt(i.unit_sell)}</td><td class="mono">${sym}${fmt(i.unit_cost)}</td></tr>`).join('')||'';
-  const shipRows = (o.shipments||[]).map(s=>`
-    <tr><td>${s.kind}</td><td class="mono">${s.date||''}</td><td class="mono">${fmtInt(s.qty||'')}</td>
-    <td>${s.from||''}</td><td>${s.to||''}</td><td>${s.method||''}</td><td>${s.ref||''}</td>
-    <td>${s.courier||''}</td><td>${s.tracking||''}</td><td class="mono">${s.cost? sym+fmt(s.cost):''}</td></tr>`).join('')||'';
+/* -------- Documents (embedded) -------- */
+const DOC_ROUTES = {
+  so:       '/so-invoice/index.html',
+  invoice:  '/so-invoice/index.html',
+  ci:       '/commercial-invoice/index.html',
+  pt:       '/commercial-invoice/index.html#pt',
+  rma:      '/rma/index.html'
+};
 
-  $('viewBody').innerHTML = `
+function orderToDocPayload(o){
+  const {revenue, itemCost, shipCost, testCost, cost, qty} = totals(o);
+  return {
+    meta:{
+      orderId:o.id, customer:o.customer, salesperson:o.salesperson,
+      po:o.files?.po || null, incoterm:o.incoterm, payment_terms:o.payment_terms,
+      currency:o.currency || 'USD', order_date:o.order_date, requested_by:o.requested_by,
+      vendor:o.vendor, notes:o.notes
+    },
+    items:(o.items||[]).map(i=>({
+      part:i.part_number, desc:i.date_codes||'', date:i.date_codes||'',
+      qty:i.qty, unitSell:i.unit_sell, unitCost:i.unit_cost
+    })),
+    shipments:(o.shipments||[]),
+    totals:{revenue,itemCost,shipCost,testCost,cost,qty}
+  };
+}
+
+function openDocsPreflight(order, docType){
+  const d=order;
+  $('pf_currency').value=(d.currency||'USD').toUpperCase();
+  $('pf_incoterm').value=d.incoterm||'';
+  $('pf_terms').value=d.payment_terms||'';
+  $('pf_from').value='Verified Electronics\n(Exporter / Warehouse address)';
+  $('pf_soldto').value=(d.customer||'')+'\n(Billing address)';
+  $('pf_shipto').value=(d.customer||'')+'\n(Shipping address)';
+  $('pf_return').value='Verified Electronics\n(Returns address)';
+  $('pf_freight').value=Number(d.shipping_cost_extra||0);
+  $('pf_ins').value=''; $('pf_other').value='';
+
+  $('preDlg').showModal();
+
+  $('pfConfirm').onclick=()=>{
+    const overrides={
+      currency:$('pf_currency').value,
+      incoterm:$('pf_incoterm').value.trim()||d.incoterm||'',
+      terms:$('pf_terms').value.trim()||d.payment_terms||'',
+      from:$('pf_from').value.trim(), soldto:$('pf_soldto').value.trim(),
+      shipto:$('pf_shipto').value.trim(), returnTo:$('pf_return').value.trim(),
+      ciCharges:{freight:Number($('pf_freight').value||0),insurance:Number($('pf_ins').value||0),other:Number($('pf_other').value||0)}
+    };
+    const payload=orderToDocPayload(d);
+    payload.meta.currency=overrides.currency;
+    payload.meta.incoterm=overrides.incoterm;
+    payload.meta.payment_terms=overrides.terms;
+    payload.meta.from=overrides.from;
+    payload.meta.soldto=overrides.soldto;
+    payload.meta.shipto=overrides.shipto;
+    payload.meta.returnTo=overrides.returnTo;
+    payload.ci={...payload.ci,...overrides.ciCharges};
+    try{ sessionStorage.setItem('veDocData', JSON.stringify(payload)); }catch(e){ console.warn(e); }
+    $('preDlg').close(); openDocsDialog(docType);
+  };
+
+  window._openOrderRef=d; // for View modal buttons too
+}
+function openDocsDialog(docType='so'){
+  const frame=$('docsFrame'); frame.src=DOC_ROUTES[docType]||DOC_ROUTES.so;
+  $('docsDlg').showModal();
+  [...$('docTabs').querySelectorAll('button')].forEach(b=>b.classList.toggle('primary', b.dataset.doc===docType));
+}
+$('docTabs').addEventListener('click', e=>{
+  const btn=e.target.closest('button[data-doc]'); if(!btn) return;
+  const type=btn.dataset.doc; $('docsFrame').src=DOC_ROUTES[type]||DOC_ROUTES.so;
+  [...$('docTabs').querySelectorAll('button')].forEach(b=>b.classList.toggle('primary', b.dataset.doc===type));
+});
+
+/* -------- View (with Generate section) -------- */
+function openView(o){
+  window._openOrderRef=o; // store for generator
+
+  const {revenue,gp,gpPct,qty,avgUnit,itemCost,shipCost,testCost,cost} = totals(o);
+  const sym=curSym(o.currency);
+  const files=window._sessionFiles?.[o.id]||{};
+  const partsRows=(o.items||[]).map(i=>`
+    <tr><td>${esc(i.part_number||'')}</td><td>${esc(i.date_codes||'')}</td><td class="mono">${fmtInt(i.qty)}</td>
+    <td class="mono">${sym}${fmt(i.unit_sell)}</td><td class="mono">${sym}${fmt(i.unit_cost)}</td></tr>`).join('')||'';
+  const shipRows=(o.shipments||[]).map(s=>`
+    <tr><td>${s.kind}</td><td class="mono">${s.date||''}</td><td class="mono">${fmtInt(s.qty||'')}</td>
+    <td>${esc(s.from||'')}</td><td>${esc(s.to||'')}</td><td>${esc(s.method||'')}</td><td>${esc(s.ref||'')}</td>
+    <td>${esc(s.courier||'')}</td><td>${esc(s.tracking||'')}</td><td class="mono">${s.cost? sym+fmt(s.cost):''}</td></tr>`).join('')||'';
+
+  $('viewBody').innerHTML=`
+    <div class="card" style="grid-column:1 / -1">
+      <h3>Generate</h3>
+      <div class="pad actions" style="flex-wrap:wrap">
+        <button class="btn mini" type="button" onclick="openDocsPreflight(window._openOrderRef,'so')">Order Confirmation</button>
+        <button class="btn mini" type="button" onclick="openDocsPreflight(window._openOrderRef,'invoice')">Invoice</button>
+        <button class="btn mini" type="button" onclick="openDocsPreflight(window._openOrderRef,'pt')">Picking Ticket</button>
+        <button class="btn mini" type="button" onclick="openDocsPreflight(window._openOrderRef,'ci')">Commercial Invoice</button>
+        <button class="btn mini" type="button" onclick="openDocsPreflight(window._openOrderRef,'rma')">RMA</button>
+      </div>
+    </div>
+
     <div class="card"><h3>Header</h3><div class="pad"><div class="kv">
-      <div>Customer</div><div>${o.customer||'-'}</div>
-      <div>Salesperson</div><div>${o.salesperson||'-'}</div>
-      <div>Priority</div><div>${o.priority||'-'}</div>
-      <div>Status</div><div>${o.status||'-'}</div>
-      <div>Order Date</div><div>${o.order_date||'-'}</div>
-      <div>Requested by</div><div>${o.requested_by||'-'}</div>
-      <div>Incoterm</div><div>${o.incoterm||'-'}</div>
-      <div>Terms</div><div>${o.payment_terms||'-'}</div>
-      <div>Currency</div><div>${o.currency||'-'}</div>
-      <div>Vendor</div><div>${o.vendor||'-'}</div>
-      <div>Test Center</div><div>${o.test_center||'-'}</div>
-      <div>Tests</div><div>${o.tests||'-'}</div>
-      <div>Notes</div><div>${o.notes||'-'}</div>
+      <div>Customer</div><div>${esc(o.customer||'-')}</div>
+      <div>Salesperson</div><div>${esc(o.salesperson||'-')}</div>
+      <div>Priority</div><div>${esc(o.priority||'-')}</div>
+      <div>Status</div><div>${esc(o.status||'-')}</div>
+      <div>Order Date</div><div>${esc(o.order_date||'-')}</div>
+      <div>Requested by</div><div>${esc(o.requested_by||'-')}</div>
+      <div>Incoterm</div><div>${esc(o.incoterm||'-')}</div>
+      <div>Terms</div><div>${esc(o.payment_terms||'-')}</div>
+      <div>Currency</div><div>${esc(o.currency||'-')}</div>
+      <div>Vendor</div><div>${esc(o.vendor||'-')}</div>
+      <div>Test Center</div><div>${esc(o.test_center||'-')}</div>
+      <div>Tests</div><div>${esc(o.tests||'-')}</div>
+      <div>Notes</div><div>${esc(o.notes||'-')}</div>
     </div></div></div>
 
     <div class="card"><h3>Totals</h3><div class="pad"><div class="kv">
@@ -909,39 +1062,33 @@ function openView(o){
     </div></div></div>
 
     <div class="card" style="grid-column:1 / -1"><h3>Line Items</h3>
-      <div class="pad">
-        <div class="hscroll"><table class="tbl" style="min-width:900px">
-          <thead><tr><th>Part</th><th>Date Codes</th><th>Qty</th><th>Unit Sell</th><th>Unit Cost</th></tr></thead>
-          <tbody>${partsRows||'<tr><td colspan="5" class="muted">No items</td></tr>'}</tbody>
-        </table></div>
-      </div>
+      <div class="pad"><div class="hscroll"><table class="tbl" style="min-width:900px">
+        <thead><tr><th>Part</th><th>Date Codes</th><th>Qty</th><th>Unit Sell</th><th>Unit Cost</th></tr></thead>
+        <tbody>${partsRows||'<tr><td colspan="5" class="muted">No items</td></tr>'}</tbody>
+      </table></div></div>
     </div>
 
     <div class="card" style="grid-column:1 / -1"><h3>Shipments</h3>
-      <div class="pad">
-        <div class="hscroll"><table class="tbl" style="min-width:1100px">
-          <thead><tr><th>Kind</th><th>Date</th><th>Qty</th><th>From</th><th>To</th><th>Method</th><th>Ref</th><th>Courier</th><th>Tracking</th><th>Cost</th></tr></thead>
-          <tbody>${shipRows||'<tr><td colspan="10" class="muted">No shipments</td></tr>'}</tbody>
-        </table></div>
-      </div>
+      <div class="pad"><div class="hscroll"><table class="tbl" style="min-width:1100px">
+        <thead><tr><th>Kind</th><th>Date</th><th>Qty</th><th>From</th><th>To</th><th>Method</th><th>Ref</th><th>Courier</th><th>Tracking</th><th>Cost</th></tr></thead>
+        <tbody>${shipRows||'<tr><td colspan="10" class="muted">No shipments</td></tr>'}</tbody>
+      </table></div></div>
     </div>
   `;
   $('viewDlg').showModal();
 }
 
-/* init */
+/* -------- init -------- */
 document.addEventListener('DOMContentLoaded', ()=>{
   $('salesperson').innerHTML = SALESTEAM.map(n=>`<option>${n}</option>`).join('');
   $('fltSales').innerHTML = `<option value="">All salespeople</option>` + SALESTEAM.map(n=>`<option>${n}</option>`).join('');
 });
-
-async function init(){
-  await supa.loadOrders(); supa.subscribeRealtime(); render();
-}
+async function init(){ await supa.loadOrders(); supa.subscribeRealtime(); render(); }
 init();
 </script>
 </body>
 </html>
+
 
 
 
