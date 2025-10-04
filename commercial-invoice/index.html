@@ -1,699 +1,1207 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Verified Electronics — Commercial Invoice & Picking Ticket</title>
-<link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Live Order Tracking — Verified Electronics</title>
+<link rel="icon" href="data:;base64,iVBORw0KGgo="/>
 <style>
-  /* ===== Verified design system ===== */
   :root{
-    --brand:#6f57e9; --brand2:#3b2eca; --ink:#121626; --muted:#6d7486;
-    --line:#e3e7f1; --bg:#f7f8fc; --paper:#ffffff;
+    --brand:#6f57e9; --ink:#1e2330; --muted:#6d7486;
+    --bg:#f6f7fb; --card:#fff; --line:#e9e9ef;
+    --green:#12a274; --purple:#3b2eca;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
-  body{
-    margin:0;background:var(--bg);color:var(--ink);
-    font:14px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif
+  body{margin:0;font:15px/1.5 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
+  .wrap{max-width:1600px;margin:22px auto;padding:0 16px}
+
+  header{
+    display:flex;align-items:center;gap:16px;padding:16px 18px;border:1px solid var(--line);
+    border-radius:16px;background:radial-gradient(1100px 220px at 160px -60px, rgba(111,87,233,.15), transparent 60%), #fff;
+    box-shadow:0 8px 26px rgba(111,87,233,.08), 0 1px 0 rgba(0,0,0,.04);
   }
-  .wrap{max-width:1220px;margin:26px auto;padding:0 16px}
+  header img{height:42px}
+  h1{font-size:26px;margin:0;font-weight:800}
+  .sub{color:var(--muted);margin-top:2px}
 
-  /* ===== Header with visible selector ===== */
-  .hero{
-    display:grid;grid-template-columns:1fr auto;gap:14px;
-    background:var(--paper);border:1px solid var(--line);border-radius:22px;
-    padding:16px 18px 18px; box-shadow:0 8px 24px rgba(30,20,90,.07); position:relative; overflow:hidden
-  }
-  .hero::before{
-    content:"";position:absolute;left:18px;right:18px;top:12px;height:8px;border-radius:999px;
-    background:linear-gradient(90deg,var(--brand),var(--brand2));
-  }
-  .brandRow{display:flex;gap:16px;align-items:center;margin-top:10px}
-  .logo img{height:44px} /* header logo */
-  .titles h1{margin:0;font-weight:900;letter-spacing:.2px;font-size:22px}
-  .titles .sub{font-size:12px;color:var(--muted)}
-  .heroRight{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:4px}
-  .selector{
-    display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);
-    border-radius:14px;padding:8px 12px;box-shadow:0 2px 8px rgba(20,18,66,.05)
-  }
-  .selector label{font-weight:800}
-  .selector select{padding:9px 12px;border:1px solid var(--line);border-radius:12px;font-weight:700}
-  .cta{
-    border:0;border-radius:12px;padding:10px 14px;font-weight:800;color:#fff;
-    background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 6px 18px rgba(79,63,214,.35);cursor:pointer
-  }
+  .toolbar{position:sticky;top:8px;z-index:5;background:var(--bg);display:grid;grid-template-columns:1fr 190px 170px 170px auto auto;gap:10px;margin:16px 0}
+  .input,.select,.btn, textarea{height:36px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:0 12px;font:inherit}
+  .input{width:100%}
+  textarea{height:auto;padding:10px 12px;resize:vertical}
+  .select{appearance:none;padding-right:28px;background-image:
+    linear-gradient(45deg, transparent 50%, #869 50%),
+    linear-gradient(135deg, #869 50%, transparent 50%);background-position:calc(100% - 16px) calc(50% - 2px), calc(100% - 10px) calc(50% - 2px);
+    background-size:6px 6px, 6px 6px;background-repeat:no-repeat}
+  .btn{background:#f7f5ff;color:var(--purple);border-color:#ece8ff;font-weight:700;cursor:pointer}
+  .btn:hover{background:#eee8ff}
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn.primary:hover{filter:brightness(.97)}
+  .btn.ghost{background:#fff}
+  .mini{height:32px}
 
-  /* ===== Panels / Grid ===== */
-  .actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
-  .btn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:9px 12px;font-weight:700;cursor:pointer}
-  .btn.pill{border-radius:999px}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-  @media (max-width:980px){ .grid{grid-template-columns:1fr} }
-  .panel{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 2px 8px rgba(20,18,66,.05)}
-  .panel h2{margin:0 0 10px;font-size:15px;font-weight:900}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-  .row{display:grid;grid-template-columns:repeat(12,1fr);gap:10px}
-  .field{display:flex;flex-direction:column;gap:6px}
-  .field label{font-size:12px;color:var(--muted)}
-  input[type="text"],input[type="number"],input[type="date"],select,textarea{
-    border:1px solid var(--line);border-radius:10px;background:#fff;padding:9px;width:100%
-  }
-  textarea{min-height:72px;resize:vertical}
-  .k2{grid-column:span 2}.k3{grid-column:span 3}.k4{grid-column:span 4}.k5{grid-column:span 5}
-  .k6{grid-column:span 6}.k7{grid-column:span 7}.k8{grid-column:span 8}.k9{grid-column:span 9}.k12{grid-column:span 12}
+  .table-card{border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden}
+  .table-wrap{overflow:auto}
+  table{width:100%;border-collapse:collapse;min-width:1200px}
+  thead th{position:sticky;top:0;background:#fafaff;border-bottom:1px solid var(--line);
+    text-align:left;font-size:13px;color:#4a4f64;padding:10px}
+  tbody td{border-bottom:1px solid var(--line);padding:10px;vertical-align:top}
+  tbody tr:hover{background:#fcfbff}
+  .mono{font-variant-numeric:tabular-nums}
+  .muted{color:var(--muted)}
+  .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #e6f2ec;padding:2px 8px;border-radius:999px;background:#f0fbf7;color:var(--green);font-weight:700}
+  .chip{display:inline-block;border-radius:999px;padding:2px 8px;border:1px solid #eee;background:#fafafa;font-size:12px;color:#5d6480}
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
+  .link{color:#362dc7;text-decoration:none}
+  .link:hover{text-decoration:underline}
 
-  /* ===== Document blocks ===== */
-  .doc{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px}
-  .hdrLine{display:grid;grid-template-columns:1fr auto;gap:12px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px}
-  .hdrLeft{display:flex;align-items:center;gap:14px}
-  .logoBig img{height:60px} /* big doc logo */
-  .docTitle{font-size:26px;font-weight:900;letter-spacing:.2px}
-  .docMeta{font-size:12px;color:#2d3242}
-  .cap{font-size:12px;color:#6d7486;margin-bottom:6px}
-  .box{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}
-  .col-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  /* inline edit */
+  .ie{display:inline-flex;align-items:center;gap:6px}
+  .ie button{border:0;background:transparent;color:#6d6fe5;cursor:pointer;padding:0 4px;border-radius:6px}
+  .ie button:hover{background:#f0efff}
+  .ie select{display:none;height:28px;border-radius:8px}
+  .ie.editing select{display:inline-block}
+  .ie.editing .chip{display:none}
 
-  table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:10px}
-  thead th{
-    background:linear-gradient(0deg,#ede9ff,#fafaff); color:#2f3450; font-size:12px; text-transform:uppercase; letter-spacing:.06em;
-    border-bottom:1px solid var(--line); padding:8px; text-align:left
-  }
-  tbody td{border-bottom:1px solid var(--line);padding:8px;vertical-align:top}
-  tbody tr:last-child td{border-bottom:none}
-  .num{text-align:right}
+  dialog{border:0;padding:0;margin:0 auto;max-width:1400px;width:98vw}
+  dialog::backdrop{background:rgba(17,17,33,.35)}
+  .modal{display:flex;flex-direction:column;max-height:92vh;border-radius:18px;overflow:hidden;background:#fff}
+  .modal header{position:sticky;top:0;z-index:2;border-bottom:1px solid var(--line);border-radius:18px 18px 0 0;background:#fff}
+  .modal .head{padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
+  .content{padding:14px;overflow:auto;max-height:calc(92vh - 48px);overscroll-behavior:contain}
 
-  .totalsGrid{display:grid;grid-template-columns:1fr minmax(300px,42%);gap:12px;margin-top:10px}
-  .right{display:grid;gap:6px}
-  .trow{display:flex;justify-content:space-between;gap:8px}
-  .trow .label{color:#3a4250}
-  .trow .val{font-weight:900}
+  .grid2,.grid3{gap:10px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr}
+  .section{margin:14px 0 6px;font-weight:800;color:#262b3a}
+  .note{font-size:12px;color:var(--muted);margin-bottom:4px}
 
-  .signature{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center;margin-top:10px}
-  .sigimg{max-height:80px;border:1px dashed var(--line);border-radius:10px;padding:4px}
-  .muted{color:#747c93}
+  .tbl{width:100%;border-collapse:collapse;table-layout:fixed}
+  .tbl th,.tbl td{border:1px solid #ececf3;padding:8px;text-align:left;white-space:nowrap}
+  .tbl th{background:#fafaff}
+  .hscroll{overflow:auto;border:1px solid #ececf3;border-radius:12px;background:#fff}
+  .hscroll table{min-width:1100px}
+  .right{display:flex;justify-content:flex-end;gap:8px;margin:10px 0 2px}
 
-  /* ===== Picking Ticket footer strip ===== */
-  .ptFooter{border-radius:12px;margin-top:14px;overflow:hidden;border:1px solid var(--line)}
-  .ptFooter .bar{height:8px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
-  .ptFooter .body{padding:12px;background:#fbfbff}
-  .ptFooter .body strong{color:var(--brand)}
-  .ptContact{display:flex;gap:18px;flex-wrap:wrap;color:#4a5066;font-size:13px;margin-top:6px}
-  .ptContact a{color:var(--brand);text-decoration:none;font-weight:700}
-
-  /* Helpers */
-  .hidden{display:none}
-  .sr-only{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
-
-  /* ===== Print: doc fills page ===== */
-  @media print{
-    body{background:#fff}
-    .hero,.actions,.panel.form,.sr-only{display:none !important}
-    .doc{border:none;border-radius:0;padding:0}
-    thead{display:table-header-group}
-    @page{size:A4;margin:14mm}
-  }
+  /* View / Summary cards */
+  .summary{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+  .card{border:1px solid var(--line);border-radius:12px;background:#fff}
+  .card h3{margin:0;padding:8px 10px;border-bottom:1px solid var(--line);background:#fafaff;font-size:15px}
+  .card .pad{padding:10px}
+  .kv{display:grid;grid-template-columns:170px 1fr;gap:6px 10px}
+  @media (max-width:1200px){.summary{grid-template-columns:1fr}}
+  @media (max-width:900px){.grid3{grid-template-columns:1fr 1fr}}
+  @media (max-width:680px){.grid2,.grid3{grid-template-columns:1fr}}
 </style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://ijzroisggstqkfhpjndq.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* add apikey/authorization to any direct fetch to Supabase REST */
+  (function(){
+    const realFetch = window.fetch.bind(window);
+    window.fetch = (input, init = {}) => {
+      const url = typeof input === 'string' ? input : input?.url || '';
+      if (url.startsWith(SUPABASE_URL)) {
+        const h = new Headers(init.headers || {});
+        if (!h.has('apikey')) h.set('apikey', SUPABASE_ANON_KEY);
+        if (!h.has('Authorization')) h.set('Authorization', `Bearer ${SUPABASE_ANON_KEY}`);
+        init = { ...init, headers: h };
+      }
+      return realFetch(input, init);
+    };
+  })();
+</script>
 </head>
 <body>
   <div class="wrap">
-    <!-- ===== Top header ===== -->
-    <div class="hero">
-      <div class="brandRow">
-        <div class="logo"><img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified Electronics"></div>
-        <div class="titles">
-          <h1>Commercial Invoice & Picking Ticket</h1>
-          <div class="sub">Verified Electronics</div>
-        </div>
+    <header>
+      <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified">
+      <div>
+        <h1>Order Tracker</h1>
+        <div class="sub">Multi-part orders with date codes, priority, requested-by date, tests, multi-leg shipping costs, partial shipments, files & GP.</div>
       </div>
-      <div class="heroRight">
-        <div class="selector">
-          <label for="modeSel">Document</label>
-          <select id="modeSel" onchange="switchMode()">
-            <option value="ci" selected>Commercial Invoice</option>
-            <option value="pt">Picking Ticket</option>
-          </select>
-        </div>
-        <button class="cta" onclick="window.print()">Download / Print PDF</button>
+    </header>
+
+    <!-- DASHBOARD -->
+    <div id="dash" class="row" style="margin:12px 0; gap:10px">
+      <div class="card" style="flex:1; min-width:220px">
+        <h3>Open Orders</h3><div class="pad mono"><span id="dOpen">0</span></div>
       </div>
-    </div>
-
-    <!-- ===== Actions row ===== -->
-    <div class="actions">
-      <!-- CI buttons -->
-      <span id="ciBtns">
-        <button class="btn pill" onclick="ciAddRow()">Add line</button>
-        <button class="btn pill" onclick="ciClearRows()">Clear lines</button>
-        <button class="btn pill" onclick="ciSaveJSON()">Save JSON</button>
-        <label class="btn pill" style="cursor:pointer">Load JSON
-          <input type="file" accept=".json" style="display:none" onchange="ciLoadJSON(event)">
-        </label>
-        <button class="btn pill" onclick="ciLoadSample()">Load sample</button>
-      </span>
-      <!-- PT buttons -->
-      <span id="ptBtns" class="hidden">
-        <button class="btn pill" onclick="ptAddRow()">Add item</button>
-        <button class="btn pill" onclick="ptClearRows()">Clear items</button>
-        <button class="btn pill" onclick="ptSaveJSON()">Save JSON</button>
-        <label class="btn pill" style="cursor:pointer">Load JSON
-          <input type="file" accept=".json" style="display:none" onchange="ptLoadJSON(event)">
-        </label>
-        <button class="btn pill" onclick="ptLoadSample()">Load sample</button>
-      </span>
-    </div>
-
-    <!-- ================= COMMERCIAL INVOICE ================= -->
-    <div id="mode-ci">
-      <div class="grid">
-        <!-- Form -->
-        <section class="panel form">
-          <h2>Invoice details</h2>
-          <div class="row">
-            <div class="field k6"><label>From (Exporter/Shipper)</label><textarea id="ci-from" placeholder="Verified Electronics Ltd&#10;Address&#10;City, Postcode, Country&#10;Tax ID/VAT / EORI"></textarea></div>
-            <div class="field k3"><label>Waybill / AWB</label><input id="ci-awb" type="text" placeholder="—"></div>
-            <div class="field k3"><label>Shipment ID</label><input id="ci-shipmentId" type="text" placeholder="—"></div>
-
-            <div class="field k6"><label>Ship To</label><textarea id="ci-shipTo" placeholder="Company&#10;Address&#10;City, State/Province&#10;Postal Code, Country&#10;Tax ID/VAT"></textarea></div>
-            <div class="field k6"><label>Sold To (Bill To)</label><textarea id="ci-soldTo" placeholder="Company&#10;Address&#10;City, State/Province&#10;Postal Code, Country&#10;Tax ID/VAT"></textarea></div>
-
-            <div class="field k3"><label>Contact Name</label><input id="ci-contact" type="text"></div>
-            <div class="field k3"><label>Date</label><input id="ci-invDate" type="date"></div>
-            <div class="field k3"><label>Invoice # (Ref 1)</label><input id="ci-invNo" type="text" placeholder="VE-CI-0001"></div>
-            <div class="field k3"><label>PO # (Ref 2)</label><input id="ci-poNo" type="text" placeholder="PO-12345"></div>
-
-            <div class="field k3"><label>Terms of Sale (Incoterm)</label>
-              <select id="ci-incoterm"><option>EXW</option><option>FCA</option><option>CPT</option><option>CIP</option><option selected>DAP</option><option>DPU</option><option>DDP</option></select>
-            </div>
-            <div class="field k3"><label>Incoterm Place</label><input id="ci-incotermPlace" type="text" placeholder="e.g., Austin, TX"></div>
-            <div class="field k3"><label>Currency</label>
-              <select id="ci-currency" onchange="ciSync()"><option value="USD" selected>USD $</option><option value="GBP">GBP £</option><option value="EUR">EUR €</option></select>
-            </div>
-            <div class="field k3"><label>Reason for Export</label><input id="ci-reason" type="text" placeholder="Sale of goods"></div>
-
-            <div class="field k3"><label>Total Packages</label><input id="ci-packages" type="number" step="1" min="0"></div>
-            <div class="field k3"><label>Total Weight (kg)</label><input id="ci-weight" type="number" step="0.001" min="0"></div>
-            <div class="field k6"><label>Phone (optional)</label><input id="ci-phone" type="text"></div>
-          </div>
-
-          <h2 style="margin-top:10px">Line items</h2>
-          <table id="ci-editTable">
-            <thead>
-              <tr>
-                <th style="width:12%">Units</th>
-                <th style="width:10%">U/M</th>
-                <th>Description of Goods / Part Number</th>
-                <th style="width:12%">HS Code</th>
-                <th style="width:10%">C/O</th>
-                <th style="width:12%" class="num">Unit Value</th>
-                <th style="width:14%" class="num">Total Value</th>
-                <th style="width:10%">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="ci-tbody"></tbody>
-          </table>
-
-          <div class="row" style="margin-top:8px">
-            <div class="field k6"><label>Additional Comments</label><textarea id="ci-comments" placeholder="Licenses, special notes, packing declaration, etc."></textarea></div>
-            <div class="field k6">
-              <div class="row">
-                <div class="field k6"><label>Freight</label><input id="ci-freight" type="number" step="0.01" value="0" oninput="ciSync()"></div>
-                <div class="field k6"><label>Insurance</label><input id="ci-insurance" type="number" step="0.01" value="0" oninput="ciSync()"></div>
-                <div class="field k6"><label>Other</label><input id="ci-other" type="number" step="0.01" value="0" oninput="ciSync()"></div>
-                <div class="field k6"><label>Discount/Rebate</label><input id="ci-discount" type="number" step="0.01" value="0" oninput="ciSync()"></div>
-              </div>
-            </div>
-          </div>
-
-          <h2 style="margin-top:10px">Signature</h2>
-          <div class="row">
-            <div class="field k6"><label>Signer (name & title)</label><input id="ci-signedBy" type="text" placeholder="Name, Title"></div>
-            <div class="field k3"><label>Date of issue</label><input id="ci-issueDate" type="date"></div>
-            <div class="field k3"><label>Upload Signature (PNG/JPG)</label><input id="ci-sigFile" type="file" accept="image/*" onchange="ciLoadSignature(event)"></div>
-          </div>
-        </section>
-
-        <!-- Preview -->
-        <section class="panel">
-          <h2 class="sr-only">Commercial Invoice Preview</h2>
-          <div id="ci-print" class="doc">
-            <div class="hdrLine">
-              <div class="hdrLeft">
-                <div class="logoBig"><img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified"></div>
-                <div>
-                  <div class="docTitle">Commercial Invoice</div>
-                  <div class="docMeta">Verified Electronics · Official customs invoice</div>
-                </div>
-              </div>
-              <div class="docMeta" id="ci-metaBox"></div>
-            </div>
-
-            <div class="col-2">
-              <div class="box"><div class="cap">From (Exporter/Shipper)</div><div id="ci-v-from" style="white-space:pre-wrap"></div></div>
-              <div class="box"><div class="cap">Waybill / Shipment</div><div id="ci-v-shipmeta"></div></div>
-            </div>
-            <div class="col-2" style="margin-top:10px">
-              <div class="box"><div class="cap">Ship To</div><div id="ci-v-shipto" style="white-space:pre-wrap"></div></div>
-              <div class="box"><div class="cap">Sold To (Bill To)</div><div id="ci-v-soldto" style="white-space:pre-wrap"></div></div>
-            </div>
-
-            <table>
-              <thead><tr>
-                <th>Units</th><th>U/M</th><th>Description of Goods / Part Number</th>
-                <th>Harmonized Code</th><th>C/O</th><th class="num">Unit Value</th><th class="num">Total Value</th>
-              </tr></thead>
-              <tbody id="ci-pbody"></tbody>
-              <tfoot><tr><td colspan="7" id="ci-lineTotalCell" class="num" style="font-weight:900"></td></tr></tfoot>
-            </table>
-
-            <div class="totalsGrid">
-              <div class="box"><div class="cap">Additional Comments</div><div id="ci-v-comments" style="white-space:pre-wrap"></div></div>
-              <div class="box right" id="ci-totalsBox"></div>
-            </div>
-
-            <div class="box" style="margin-top:10px">
-              <div class="cap">Declaration Statement</div>
-              <div class="muted" style="line-height:1.45">
-                I declare the information contained in this invoice to be true and correct and that the goods are of the origin indicated.
-                This document is issued for customs purposes. These items may be subject to U.S., E.U., and other export controls and are
-                authorized for export only to the country of ultimate destination for use by the identified consignee/end-user. They may
-                not be resold, transferred, or otherwise disposed of to any other country or person without prior authorization where required.
-              </div>
-            </div>
-
-            <div class="signature">
-              <div>
-                <img id="ci-sigImg" class="sigimg" alt="Signature" />
-                <div id="ci-sigMeta" class="muted" style="margin-top:6px"></div>
-              </div>
-              <div class="box">
-                <div class="trow"><span class="label">Total Number of Packages</span><span class="val" id="ci-v-packages">—</span></div>
-                <div class="trow"><span class="label">Total Weight (kg)</span><span class="val" id="ci-v-weight">—</span></div>
-              </div>
-            </div>
-          </div>
-        </section>
+      <div class="card" style="flex:1; min-width:220px">
+        <h3>Revenue (Filtered)</h3><div class="pad mono"><span id="dRev">$0.00</span></div>
+      </div>
+      <div class="card" style="flex:1; min-width:220px">
+        <h3>Gross Profit (Filtered)</h3><div class="pad mono"><span id="dGP">$0.00</span> <span class="muted mono">(<span id="dGPPct">0%</span>)</span></div>
+      </div>
+      <div class="card" style="flex:1; min-width:220px">
+        <h3>Avg Age</h3><div class="pad mono"><span id="dAge">-</span></div>
       </div>
     </div>
 
-    <!-- ================= PICKING TICKET ================= -->
-    <div id="mode-pt" class="hidden">
-      <div class="grid">
-        <!-- Form -->
-        <section class="panel form">
-          <h2>Picking Ticket</h2>
-          <div class="row">
-            <div class="field k4"><label>Order Number</label><input type="text" id="pt-orderNo" placeholder="VE-PT-0001"></div>
-            <div class="field k4"><label>Customer PO Number</label><input type="text" id="pt-poNo" placeholder="Customer PO"></div>
-            <div class="field k4"><label>Date</label><input type="date" id="pt-date"></div>
+    <div class="toolbar">
+      <input id="q" class="input" placeholder="Search: customer, part number, order id..."/>
+      <select id="fltSales" class="select"><option value="">All salespeople</option></select>
+      <select id="fltStatus" class="select"><option value="">All status</option><option>New</option><option>Open</option><option>Closed</option></select>
+      <select id="fltPriority" class="select"><option value="">All priorities</option><option>High</option><option>Normal</option><option>Low</option></select>
+      <button id="btnNew" class="btn" type="button" onclick="openModal(null)">+ New Order</button>
+      <button id="btnCsv" class="btn ghost" type="button">Export CSV</button>
+    </div>
 
-            <div class="field k6"><label>From (carried from CI)</label><textarea id="pt-from" placeholder="Exporter/Shipper"></textarea></div>
-            <div class="field k6"><label>Ship To (carried from CI)</label><textarea id="pt-shipTo" placeholder="Ship To address"></textarea></div>
-            <div class="field k6"><label>Sold To (carried from CI)</label><textarea id="pt-soldTo" placeholder="Bill To"></textarea></div>
-            <div class="field k6"><label>Contact Name (carried from CI)</label><input id="pt-contact" type="text" placeholder="Buyer / Warehouse contact"></div>
-
-            <div class="field k6"><label>Shipment Type</label><select id="pt-shipType"><option>Full Shipment</option><option>Partial Shipment</option></select></div>
-          </div>
-
-          <h2 style="margin-top:10px">Items</h2>
-          <table id="pt-table">
-            <thead><tr><th style="width:44%">Item</th><th class="num" style="width:14%">Quantity</th><th style="width:22%">Date Code</th><th style="width:100px">Actions</th></tr></thead>
-            <tbody></tbody>
-          </table>
-          <div class="actions">
-            <button class="btn pill" onclick="ptAddRow()">Add item</button>
-            <button class="btn pill" onclick="ptClearRows()">Clear items</button>
-          </div>
-
-          <div class="field"><label>Special Instructions</label><textarea id="pt-notes" placeholder="e.g., Pick with ESD precautions, Verified purple outer labels"></textarea></div>
-          <div class="field k6"><label>Signature / Name</label><input type="text" id="pt-signer" placeholder="Warehouse operator"></div>
-        </section>
-
-        <!-- Picking Ticket Document (no 'Preview' title) -->
-        <section class="panel">
-          <h2 class="sr-only">Picking Ticket Document</h2>
-          <div id="pt-print" class="doc">
-            <div class="hdrLine">
-              <div class="hdrLeft">
-                <div class="logoBig"><img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified"></div>
-                <div>
-                  <div class="docTitle">Picking Ticket</div>
-                  <div class="docMeta">Verified Electronics</div>
-                </div>
-              </div>
-              <div class="docMeta" id="pt-metaBox"></div>
-            </div>
-
-            <div class="col-2">
-              <div class="box"><div class="cap">From</div><div id="pt-v-from" style="white-space:pre-wrap"></div></div>
-              <div class="box"><div class="cap">Ship To</div><div id="pt-v-shipTo" style="white-space:pre-wrap"></div></div>
-            </div>
-            <div class="box" style="margin-top:10px"><div class="cap">Sold To (Bill To)</div><div id="pt-v-soldTo" style="white-space:pre-wrap"></div></div>
-
-            <table>
-              <thead><tr><th>#</th><th>Item</th><th class="num">Quantity</th><th>Date Code</th></tr></thead>
-              <tbody id="pt-pbody"></tbody>
-            </table>
-
-            <div class="box" style="margin-top:10px"><div class="cap">Special Instructions</div><div id="pt-v-notes" style="white-space:pre-wrap"></div></div>
-
-            <div class="signature">
-              <div class="box"><div class="cap">Signature / Name</div><div id="pt-v-signer">—</div></div>
-              <div class="box"><span class="muted">Shipment Type:</span> <span style="font-weight:900;color:var(--brand)" id="pt-v-shipType">Full Shipment</span></div>
-            </div>
-
-            <!-- Thank-you footer strip -->
-            <div class="ptFooter">
-              <div class="bar"></div>
-              <div class="body">
-                <strong>Thank you for your order and continued business.</strong><br>
-                We appreciate your trust in Verified Electronics and look forward to serving you again.
-                <div class="ptContact">
-                  <div>📞 +1 203 299 2980</div>
-                  <div>✉️ <a href="mailto:sales@verifiedelectronics.com">sales@verifiedelectronics.com</a></div>
-                  <div>🌐 <a href="https://verifiedelectronics.com" target="_blank">verifiedelectronics.com</a></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+    <div class="table-card">
+      <div class="table-wrap">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th>View</th>
+              <th>Customer</th>
+              <th>Part(s)</th>
+              <th>Sales</th>
+              <th>Total Qty</th>
+              <th>Avg Unit $</th>
+              <th>Sell</th>
+              <th>GP</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Order Date</th>
+              <th>Requested by</th>
+              <th>Age</th>
+              <th>Tests</th>
+              <th>Vendor</th>
+              <th>Incoterm</th>
+              <th>Terms</th>
+              <th>Shipped</th>
+              <th>Invoiced</th>
+              <th>Files</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
       </div>
     </div>
   </div>
 
+  <!-- EDIT / NEW MODAL -->
+  <dialog id="dlg">
+    <div class="modal">
+      <header><div class="head"><strong id="dlgTitle">New Order</strong><button id="btnClose" class="btn ghost mini" type="button">✕</button></div></header>
+      <div class="content">
+        <input type="hidden" id="orderId"/>
+
+        <div class="section">SALES — what Sales enters</div>
+        <div class="grid3">
+          <div><div class="note">Salesperson</div><select id="salesperson" class="select mini"></select></div>
+          <div><div class="note">Customer</div><input id="customer" class="input mini"/></div>
+          <div><div class="note">Priority</div><select id="priority" class="select mini"><option>High</option><option selected>Normal</option><option>Low</option></select></div>
+
+          <div><div class="note">Status</div><select id="status" class="select mini"><option>New</option><option>Open</option><option>Closed</option></select></div>
+          <div><div class="note">Order Date</div><input id="order_date" type="date" class="input mini"/></div>
+          <div><div class="note">Requested by</div><input id="requested_by" type="date" class="input mini"/></div>
+
+          <div>
+            <div class="note">Payment Terms</div>
+            <div class="row">
+              <select id="payment_terms" class="select mini" style="flex:1">
+                <option>Net 5</option><option>Net 10</option><option>Net 15</option><option>Net 20</option>
+                <option>Net 30</option><option>Net 40</option><option>Net 50</option><option>Net 60</option><option>Net 90</option>
+                <option value="Other">Other…</option>
+              </select>
+              <input id="payment_terms_other" class="input mini" placeholder="If Other…" style="flex:1;display:none"/>
+            </div>
+          </div>
+          <div>
+            <div class="note">Payment Method</div>
+            <div class="row">
+              <select id="payment_method" class="select mini" style="flex:1">
+                <option>Bank Transfer</option><option>Credit Card</option><option>PayPal</option>
+                <option value="Other">Other…</option>
+              </select>
+              <input id="payment_method_other" class="input mini" placeholder="If Other…" style="flex:1;display:none"/>
+            </div>
+          </div>
+          <div>
+            <div class="note">Incoterm</div>
+            <div class="row">
+              <select id="incoterm" class="select mini" style="flex:1">
+                <option>DAP</option><option>DDP</option><option>EXW</option><option>CIP</option><option>FOB</option>
+                <option value="Other">Other…</option>
+              </select>
+              <input id="incoterm_other" class="input mini" placeholder="If Other…" style="flex:1;display:none"/>
+            </div>
+          </div>
+
+          <div><div class="note">Invoice Date</div><input id="invoice_date" type="date" class="input mini"/></div>
+          <div><div class="note">Due Date</div><input id="due_date" type="date" class="input mini"/></div>
+          <div>
+            <div class="note">Currency</div>
+            <select id="currency" class="select mini">
+              <option value="USD" selected>USD ($)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="EUR">EUR (€)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="section">Testing — requirements & center</div>
+        <div class="row" id="testsLine" style="flex-wrap:wrap;gap:14px">
+          <label><input type="checkbox" value="No test" id="tNone"> No test</label>
+          <label><input type="checkbox" value="EVI"> EVI</label>
+          <label><input type="checkbox" value="Solderability"> Solderability</label>
+          <label><input type="checkbox" value="Electrical"> Electrical</label>
+          <label><input type="checkbox" value="Other" id="tOther"> Other</label>
+          <input id="tests_other" class="input mini" placeholder="Describe other test…" style="max-width:340px"/>
+          <div style="flex:1"></div>
+          <div style="min-width:240px">
+            <div class="note">Test Center</div>
+            <select id="test_center" class="select mini" style="min-width:240px">
+              <option>GETs HK</option><option>GETs Shenzhen</option><option>GETs US</option>
+              <option>White Horse US</option><option>White Horse China</option><option>White Horse EU</option>
+              <option value="Other">Other…</option>
+            </select>
+          </div>
+          <div style="min-width:280px">
+            <div class="note">Customer PO (file)</div>
+            <input id="file_po" type="file" class="input mini" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"/>
+          </div>
+        </div>
+
+        <div class="section">Line Items — parts, date codes & pricing</div>
+        <div class="hscroll">
+          <table class="tbl" id="itemsTbl">
+            <thead><tr>
+              <th style="width:26%">Part Number</th>
+              <th style="width:18%">Date Codes</th>
+              <th style="width:10%">Qty</th>
+              <th style="width:16%">Unit Sell</th>
+              <th style="width:16%">Unit Cost</th>
+              <th style="width:8%"></th>
+            </tr></thead>
+            <tbody id="itemsBody"></tbody>
+          </table>
+        </div>
+        <div class="right"><button id="addItem" class="btn mini" type="button">+ Add item</button></div>
+
+        <div class="section">PURCHASING — what Purchasing updates</div>
+        <div class="grid3">
+          <div>
+            <div class="note">Vendor</div>
+            <input id="vendor" class="input mini"/>
+          </div>
+          <div>
+            <div class="note">Test Report (file)</div>
+            <input id="file_test" type="file" class="input mini" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"/>
+          </div>
+          <div>
+            <div class="note">Notes</div>
+            <textarea id="notes" rows="2" class="input mini" placeholder="Internal notes..."></textarea>
+          </div>
+        </div>
+
+        <div class="section">Shipments — legs & partials (unified)</div>
+        <div class="hscroll">
+          <table class="tbl" id="shipTbl">
+            <thead><tr>
+              <th style="width:10%">Kind</th>
+              <th style="width:12%">Date</th>
+              <th style="width:10%">Qty</th>
+              <th style="width:15%">From</th>
+              <th style="width:15%">To</th>
+              <th style="width:12%">Method</th>
+              <th style="width:10%">Ref</th>
+              <th style="width:12%">Courier</th>
+              <th style="width:16%">Tracking</th>
+              <th style="width:10%">Cost</th>
+              <th style="width:6%"></th>
+            </tr></thead>
+            <tbody id="shipBody"></tbody>
+          </table>
+        </div>
+        <div class="right"><button id="addShip" class="btn mini" type="button">+ Add shipment/leg</button></div>
+
+        <div class="grid3" style="margin-top:12px">
+          <div>
+            <div class="note">Extra shipping cost</div>
+            <input id="shipping_cost_extra" type="number" step="0.01" class="input mini mono" placeholder="0.00"/>
+          </div>
+          <div>
+            <div class="note">Test cost</div>
+            <input id="test_cost" type="number" step="0.01" class="input mini mono" placeholder="0.00"/>
+          </div>
+          <div></div>
+        </div>
+
+        <!-- Financial summary -->
+        <div class="card" style="margin-top:12px">
+          <h3>Financial Summary</h3>
+          <div class="pad">
+            <div class="kv">
+              <div>Total Qty</div><div id="finQty" class="mono">0</div>
+              <div>Sell (Revenue)</div><div id="finSell" class="mono">$0.00</div>
+              <div>Item Cost</div><div id="finItemCost" class="mono">$0.00</div>
+              <div>Shipping Cost</div><div id="finShipCost" class="mono">$0.00</div>
+              <div>Test Cost</div><div id="finTestCost" class="mono">$0.00</div>
+              <div>Total Cost</div><div id="finTotalCost" class="mono">$0.00</div>
+              <div>GP</div><div id="finGP" class="mono">$0.00</div>
+              <div>GP %</div><div id="finGPPct" class="mono">0%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="right" style="margin-top:10px">
+          <button id="btnDelete" class="btn ghost" type="button">Delete</button>
+          <button id="btnSave" class="btn primary" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- VIEW SUMMARY MODAL -->
+  <dialog id="viewDlg">
+    <div class="modal">
+      <header><div class="head"><strong>Order Summary</strong><button class="btn ghost mini" type="button" onclick="$('viewDlg').close()">✕</button></div></header>
+      <div class="content"><div id="viewBody" class="summary"></div></div>
+    </div>
+  </dialog>
+
+  <!-- DOCS MODAL (embedded generators) -->
+  <dialog id="docsDlg">
+    <div class="modal">
+      <header>
+        <div class="head">
+          <div class="row">
+            <strong>Generate Document</strong>
+            <div id="docTabs" class="row" style="gap:6px">
+              <button class="btn mini ghost" type="button" data-doc="so">Order Confirmation</button>
+              <button class="btn mini ghost" type="button" data-doc="invoice">Invoice</button>
+              <button class="btn mini ghost" type="button" data-doc="pt">Picking Ticket</button>
+              <button class="btn mini ghost" type="button" data-doc="ci">Commercial Invoice</button>
+              <button class="btn mini ghost" type="button" data-doc="rma">RMA</button>
+            </div>
+          </div>
+          <button class="btn ghost mini" type="button" onclick="$('docsDlg').close()">✕</button>
+        </div>
+      </header>
+      <div class="content" style="padding:0">
+        <iframe id="docsFrame" style="width:100%;height:80vh;border:0"></iframe>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- PREFLIGHT DIALOG (collect missing bits before generating) -->
+  <dialog id="preDlg">
+    <div class="modal">
+      <header><div class="head"><strong>Pre-flight Details</strong><button class="btn ghost mini" type="button" onclick="$('preDlg').close()">✕</button></div></header>
+      <div class="content">
+        <div class="section">Basics</div>
+        <div class="grid3">
+          <div><div class="note">Currency</div><select id="pf_currency" class="select mini"><option>USD</option><option>GBP</option><option>EUR</option></select></div>
+          <div><div class="note">Incoterm</div><input id="pf_incoterm" class="input mini" placeholder="DAP / DDP / EXW / ..."/></div>
+          <div><div class="note">Payment Terms</div><input id="pf_terms" class="input mini" placeholder="Net 30 / ..."/></div>
+        </div>
+
+        <div class="section">Addresses</div>
+        <div class="grid2">
+          <div><div class="note">Seller (from)</div><textarea id="pf_from" rows="4" class="input mini" placeholder="Verified Electronics&#10;Address line&#10;City, Country"/></textarea></div>
+          <div><div class="note">Buyer (sold to)</div><textarea id="pf_soldto" rows="4" class="input mini" placeholder="Customer&#10;Billing address"/></textarea></div>
+          <div><div class="note">Ship To</div><textarea id="pf_shipto" rows="4" class="input mini" placeholder="Customer&#10;Shipping address"/></textarea></div>
+          <div><div class="note">Return To (RMA)</div><textarea id="pf_return" rows="4" class="input mini" placeholder="Verified Electronics&#10;Returns address"/></textarea></div>
+        </div>
+
+        <div class="section">Commercial Invoice Extras (optional)</div>
+        <div class="grid3">
+          <div><div class="note">Freight</div><input id="pf_freight" type="number" step="0.01" class="input mini mono" placeholder="0.00"/></div>
+          <div><div class="note">Insurance</div><input id="pf_ins" type="number" step="0.01" class="input mini mono" placeholder="0.00"/></div>
+          <div><div class="note">Other</div><input id="pf_other" type="number" step="0.01" class="input mini mono" placeholder="0.00"/></div>
+        </div>
+        <div class="note" style="margin-top:6px">Per-item HS/COO can be completed inside the CI page after prefill if unknown now.</div>
+
+        <div class="right" style="margin-top:10px">
+          <button class="btn primary mini" type="button" id="pfConfirm">Generate</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
 <script>
-  /* ===== Helpers ===== */
-  const $ = s => document.querySelector(s);
-  const $$ = s => Array.from(document.querySelectorAll(s));
-  const CUR = { USD:'$', GBP:'£', EUR:'€' };
-  const sym = () => CUR[$('#ci-currency').value] || '$';
-  const fmt = n => Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-  const esc = s => (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const SALESTEAM = ['Nick N','Dan C','Emir B','Nick K','Jake B'];
+const todayStr = () => new Date().toISOString().slice(0,10);
+const curSym = c => ({USD:'$',GBP:'£',EUR:'€'})[c||'USD'] || '$';
+const fmt = n => (n==null||isNaN(n))?'-':Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtInt = n => (n==null||isNaN(n))?'-':Number(n).toLocaleString();
 
-  /* ===== Mode switch with carryover ===== */
-  function readSharedFromCI(){
-    return {
-      from:$('#ci-from').value, shipTo:$('#ci-shipTo').value, soldTo:$('#ci-soldTo').value,
-      contact:$('#ci-contact').value, date:$('#ci-invDate').value, po:$('#ci-poNo').value
-    };
-  }
-  function writeSharedToPT(s){
-    if (!$('#pt-from').value)   $('#pt-from').value   = s.from||'';
-    if (!$('#pt-shipTo').value) $('#pt-shipTo').value = s.shipTo||'';
-    if (!$('#pt-soldTo').value) $('#pt-soldTo').value = s.soldTo||'';
-    if (!$('#pt-contact').value)$('#pt-contact').value= s.contact||'';
-    if (!$('#pt-date').value)   $('#pt-date').value   = s.date||'';
-    if (!$('#pt-poNo').value)   $('#pt-poNo').value   = s.po||'';
-    ptSync();
-  }
-  function writeSharedFromPT(){
-    if (!$('#ci-from').value)    $('#ci-from').value    = $('#pt-from').value;
-    if (!$('#ci-shipTo').value)  $('#ci-shipTo').value  = $('#pt-shipTo').value;
-    if (!$('#ci-soldTo').value)  $('#ci-soldTo').value  = $('#pt-soldTo').value;
-    if (!$('#ci-contact').value) $('#ci-contact').value = $('#pt-contact').value;
-    if (!$('#ci-invDate').value) $('#ci-invDate').value = $('#pt-date').value;
-    if (!$('#ci-poNo').value)    $('#ci-poNo').value    = $('#pt-poNo').value;
-    ciSync();
-  }
-  function switchMode(){
-    const val = $('#modeSel').value;
-    if (val==='ci'){
-      $('#mode-ci').classList.remove('hidden'); $('#ciBtns').classList.remove('hidden');
-      $('#mode-pt').classList.add('hidden');    $('#ptBtns').classList.add('hidden');
-      writeSharedFromPT();
-    }else{
-      const shared = readSharedFromCI();
-      $('#mode-ci').classList.add('hidden');    $('#ciBtns').classList.add('hidden');
-      $('#mode-pt').classList.remove('hidden'); $('#ptBtns').classList.remove('hidden');
-      writeSharedToPT(shared);
-    }
-  }
+/* ---------- data layer ---------- */
+const supa = {
+  state:{orders:[]},
+  getOrders(){return this.state.orders;},
 
-  /* ======== Commercial Invoice ======== */
-  function ciAddRow(obj={}){
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><input type="number" step="1" min="0" value="${obj.units??''}" oninput="ciSync()"></td>
-      <td><input type="text" value="${obj.um??'pcs'}" oninput="ciSync()"></td>
-      <td><input type="text" value="${obj.desc??''}" placeholder="Part number + description" oninput="ciSync()"></td>
-      <td><input type="text" value="${obj.hs??''}" placeholder="e.g., 854239" oninput="ciSync()"></td>
-      <td><input type="text" value="${obj.coo??''}" placeholder="C/O (COO), e.g., CN" oninput="ciSync()"></td>
-      <td class="num"><input type="number" step="0.01" min="0" value="${obj.unitValue??''}" oninput="ciSync()"></td>
-      <td class="num vtotal">0.00</td>
-      <td>
-        <button class="btn pill" onclick="ciDupRow(this)">Duplicate</button>
-        <button class="btn pill" style="color:#a63b2f" onclick="ciDelRow(this)">Delete</button>
-      </td>`;
-    $('#ci-tbody').appendChild(tr);
-    ciSync();
-  }
-  function ciDupRow(btn){
-    const t = btn.closest('tr'); const v = [...t.querySelectorAll('input')].map(i=>i.value);
-    ciAddRow({units:v[0],um:v[1],desc:v[2],hs:v[3],coo:v[4],unitValue:v[5]});
-  }
-  function ciDelRow(btn){ btn.closest('tr').remove(); ciSync(); }
-  function ciClearRows(){ $('#ci-tbody').innerHTML=''; ciSync(); }
-  function ciItems(){
-    return $$('#ci-tbody tr').map(tr=>{
-      const [units,um,desc,hs,coo,unitValue] = tr.querySelectorAll('input');
-      const it = {
-        units: parseFloat(units.value)||0,
-        um: um.value||'pcs',
-        desc: desc.value.trim(),
-        hs: hs.value.trim(),
-        coo: coo.value.trim(),
-        unitValue: parseFloat(unitValue.value)||0
+  async loadOrders(){
+    const {data:orders, error:e0} = await supabase
+      .from('orders')
+      .select('*')
+      .order('order_date',{ascending:false,nullsFirst:true})
+      .order('created_at',{ascending:false});
+    if(e0){ console.error('orders load error', e0); this.state.orders=[]; return; }
+
+    this.state.orders = await Promise.all((orders||[]).map(async r=>{
+      const [itemsRes, legsRes, inbRes, outRes, filesRes] = await Promise.all([
+        supabase.from('order_items').select('*').eq('order_id', r.id),
+        supabase.from('ship_legs').select('*').eq('order_id', r.id),
+        supabase.from('shipments_inbound').select('*').eq('order_id', r.id),
+        supabase.from('shipments_outbound').select('*').eq('order_id', r.id),
+        supabase.from('order_files').select('*').eq('order_id', r.id)
+      ]);
+
+      const items = (itemsRes.data||[]).map(i=>({
+        part_number:i.part_number,date_codes:i.date_codes,qty:i.qty,unit_sell:i.unit_sell,unit_cost:i.unit_cost
+      }));
+      const legs = (legsRes.data||[]).map(l=>({kind:'Leg',date:'',qty:'',from:l.from_loc,to:l.to_loc,method:l.method,ref:l.ref,cost:l.cost}));
+      const inbound = (inbRes.data||[]).map(s=>({kind:'Inbound',date:s.ship_date,qty:s.qty,from:'',to:'',method:'',ref:'',courier:s.courier,tracking:s.tracking,cost:''}));
+      const outbound = (outRes.data||[]).map(s=>({kind:'Outbound',date:s.ship_date,qty:s.qty,from:'',to:'',method:'',ref:'',courier:s.courier,tracking:s.tracking,cost:''}));
+      const shipments=[...legs,...inbound,...outbound];
+
+      const files = (filesRes.data||[]).reduce((a,f)=>{a[f.kind]=f.path;return a;}, {});
+      let poUrl=null,testUrl=null;
+      if(files.po){const {data:s}=await supabase.storage.from('order-files').createSignedUrl(files.po,3600);poUrl=s?.signedUrl||null;}
+      if(files.test_report){const {data:s}=await supabase.storage.from('order-files').createSignedUrl(files.test_report,3600);testUrl=s?.signedUrl||null;}
+      window._sessionFiles ||= {}; window._sessionFiles[r.id]={poUrl,testUrl};
+
+      return {
+        id:r.id, created_at:r.created_at,
+        salesperson:r.salesperson, customer:r.customer, priority:r.priority, status:r.status,
+        order_date:r.order_date, requested_by:r.requested_by,
+        payment_terms:r.payment_terms, payment_method:r.payment_method,
+        invoice_date:r.invoice_date, due_date:r.due_date,
+        currency:r.currency||'USD',
+        tests:r.tests||'', test_center:r.test_center||'',
+        vendor:r.vendor, incoterm:r.incoterm, notes:r.notes,
+        is_shipped:r.is_shipped ?? null, is_invoiced:r.is_invoiced ?? null,
+        shipping_cost_extra:r.shipping_cost_extra||0, test_cost:r.test_cost||0,
+        items, shipments, files
       };
-      const total = it.units * it.unitValue;
-      tr.querySelector('.vtotal').textContent = Number(total||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-      return {...it,total};
-    });
-  }
-  function ciLoadSignature(e){
-    const f = e.target.files?.[0]; if(!f) return;
-    const r = new FileReader(); r.onload = ()=> $('#ci-sigImg').src = r.result; r.readAsDataURL(f);
-  }
-  function ciSync(){
-    const list = ciItems();
-    const goods = list.reduce((s,i)=>s+i.total,0);
-    const discount = parseFloat($('#ci-discount').value)||0;
-    const freight = parseFloat($('#ci-freight').value)||0;
-    const insurance = parseFloat($('#ci-insurance').value)||0;
-    const other = parseFloat($('#ci-other').value)||0;
-    const subtotal = Math.max(goods - discount, 0);
-    const grand = subtotal + freight + insurance + other;
+    }));
+  },
 
-    const meta = [];
-    if($('#ci-invDate').value) meta.push(`<div><b>Date:</b> ${new Date($('#ci-invDate').value).toLocaleDateString()}</div>`);
-    if($('#ci-invNo').value)  meta.push(`<div><b>Invoice #:</b> ${esc($('#ci-invNo').value)}</div>`);
-    if($('#ci-poNo').value)   meta.push(`<div><b>PO #:</b> ${esc($('#ci-poNo').value)}</div>`);
-    meta.push(`<div><b>Currency:</b> ${$('#ci-currency').value} ${sym()}</div>`);
-    meta.push(`<div><b>Incoterms:</b> ${$('#ci-incoterm').value} ${esc($('#ci-incotermPlace').value)}</div>`);
-    if($('#ci-reason').value) meta.push(`<div><b>Reason for export:</b> ${esc($('#ci-reason').value)}</div>`);
-    $('#ci-metaBox').innerHTML = meta.join('');
-
-    $('#ci-v-from').textContent   = $('#ci-from').value || '';
-    $('#ci-v-shipto').textContent = $('#ci-shipTo').value || '';
-    $('#ci-v-soldto').textContent = $('#ci-soldTo').value || '';
-    $('#ci-v-packages').textContent = $('#ci-packages').value || '—';
-    $('#ci-v-weight').textContent   = $('#ci-weight').value || '—';
-    $('#ci-v-shipmeta').innerHTML = `
-      <div><b>Waybill/AWB:</b> ${esc($('#ci-awb').value||'—')}</div>
-      <div><b>Shipment ID:</b> ${esc($('#ci-shipmentId').value||'—')}</div>
-      <div><b>Contact:</b> ${esc($('#ci-contact').value||'—')}</div>
-      <div><b>Phone:</b> ${esc($('#ci-phone').value||'—')}</div>`;
-
-    const pb = $('#ci-pbody'); pb.innerHTML='';
-    list.forEach(i=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${Number(i.units||0).toLocaleString()}</td>
-        <td>${esc(i.um)}</td>
-        <td>${esc(i.desc)}</td>
-        <td>${esc(i.hs)}</td>
-        <td>${esc(i.coo)}</td>
-        <td class="num">${sym()} ${Number(i.unitValue||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
-        <td class="num">${sym()} ${Number(i.total||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>`;
-      pb.appendChild(tr);
-    });
-    $('#ci-lineTotalCell').textContent = `Invoice Line total: ${sym()} ${Number(goods||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
-
-    $('#ci-totalsBox').innerHTML = `
-      <div class="trow"><span class="label">Invoice Sub-Total</span><span class="val">${sym()} ${fmt(subtotal)}</span></div>
-      <div class="trow"><span class="label">Freight</span><span class="val">${sym()} ${fmt(freight)}</span></div>
-      <div class="trow"><span class="label">Insurance</span><span class="val">${sym()} ${fmt(insurance)}</span></div>
-      <div class="trow"><span class="label">Other</span><span class="val">${sym()} ${fmt(other)}</span></div>
-      <div class="trow"><span class="label">Discount/Rebate</span><span class="val">-${sym()} ${fmt(discount)}</span></div>
-      <hr style="border:none;border-top:1px solid var(--line)">
-      <div class="trow"><span class="label" style="font-weight:900">Total Invoice amount</span><span class="val" style="font-size:16px">${sym()} ${fmt(grand)}</span></div>
-      <div class="muted" style="font-size:12px;margin-top:4px">Currency: ${$('#ci-currency').value}</div>`;
-
-    $('#ci-v-comments').textContent = $('#ci-comments').value || '';
-    const parts = [];
-    if($('#ci-signedBy').value) parts.push($('#ci-signedBy').value);
-    if($('#ci-issueDate').value) parts.push(new Date($('#ci-issueDate').value).toLocaleDateString());
-    $('#ci-sigMeta').textContent = parts.join(' • ');
-  }
-
-  function ciCollect(){
-    return {
-      from: $('#ci-from').value, shipTo: $('#ci-shipTo').value, soldTo: $('#ci-soldTo').value,
-      awb: $('#ci-awb').value, shipmentId: $('#ci-shipmentId').value, contact: $('#ci-contact').value,
-      phone: $('#ci-phone').value, invDate: $('#ci-invDate').value, invNo: $('#ci-invNo').value,
-      poNo: $('#ci-poNo').value, incoterm: $('#ci-incoterm').value, incotermPlace: $('#ci-incotermPlace').value,
-      currency: $('#ci-currency').value, reason: $('#ci-reason').value,
-      packages: $('#ci-packages').value, weight: $('#ci-weight').value,
-      comments: $('#ci-comments').value, freight: $('#ci-freight').value, insurance: $('#ci-insurance').value,
-      other: $('#ci-other').value, discount: $('#ci-discount').value,
-      signedBy: $('#ci-signedBy').value, issueDate: $('#ci-issueDate').value, sigImg: $('#ci-sigImg').src || '',
-      items: ciItems().map(({units,um,desc,hs,coo,unitValue})=>({units,um,desc,hs,coo,unitValue}))
+  async saveOrder(rec, uploads){
+    const header = {
+      id:rec.id, salesperson:rec.salesperson, customer:rec.customer,
+      priority:rec.priority, status:rec.status,
+      order_date:rec.order_date, requested_by:rec.requested_by,
+      payment_terms:rec.payment_terms, payment_method:rec.payment_method,
+      invoice_date:rec.invoice_date, due_date:rec.due_date,
+      currency:rec.currency,
+      tests:rec.tests, test_center:rec.test_center,
+      vendor:rec.vendor, incoterm:rec.incoterm,
+      shipping_cost_extra:rec.shipping_cost_extra, test_cost:rec.test_cost,
+      notes:rec.notes,
+      is_shipped: rec.is_shipped ?? false,
+      is_invoiced: rec.is_invoiced ?? false
     };
-  }
-  function ciApply(s){
-    $('#ci-from').value=s.from||''; $('#ci-shipTo').value=s.shipTo||''; $('#ci-soldTo').value=s.soldTo||'';
-    $('#ci-awb').value=s.awb||''; $('#ci-shipmentId').value=s.shipmentId||''; $('#ci-contact').value=s.contact||'';
-    $('#ci-phone').value=s.phone||''; $('#ci-invDate').value=s.invDate||''; $('#ci-invNo').value=s.invNo||'';
-    $('#ci-poNo').value=s.poNo||''; $('#ci-incoterm').value=s.incoterm||'DAP'; $('#ci-incotermPlace').value=s.incotermPlace||'';
-    $('#ci-currency').value=s.currency||'USD'; $('#ci-reason').value=s.reason||'';
-    $('#ci-packages').value=s.packages||''; $('#ci-weight').value=s.weight||'';
-    $('#ci-comments').value=s.comments||''; $('#ci-freight').value=s.freight||0; $('#ci-insurance').value=s.insurance||0;
-    $('#ci-other').value=s.other||0; $('#ci-discount').value=s.discount||0;
-    $('#ci-signedBy').value=s.signedBy||''; $('#ci-issueDate').value=s.issueDate||'';
-    if(s.sigImg) $('#ci-sigImg').src=s.sigImg;
-    ciClearRows(); (s.items||[]).forEach(ciAddRow);
-    if(!s.items || !s.items.length) ciAddRow();
-    ciSync();
-  }
-  function ciSaveJSON(){
-    const blob = new Blob([JSON.stringify(ciCollect(),null,2)],{type:'application/json'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-    a.download = `${($('#ci-invNo').value||'commercial-invoice').replace(/[^a-z0-9-_]/gi,'_')}.json`;
-    a.click(); URL.revokeObjectURL(a.href);
-  }
-  function ciLoadJSON(e){
-    const f = e.target.files?.[0]; if(!f) return;
-    const r=new FileReader(); r.onload=()=>{ try{ciApply(JSON.parse(r.result));}catch{alert('Invalid JSON');} };
-    r.readAsText(f);
-  }
-  function ciLoadSample(){
-    const today = new Date().toISOString().slice(0,10);
-    ciApply({
-      from: "Verified Electronics Ltd\n14 Albion Street, Offices 1–3\nHull, HU1 3TD, UNITED KINGDOM\nPhone: +44 1482 904582\nEORI/VAT: GB123456789",
-      shipTo: "Acme Devices Inc.\n1000 Logistics Dr\nDallas, TX 75001, USA\nTAX ID: 12-3456789",
-      soldTo: "Acme Devices Inc.\n500 Market St\nAustin, TX 78701, USA\nTAX ID: 12-3456789",
-      awb: "7790 1234 5678", shipmentId: "SHIP-8891", contact: "Jane Buyer", phone: "+1 512 555 0199",
-      invDate: today, invNo: "VE-CI-1025", poNo: "PO-78910", incoterm: "DAP", incotermPlace: "Austin, TX",
-      currency: "USD", reason: "Sale of goods", packages: "2", weight: "20.0",
-      comments: "No wood packaging materials used. Non-hazardous electronic components.",
-      freight: 120, insurance: 40, other: 0, discount: 0, signedBy: "Nick North, Director", issueDate: today,
-      items: [
-        {units:1000, um:"pcs", desc:"IPF015N10N5ATMA1 — MOSFET 100V 150A", hs:"854129", coo:"CN", unitValue:1.92},
-        {units:40, um:"pcs", desc:"DS1644-120+ — RTC + NV SRAM 120ns", hs:"854232", coo:"PH", unitValue:66.90}
-      ]
-    });
-  }
+    const {data:up, error:e1} = await supabase.from('orders').upsert(header).select().single();
+    if(e1) throw e1;
+    const order_id=up.id;
 
-  /* ======== Picking Ticket ======== */
-  function ptAddRow(d={}) {
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td><input value="${d.item||''}" placeholder="Item"></td>
-      <td class="num"><input type="number" value="${d.qty||''}" placeholder="Qty" style="width:100%"></td>
-      <td><input value="${d.date||''}" placeholder="Date code"></td>
-      <td><button class="btn pill" onclick="this.closest('tr').remove();ptSync()">✕</button></td>`;
-    $('#pt-table tbody').appendChild(tr);
-    tr.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',ptSync));
-    ptSync();
-  }
-  function ptClearRows(){ $('#pt-table tbody').innerHTML=''; ptSync(); }
-  function ptItems(){
-    return $$('#pt-table tbody tr').map((tr,i)=>{
-      const [item,qty,date]=tr.querySelectorAll('input');
-      return { idx:i+1, item:item.value.trim(), qty:Number(qty.value||0), date:date.value.trim() };
-    }).filter(r=>r.item||r.qty||r.date);
-  }
-  function ptSync(){
-    const meta = [];
-    if($('#pt-date').value)    meta.push(`<div><b>Date:</b> ${new Date($('#pt-date').value).toLocaleDateString()}</div>`);
-    if($('#pt-orderNo').value) meta.push(`<div><b>Order #:</b> ${esc($('#pt-orderNo').value)}</div>`);
-    if($('#pt-poNo').value)    meta.push(`<div><b>Customer PO:</b> ${esc($('#pt-poNo').value)}</div>`);
-    if($('#pt-contact').value) meta.push(`<div><b>Contact:</b> ${esc($('#pt-contact').value)}</div>`);
-    $('#pt-metaBox').innerHTML = meta.join('');
+    await supabase.from('order_items').delete().eq('order_id',order_id);
+    await supabase.from('ship_legs').delete().eq('order_id',order_id);
+    await supabase.from('shipments_inbound').delete().eq('order_id',order_id);
+    await supabase.from('shipments_outbound').delete().eq('order_id',order_id);
 
-    $('#pt-v-from').textContent   = $('#pt-from').value || '';
-    $('#pt-v-shipTo').textContent = $('#pt-shipTo').value || '';
-    $('#pt-v-soldTo').textContent = $('#pt-soldTo').value || '';
+    if(rec.items?.length){
+      await supabase.from('order_items').insert(rec.items.map(i=>({
+        order_id, part_number:i.part_number, date_codes:i.date_codes, qty:i.qty, unit_sell:i.unit_sell, unit_cost:i.unit_cost
+      })));
+    }
+    const legs = rec.shipments?.filter(s=>s.kind==='Leg')||[];
+    const inbound = rec.shipments?.filter(s=>s.kind==='Inbound')||[];
+    const outbound = rec.shipments?.filter(s=>s.kind==='Outbound')||[];
+    if(legs.length){
+      await supabase.from('ship_legs').insert(legs.map(l=>({
+        order_id, from_loc:l.from, to_loc:l.to, method:l.method, ref:l.ref, cost:Number(l.cost||0)
+      })));
+    }
+    if(inbound.length){
+      await supabase.from('shipments_inbound').insert(inbound.map(s=>({
+        order_id, ship_date:s.date||null, qty:Number(s.qty||0), courier:s.courier||null, tracking:s.tracking||null
+      })));
+    }
+    if(outbound.length){
+      await supabase.from('shipments_outbound').insert(outbound.map(s=>({
+        order_id, ship_date:s.date||null, qty:Number(s.qty||0), courier:s.courier||null, tracking:s.tracking||null
+      })));
+    }
 
-    const body=$('#pt-pbody'); body.innerHTML='';
-    ptItems().forEach(r=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=`<td class="num">${r.idx}</td><td>${esc(r.item)}</td><td class="num">${r.qty||''}</td><td>${esc(r.date)}</td>`;
-      body.appendChild(tr);
-    });
+    // ensure flags exist (silent if column missing)
+    await this.quickUpdate(order_id, 'is_shipped', rec.is_shipped, true);
+    await this.quickUpdate(order_id, 'is_invoiced', rec.is_invoiced, true);
 
-    $('#pt-v-notes').textContent = $('#pt-notes').value || '';
-    $('#pt-v-signer').textContent = $('#pt-signer').value || '—';
-    $('#pt-v-shipType').textContent = $('#pt-shipType').value;
-  }
+    if(uploads?.po) await this.uploadFile(order_id,'po',uploads.po);
+    if(uploads?.test_report) await this.uploadFile(order_id,'test_report',uploads.test_report);
+  },
 
-  function ptCollect(){
-    return {
-      orderNo:$('#pt-orderNo').value, poNo:$('#pt-poNo').value, date:$('#pt-date').value,
-      from:$('#pt-from').value, shipTo:$('#pt-shipTo').value, soldTo:$('#pt-soldTo').value,
-      contact:$('#pt-contact').value, shipType:$('#pt-shipType').value,
-      notes:$('#pt-notes').value, signer:$('#pt-signer').value, items:ptItems()
-    };
-  }
-  function ptApply(d){
-    $('#pt-orderNo').value=d.orderNo||''; $('#pt-poNo').value=d.poNo||''; $('#pt-date').value=d.date||'';
-    $('#pt-from').value=d.from||''; $('#pt-shipTo').value=d.shipTo||''; $('#pt-soldTo').value=d.soldTo||'';
-    $('#pt-contact').value=d.contact||''; $('#pt-shipType').value=d.shipType||'Full Shipment';
-    $('#pt-notes').value=d.notes||''; $('#pt-signer').value=d.signer||'';
-    ptClearRows(); (d.items||[]).forEach(it=>ptAddRow(it)); if(!d.items||!d.items.length) ptAddRow();
-    ptSync();
-  }
-  function ptSaveJSON(){
-    const blob = new Blob([JSON.stringify(ptCollect(),null,2)],{type:'application/json'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-    a.download = `${($('#pt-orderNo').value||'picking-ticket').replace(/[^a-z0-9-_]/gi,'_')}.json`;
-    a.click(); URL.revokeObjectURL(a.href);
-  }
-  function ptLoadJSON(e){
-    const f = e.target.files?.[0]; if(!f) return;
-    const r=new FileReader(); r.onload=()=>{ try{ptApply(JSON.parse(r.result));}catch{alert('Invalid JSON');} };
-    r.readAsText(f);
-  }
-  function ptLoadSample(){
-    const today = new Date().toISOString().slice(0,10);
-    ptApply({
-      orderNo:'VE-PT-1007', poNo: $('#ci-poNo').value || 'PO-78910', date: today,
-      from: $('#ci-from').value, shipTo: $('#ci-shipTo').value, soldTo: $('#ci-soldTo').value,
-      contact: $('#ci-contact').value, shipType:'Full Shipment',
-      notes:'Pick with ESD precautions. Use Verified purple labels on outer cartons.',
-      signer:'', items:[ {item:'IPF015N10N5ATMA1', qty:1000, date:'23+'}, {item:'DS1644-120+', qty:40, date:'20+'} ]
-    });
-  }
+  async uploadFile(orderId, kind, file){
+    const safe=file.name.replace(/[^a-z0-9._-]+/gi,'_');
+    const path=`orders/${orderId}/${kind}/${Date.now()}_${safe}`;
+    const {error} = await supabase.storage.from('order-files').upload(path,file,{upsert:true});
+    if(error) throw error;
+    await supabase.from('order_files').insert({order_id:orderId,kind,path});
+    const {data:s} = await supabase.storage.from('order-files').createSignedUrl(path,3600);
+    window._sessionFiles ||= {}; window._sessionFiles[orderId] ||= {};
+    if(kind==='po') window._sessionFiles[orderId].poUrl=s?.signedUrl||null;
+    if(kind==='test_report') window._sessionFiles[orderId].testUrl=s?.signedUrl||null;
+  },
 
-  /* ===== Init ===== */
-  window.addEventListener('load', ()=>{
-    if(!$('#ci-tbody').children.length) ciAddRow();
-    const d = new Date().toISOString().slice(0,10);
-    $('#ci-invDate').value = d; $('#ci-issueDate').value = d;
+  async deleteOrder(id){ await supabase.from('orders').delete().eq('id',id); },
 
-    // CI inputs -> render
-    $$('.form input, .form textarea, .form select').forEach(el=>{
-      el.addEventListener('input', ciSync);
-      el.addEventListener('change', ciSync);
-    });
-    // PT inputs -> render
-    ['#pt-orderNo','#pt-poNo','#pt-date','#pt-from','#pt-shipTo','#pt-soldTo','#pt-contact','#pt-shipType','#pt-notes','#pt-signer']
-      .forEach(sel=>$(sel).addEventListener('input', ptSync));
+  async quickUpdate(id, field, value, silentIfMissing=false){
+    try{
+      const { error } = await supabase.from('orders').update({ [field]: value }).eq('id', id);
+      if(error) throw error;
+    }catch(e){
+      if(silentIfMissing && String(e?.message||'').toLowerCase().includes('column')) return;
+      throw e;
+    }
+  },
 
-    ciSync();
-    ptAddRow();
+  subscribeRealtime(){
+    supabase.channel('orders-rt')
+      .on('postgres_changes',{event:'*',schema:'public',table:'orders'},async()=>{await this.loadOrders();render();})
+      .on('postgres_changes',{event:'*',schema:'public',table:'order_items'},async()=>{await this.loadOrders();render();})
+      .on('postgres_changes',{event:'*',schema:'public',table:'ship_legs'},async()=>{await this.loadOrders();render();})
+      .on('postgres_changes',{event:'*',schema:'public',table:'shipments_inbound'},async()=>{await this.loadOrders();render();})
+      .on('postgres_changes',{event:'*',schema:'public',table:'shipments_outbound'},async()=>{await this.loadOrders();render();})
+      .subscribe();
+  }
+};
+
+/* ---------- modal item helpers ---------- */
+function button(txt,cls,click){const b=document.createElement('button');b.textContent=txt;b.className='btn mini '+(cls||'');b.type='button';b.onclick=click;return b;}
+
+function addItemRow(v={part_number:'',date_codes:'',qty:'',unit_sell:'',unit_cost:''}){
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td><input class="input mini" value="${v.part_number||''}"/></td>
+    <td><input class="input mini" value="${v.date_codes||''}"/></td>
+    <td><input type="number" step="1" class="input mini mono" value="${v.qty||''}"/></td>
+    <td><input type="number" step="0.01" class="input mini mono" value="${v.unit_sell||''}"/></td>
+    <td><input type="number" step="0.01" class="input mini mono" value="${v.unit_cost||''}"/></td>
+    <td class="right"></td>`;
+  tr.lastElementChild.appendChild(button('−','ghost',()=>{ tr.remove(); recalcFinance(); }));
+  $('itemsBody').appendChild(tr);
+  recalcFinance();
+}
+function itemsFromDOM(){
+  return [...$('itemsBody').querySelectorAll('tr')].map(tr=>{
+    const [pn,dc,qty,us,uc]=[...tr.querySelectorAll('input')].map(x=>x.value.trim());
+    if(!pn) return null;
+    return {part_number:pn,date_codes:dc,qty:Number(qty||0),unit_sell:Number(us||0),unit_cost:Number(uc||0)};
+  }).filter(Boolean);
+}
+
+function addShipRow(v={kind:'Leg',date:'',qty:'',from:'',to:'',method:'',ref:'',courier:'',tracking:'',cost:''}){
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td>
+      <select class="select mini">
+        <option ${v.kind==='Leg'?'selected':''}>Leg</option>
+        <option ${v.kind==='Inbound'?'selected':''}>Inbound</option>
+        <option ${v.kind==='Outbound'?'selected':''}>Outbound</option>
+      </select>
+    </td>
+    <td><input type="date" class="input mini" value="${v.date||''}"/></td>
+    <td><input type="number" step="1" class="input mini mono" value="${v.qty||''}"/></td>
+    <td><input class="input mini" value="${v.from||''}"/></td>
+    <td><input class="input mini" value="${v.to||''}"/></td>
+    <td><input class="input mini" value="${v.method||''}"/></td>
+    <td><input class="input mini" value="${v.ref||''}"/></td>
+    <td><input class="input mini" value="${v.courier||''}"/></td>
+    <td><input class="input mini" value="${v.tracking||''}"/></td>
+    <td><input type="number" step="0.01" class="input mini mono" value="${v.cost||''}"/></td>
+    <td class="right"></td>`;
+  tr.lastElementChild.appendChild(button('−','ghost',()=>{ tr.remove(); recalcFinance(); }));
+  $('shipBody').appendChild(tr);
+  recalcFinance();
+}
+function shipsFromDOM(){
+  return [...$('shipBody').querySelectorAll('tr')].map(tr=>{
+    const [kindSel,date,qty,from,to,method,ref,courier,tracking,cost] = [
+      tr.querySelector('select').value,
+      ...[...tr.querySelectorAll('input')].map(x=>x.value.trim())
+    ];
+    if(!kindSel && !date && !qty && !from && !to && !method && !ref && !courier && !tracking && !cost) return null;
+    return {kind:kindSel,date,qty:Number(qty||0),from,to,method,ref,courier,tracking,cost:Number(cost||0)};
+  }).filter(Boolean);
+}
+
+function ageDays(d){
+  if(!d) return '-';
+  const ms = Date.now() - new Date(d).getTime();
+  const days = Math.floor(ms/86400000);
+  return days<0?'-':`${days} ${days===1?'day':'days'}`;
+}
+function totals(o){
+  const revenue=(o.items||[]).reduce((s,i)=>s+(Number(i.qty||0)*Number(i.unit_sell||0)),0);
+  const qty=(o.items||[]).reduce((s,i)=>s+Number(i.qty||0),0);
+  const itemCost=(o.items||[]).reduce((s,i)=>s+(Number(i.qty||0)*Number(i.unit_cost||0)),0);
+  const legCost=(o.shipments||[]).filter(s=>s.kind==='Leg').reduce((s,l)=>s+Number(l.cost||0),0);
+  const shipCost = legCost + Number(o.shipping_cost_extra||0);
+  const testCost = Number(o.test_cost||0);
+  const cost = itemCost + shipCost + testCost;
+  const gp = revenue - cost;
+  const gpPct = revenue ? (gp/revenue)*100 : 0;
+  const avgUnit = qty ? (revenue/qty) : 0;
+  return {revenue,cost,gp,gpPct,qty,avgUnit,itemCost,shipCost,testCost};
+}
+
+/* ---------- dashboard ---------- */
+function renderDashboard(rows){
+  if(!rows.length){
+    $('dOpen').textContent='0';
+    $('dRev').textContent='$0.00';
+    $('dGP').textContent='$0.00';
+    $('dGPPct').textContent='0%';
+    $('dAge').textContent='-';
+    return;
+  }
+  const sym = curSym(rows[0]?.currency||'USD');
+  let rev=0, gp=0, days=0, open=0, dated=0;
+  rows.forEach(o=>{
+    const t=totals(o); rev+=t.revenue; gp+=t.gp;
+    if((o.status||'')!=='Closed') open++;
+    if(o.order_date){ dated++; days += Math.max(0, Math.floor((Date.now()-new Date(o.order_date))/86400000)); }
   });
+  const avgAge = dated? Math.round(days/dated) : 0;
+  $('dOpen').textContent = fmtInt(open);
+  $('dRev').textContent  = sym + fmt(rev);
+  $('dGP').textContent   = sym + fmt(gp);
+  $('dGPPct').textContent= rev? fmt((gp/rev)*100)+'%' : '0%';
+  $('dAge').textContent  = dated? `${avgAge} d` : '-';
+}
+
+/* ---------- inline selects ---------- */
+function makeInlineSelectCell(order, field, options){
+  const wrap = document.createElement('div'); wrap.className='ie';
+  const chip = document.createElement('span'); chip.className='chip'; chip.textContent = order[field] || '-';
+  const btn = document.createElement('button'); btn.title='Edit'; btn.textContent='✎';
+  const sel = document.createElement('select'); options.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o)});
+  sel.value = options.includes(order[field]) ? order[field] : options[0];
+
+  const startEdit=()=>{ wrap.classList.add('editing'); sel.focus(); };
+  btn.onclick=startEdit; chip.style.cursor='pointer'; chip.onclick=startEdit;
+  sel.onchange=async()=>{ try{ await supa.quickUpdate(order.id, field, sel.value); chip.textContent=sel.value; wrap.classList.remove('editing'); }catch(e){ alert('Update failed'); console.error(e); } };
+  sel.onblur=()=>wrap.classList.remove('editing');
+
+  wrap.append(chip, btn, sel);
+  return wrap;
+}
+
+/* ---------- render list ---------- */
+function render(){
+  const q=$('q').value.toLowerCase(), sSales=$('fltSales').value, sStat=$('fltStatus').value, sPri=$('fltPriority').value;
+  const rows=supa.getOrders().filter(o=>{
+    const text=[o.customer,...(o.items||[]).map(i=>i.part_number),o.id].join(' ').toLowerCase();
+    if(q && !text.includes(q)) return false;
+    if(sSales && o.salesperson!==sSales) return false;
+    if(sStat && (o.status||'')!==sStat) return false;
+    if(sPri && (o.priority||'')!==sPri) return false;
+    return true;
+  });
+
+  const tb=$('tbody'); tb.innerHTML='';
+
+  if(!rows.length){
+    tb.innerHTML = `<tr><td colspan="21" class="muted" style="text-align:center;padding:40px">No orders. Click “+ New Order”.</td></tr>`;
+    renderDashboard(rows);
+    return;
+  }
+
+  rows.forEach(o=>{
+    const {revenue,gp,gpPct,qty,avgUnit} = totals(o);
+    const parts = (o.items?.length? o.items[0].part_number+(o.items.length>1? ` +${o.items.length-1} more`: '') : '-');
+    const poUrl = window._sessionFiles?.[o.id]?.poUrl || null;
+    const testUrl = window._sessionFiles?.[o.id]?.testUrl || null;
+    const sym = curSym(o.currency);
+
+    const tr=document.createElement('tr');
+
+    // View
+    let td=document.createElement('td');
+    td.appendChild(button('View','ghost',()=>openView(o)));
+    tr.appendChild(td);
+
+    const cells = [
+      o.customer||'-',
+      parts,
+      o.salesperson||'-',
+      {html: `<span class="mono">${fmtInt(qty)}</span>`},
+      {html: `<span class="mono">${sym}${fmt(avgUnit)}</span>`},
+      {html: `<span class="mono">${sym}${fmt(revenue)}</span>`},
+      {html: `<span class="pill">${sym}${fmt(gp)}</span> <span class="muted mono">(${fmt(gpPct)}%)</span>`},
+      {html: `<span class="chip">${o.priority||'-'}</span>`},
+    ];
+    cells.forEach(c=>{
+      const td=document.createElement('td');
+      if(typeof c==='string') td.textContent=c;
+      else td.innerHTML=c.html;
+      tr.appendChild(td);
+    });
+
+    // Inline Status
+    td=document.createElement('td'); td.appendChild(makeInlineSelectCell(o,'status',['New','Open','Closed'])); tr.appendChild(td);
+
+    // Dates, age, tests, vendor, incoterm
+    const tail = [
+      o.order_date||'-',
+      o.requested_by||'-',
+      ageDays(o.order_date),
+      o.tests||'-',
+      o.vendor||'-',
+      o.incoterm||'-'
+    ];
+    tail.forEach(val=>{ const td=document.createElement('td'); td.textContent=val; tr.appendChild(td); });
+
+    // Inline Terms
+    td=document.createElement('td'); td.appendChild(makeInlineSelectCell(o,'payment_terms',['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90'])); tr.appendChild(td);
+
+    // Shipped / Invoiced (FIXED: persist and reflect instantly)
+    const mkChk=(name,val)=>{ 
+      const c=document.createElement('input'); c.type='checkbox'; c.checked=!!val;
+      c.onchange=async()=>{ 
+        try{ 
+          await supa.quickUpdate(o.id,name,c.checked,true); 
+          // reflect in local state immediately
+          o[name] = c.checked; 
+        }catch(e){ console.warn(e); c.checked = !c.checked; }
+      };
+      return c;
+    };
+    td=document.createElement('td'); td.appendChild(mkChk('is_shipped',o.is_shipped)); tr.appendChild(td);
+    td=document.createElement('td'); td.appendChild(mkChk('is_invoiced',o.is_invoiced)); tr.appendChild(td);
+
+    // Files
+    td=document.createElement('td');
+    td.innerHTML = [poUrl?`<a class="link" target="_blank" href="${poUrl}">PO</a>`:'', testUrl?`<a class="link" target="_blank" href="${testUrl}">Test</a>`:''].filter(Boolean).join(' · ')||'';
+    tr.appendChild(td);
+
+    // Actions
+    td=document.createElement('td'); td.className='actions';
+    td.appendChild(button('Edit','ghost',()=>openModal(o)));
+    td.appendChild(button('Clone','ghost',()=>cloneOrder(o)));
+    td.appendChild(button('Docs','ghost',()=>openDocsPreflight(o,'so'))); /* quick entry */
+    td.appendChild(button('Delete','ghost',async()=>{ if(!confirm('Delete this order?'))return; await supa.deleteOrder(o.id); await supa.loadOrders(); render(); }));
+    tr.appendChild(td);
+
+    tb.appendChild(tr);
+  });
+
+  renderDashboard(rows);
+}
+
+/* ---------- clone ---------- */
+async function cloneOrder(o){
+  const clone = structuredClone(o);
+  delete clone.id;
+  clone.status = 'New';
+  clone.order_date = todayStr();
+  clone.requested_by = clone.requested_by || '';
+  clone.invoice_date = null;
+  clone.due_date = null;
+  clone.is_shipped = false;
+  clone.is_invoiced = false;
+  await supa.saveOrder(clone, null);
+  await supa.loadOrders(); render();
+  alert('Order cloned.');
+}
+
+/* ---------- modal open/collect/save ---------- */
+let _snapshot = null;
+function snapshotRecord(rec){ const {id, ...rest}=rec||{}; return JSON.stringify(rest); }
+
+function openModal(o){
+  $('dlgTitle').textContent = o?'Edit Order':'New Order';
+  $('orderId').value = o?.id || '';
+  $('salesperson').value = o?.salesperson || SALESTEAM[0];
+  $('customer').value = o?.customer || '';
+  $('priority').value = o?.priority || 'Normal';
+  $('status').value = o?.status || 'New';
+  $('order_date').value = o?.order_date || todayStr();
+  $('requested_by').value = o?.requested_by || '';
+
+  $('payment_terms').value = (['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90'].includes(o?.payment_terms)) ? o.payment_terms : 'Other';
+  $('payment_terms_other').style.display = $('payment_terms').value==='Other' ? '' : 'none';
+  $('payment_terms_other').value = $('payment_terms').value==='Other' ? (o?.payment_terms||'') : '';
+
+  $('payment_method').value = (['Bank Transfer','Credit Card','PayPal'].includes(o?.payment_method)) ? o.payment_method : 'Other';
+  $('payment_method_other').style.display = $('payment_method').value==='Other' ? '' : 'none';
+  $('payment_method_other').value = $('payment_method').value==='Other' ? (o?.payment_method||'') : '';
+
+  $('incoterm').value = (['DAP','DDP','EXW','CIP','FOB'].includes(o?.incoterm)) ? o.incoterm : 'Other';
+  $('incoterm_other').style.display = $('incoterm').value==='Other' ? '' : 'none';
+  $('incoterm_other').value = $('incoterm').value==='Other' ? (o?.incoterm||'') : '';
+
+  $('invoice_date').value = o?.invoice_date || '';
+  $('due_date').value = o?.due_date || '';
+
+  $('currency').value = o?.currency || 'USD';
+
+  [...$('testsLine').querySelectorAll('input[type="checkbox"]')].forEach(cb=>cb.checked=false);
+  $('tests_other').value='';
+  if(o?.tests){
+    const set=new Set(o.tests.split(',').map(s=>s.trim()).filter(Boolean));
+    [...$('testsLine').querySelectorAll('input[type="checkbox"]')].forEach(cb=>cb.checked=set.has(cb.value));
+    if(set.has('Other')) $('tests_other').value = (o.tests.match(/\(Other:(.*?)\)$/)?.[1] || '');
+  }
+  $('test_center').value = (['GETs HK','GETs Shenzhen','GETs US','White Horse US','White Horse China','White Horse EU'].includes(o?.test_center)) ? o.test_center : 'Other';
+
+  $('vendor').value = o?.vendor || '';
+  $('notes').value  = o?.notes  || '';
+
+  $('itemsBody').innerHTML=''; (o?.items?.length?o.items:[{}]).forEach(addItemRow);
+  $('shipBody').innerHTML=''; (o?.shipments||[]).forEach(addShipRow);
+
+  $('shipping_cost_extra').value = o?.shipping_cost_extra ?? '';
+  $('test_cost').value = o?.test_cost ?? '';
+
+  $('file_po').value=''; $('file_test').value='';
+
+  $('btnDelete').style.display = o?.id ? '' : 'none';
+
+  _snapshot = snapshotRecord(collectRecord(true));
+  $('dlg').showModal();
+  recalcFinance();
+}
+
+function collectRecord(preview=false){
+  const id = $('orderId').value || (preview ? '' : crypto.randomUUID());
+
+  const checks=[...$('testsLine').querySelectorAll('input[type="checkbox"]')];
+  const none = $('tNone').checked;
+  checks.forEach(cb=>{ if(none && cb.value!=='No test') cb.checked=false; });
+  const selected = checks.filter(cb=>cb.checked).map(cb=>cb.value);
+  if($('tOther').checked){
+    const extra = $('tests_other').value.trim();
+    if(extra) selected[selected.indexOf('Other')] = 'Other';
+  }
+  let testsStr = selected.join(', ');
+  if(selected.includes('Other')){
+    const t = $('tests_other').value.trim();
+    if(t) testsStr = testsStr.replace('Other', `Other (Other:${t})`);
+  }
+
+  const terms = $('payment_terms').value==='Other' ? $('payment_terms_other').value.trim() : $('payment_terms').value;
+  const method = $('payment_method').value==='Other' ? $('payment_method_other').value.trim() : $('payment_method').value;
+  const incot = $('incoterm').value==='Other' ? $('incoterm_other').value.trim() : $('incoterm').value;
+
+  return {
+    id,
+    salesperson:$('salesperson').value,
+    customer:$('customer').value.trim(),
+    priority:$('priority').value, status:$('status').value,
+    order_date:$('order_date').value||null,
+    requested_by:$('requested_by').value||null,
+    payment_terms:terms||null, payment_method:method||null,
+    invoice_date:$('invoice_date').value||null, due_date:$('due_date').value||null,
+    currency:$('currency').value||'USD',
+    tests:testsStr||null, test_center:$('test_center').value,
+    vendor:$('vendor').value.trim()||null, incoterm:incot||null,
+    items:itemsFromDOM(),
+    shipments:shipsFromDOM(),
+    shipping_cost_extra:Number($('shipping_cost_extra').value||0),
+    test_cost:Number($('test_cost').value||0),
+    notes:$('notes').value.trim()||null,
+    is_shipped:false,
+    is_invoiced:false
+  };
+}
+
+/* auto-due from invoice + terms */
+function autoDue(){
+  const inv=$('invoice_date').value, t=$('payment_terms').value, tother=$('payment_terms_other').value.trim();
+  const src = t==='Other'? tother : t;
+  const m = src.match(/Net\s+(\d+)/i);
+  if(inv && m){ const add=Number(m[1]||0); const d=new Date(inv); d.setDate(d.getDate()+add); $('due_date').value=d.toISOString().slice(0,10); }
+}
+$('payment_terms').addEventListener('change',()=>{ $('payment_terms_other').style.display = $('payment_terms').value==='Other' ? '' : 'none'; autoDue(); });
+$('payment_terms_other').addEventListener('input',autoDue);
+$('invoice_date').addEventListener('change',autoDue);
+$('payment_method').addEventListener('change',()=>{ $('payment_method_other').style.display = $('payment_method').value==='Other' ? '' : 'none'; });
+$('incoterm').addEventListener('change',()=>{ $('incoterm_other').style.display = $('incoterm').value==='Other' ? '' : 'none'; });
+
+/* guard against accidental close if dirty */
+function maybeCloseDialog(){
+  const nowSnap = snapshotRecord(collectRecord(true));
+  if(nowSnap!==_snapshot){
+    if(!confirm('Discard changes?')) return false;
+  }
+  $('dlg').close(); return true;
+}
+$('btnClose').onclick=()=>maybeCloseDialog();
+$('dlg').addEventListener('cancel', (e)=>{ const ok = maybeCloseDialog(); if(!ok) e.preventDefault(); });
+
+/* add rows */
+$('addItem').onclick=()=>addItemRow({});
+$('addShip').onclick=()=>addShipRow({});
+
+/* live finance summary (delegated) */
+['itemsBody','shipBody'].forEach(id=>{
+  $(id).addEventListener('input',recalcFinance);
+  $(id).addEventListener('change',recalcFinance);
+});
+['shipping_cost_extra','test_cost','currency'].forEach(id=>$(id).addEventListener('input',recalcFinance));
+['shipping_cost_extra','test_cost','currency'].forEach(id=>$(id).addEventListener('change',recalcFinance));
+
+function recalcFinance(){
+  const rec = collectRecord(true);
+  const t = totals(rec);
+  const sym = curSym(rec.currency);
+  $('finQty').textContent = fmtInt(t.qty);
+  $('finSell').textContent = sym+fmt(t.revenue);
+  $('finItemCost').textContent = sym+fmt(t.itemCost);
+  $('finShipCost').textContent = sym+fmt(t.shipCost);
+  $('finTestCost').textContent = sym+fmt(t.testCost);
+  $('finTotalCost').textContent = sym+fmt(t.cost);
+  $('finGP').textContent = sym+fmt(t.gp);
+  $('finGPPct').textContent = fmt(t.gpPct)+'%';
+}
+
+/* save / delete */
+$('btnSave').onclick=async()=>{
+  const rec=collectRecord();
+  if(!rec.customer){alert('Customer is required');return;}
+  if(!rec.items?.length){alert('Add at least one line item');return;}
+  const uploads={};
+  if($('file_po').files[0]) uploads.po = $('file_po').files[0];
+  if($('file_test').files[0]) uploads.test_report = $('file_test').files[0];
+  try{
+    await supa.saveOrder(rec,uploads);
+    await supa.loadOrders(); render(); $('dlg').close();
+  }catch(e){console.error(e); alert('Save failed. See console.');}
+};
+$('btnDelete').onclick=async()=>{
+  const id=$('orderId').value; if(!id) return;
+  if(!confirm('Delete this order?'))return;
+  await supa.deleteOrder(id); await supa.loadOrders(); render(); $('dlg').close();
+};
+
+/* filters & CSV */
+let _searchTimer=null;
+$('q').addEventListener('input',()=>{ clearTimeout(_searchTimer); _searchTimer=setTimeout(render,250); });
+['fltSales','fltStatus','fltPriority'].forEach(id=>$(id).addEventListener('input',render));
+$('btnCsv').onclick=()=>{
+  const head=[...document.querySelectorAll('#tbl thead th')].map(th=>th.innerText);
+  const rows=[...document.querySelectorAll('#tbody tr')].map(tr=>[...tr.children].map(td=>td.innerText.replace(/\s+/g,' ').trim()));
+  const csv=[head,...rows].map(r=>r.map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='orders.csv'; a.click();
+};
+
+/* ---------- Documents (embedded) ---------- */
+// routes to your working generators (adjust if paths differ on your host)
+const DOC_ROUTES = {
+  so:       '/so-invoice/index.html',                // Order Confirmation (same page as invoice)
+  invoice:  '/so-invoice/index.html',                // Invoice
+  ci:       '/commercial-invoice/index.html',        // Commercial Invoice
+  pt:       '/commercial-invoice/index.html#pt',     // Picking Ticket
+  rma:      '/rma/index.html'                        // RMA
+};
+
+// convert order to shared doc payload
+function orderToDocPayload(o){
+  const {revenue, itemCost, shipCost, testCost, cost, qty} = totals(o);
+  return {
+    meta:{
+      orderId:o.id,
+      customer:o.customer,
+      salesperson:o.salesperson,
+      po:o.files?.po || null,
+      incoterm:o.incoterm,
+      payment_terms:o.payment_terms,
+      currency:o.currency || 'USD',
+      order_date:o.order_date,
+      requested_by:o.requested_by,
+      vendor:o.vendor,
+      notes:o.notes
+    },
+    items:(o.items||[]).map(i=>({
+      part:i.part_number, desc:i.date_codes||'', date:i.date_codes||'',
+      qty:i.qty, unitSell:i.unit_sell, unitCost:i.unit_cost
+    })),
+    shipments:(o.shipments||[]),
+    totals:{revenue,itemCost,shipCost,testCost,cost,qty}
+  };
+}
+
+// Preflight dialog: seed fields & confirm -> then open Docs modal
+function openDocsPreflight(order, docType){
+  const d = order;
+  $('pf_currency').value = (d.currency||'USD').toUpperCase();
+  $('pf_incoterm').value = d.incoterm || '';
+  $('pf_terms').value    = d.payment_terms || '';
+  $('pf_from').value     = 'Verified Electronics\n(Exporter / Warehouse address)';
+  $('pf_soldto').value   = (d.customer||'') + '\n(Billing address)';
+  $('pf_shipto').value   = (d.customer||'') + '\n(Shipping address)';
+  $('pf_return').value   = 'Verified Electronics\n(Returns address)';
+  $('pf_freight').value  = Number(d.shipping_cost_extra||0);
+  $('pf_ins').value      = '';
+  $('pf_other').value    = '';
+  $('preDlg').showModal();
+
+  $('pfConfirm').onclick = ()=>{
+    const overrides = {
+      currency: $('pf_currency').value,
+      incoterm: $('pf_incoterm').value.trim() || d.incoterm || '',
+      terms:    $('pf_terms').value.trim()    || d.payment_terms || '',
+      from:     $('pf_from').value.trim(),
+      soldto:   $('pf_soldto').value.trim(),
+      shipto:   $('pf_shipto').value.trim(),
+      returnTo: $('pf_return').value.trim(),
+      ciCharges:{
+        freight: Number($('pf_freight').value||0),
+        insurance: Number($('pf_ins').value||0),
+        other: Number($('pf_other').value||0)
+      }
+    };
+    const payload = orderToDocPayload(d);
+    // apply overrides
+    payload.meta.currency = overrides.currency;
+    payload.meta.incoterm = overrides.incoterm;
+    payload.meta.payment_terms = overrides.terms;
+    payload.meta.from = overrides.from;
+    payload.meta.soldto = overrides.soldto;
+    payload.meta.shipto = overrides.shipto;
+    payload.meta.returnTo = overrides.returnTo;
+    payload.ci = { ...payload.ci, ...overrides.ciCharges };
+
+    try { sessionStorage.setItem('veDocData', JSON.stringify(payload)); }catch(e){ console.warn(e); }
+
+    $('preDlg').close();
+    openDocsDialog(docType);
+  };
+
+  // remember current order globally for View modal buttons too
+  window._openOrderRef = d;
+}
+
+// Open Docs modal with selected type (uses sessionStorage already set in preflight)
+function openDocsDialog(docType='so'){
+  const frame = $('docsFrame');
+  frame.src = DOC_ROUTES[docType] || DOC_ROUTES.so;
+  $('docsDlg').showModal();
+  [...$('docTabs').querySelectorAll('button')].forEach(b=>{
+    b.classList.toggle('primary', b.dataset.doc === docType);
+  });
+}
+
+// switch tabs inside Docs modal
+$('docTabs').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-doc]');
+  if(!btn) return;
+  const type = btn.dataset.doc;
+  $('docsFrame').src = DOC_ROUTES[type] || DOC_ROUTES.so;
+  [...$('docTabs').querySelectorAll('button')].forEach(b=>{
+    b.classList.toggle('primary', b.dataset.doc === type);
+  });
+});
+
+/* ---------- view summary ---------- */
+function openView(o){
+  const {revenue,gp,gpPct,qty,avgUnit,itemCost,shipCost,testCost,cost} = totals(o);
+  const sym = curSym(o.currency);
+  const files = window._sessionFiles?.[o.id]||{};
+  const partsRows = (o.items||[]).map(i=>`
+    <tr><td>${i.part_number||''}</td><td>${i.date_codes||''}</td><td class="mono">${fmtInt(i.qty)}</td>
+    <td class="mono">${sym}${fmt(i.unit_sell)}</td><td class="mono">${sym}${fmt(i.unit_cost)}</td></tr>`).join('')||'';
+  const shipRows = (o.shipments||[]).map(s=>`
+    <tr><td>${s.kind}</td><td class="mono">${s.date||''}</td><td class="mono">${fmtInt(s.qty||'')}</td>
+    <td>${s.from||''}</td><td>${s.to||''}</td><td>${s.method||''}</td><td>${s.ref||''}</td>
+    <td>${s.courier||''}</td><td>${s.tracking||''}</td><td class="mono">${s.cost? sym+fmt(s.cost):''}</td></tr>`).join('')||'';
+
+  // stash open order for Docs buttons
+  window._openOrderRef = o;
+
+  $('viewBody').innerHTML = `
+    <div class="card" style="grid-column:1 / -1">
+      <h3>Generate</h3>
+      <div class="pad actions">
+        <button class="btn mini" type="button" onclick="openDocsPreflight(window._openOrderRef,'so')">Order Confirmation</button>
+        <button class="btn mini" type="button" onclick="openDocsPreflight(window._openOrderRef,'invoice')">Invoice</button>
+        <button class="btn mini" type="button" onclick="openDocsPreflight(window._openOrderRef,'pt')">Picking Ticket</button>
+        <button class="btn mini" type="button" onclick="openDocsPreflight(window._openOrderRef,'ci')">Commercial Invoice</button>
+        <button class="btn mini" type="button" onclick="openDocsPreflight(window._openOrderRef,'rma')">RMA</button>
+      </div>
+    </div>
+
+    <div class="card"><h3>Header</h3><div class="pad"><div class="kv">
+      <div>Customer</div><div>${o.customer||'-'}</div>
+      <div>Salesperson</div><div>${o.salesperson||'-'}</div>
+      <div>Priority</div><div>${o.priority||'-'}</div>
+      <div>Status</div><div>${o.status||'-'}</div>
+      <div>Order Date</div><div>${o.order_date||'-'}</div>
+      <div>Requested by</div><div>${o.requested_by||'-'}</div>
+      <div>Incoterm</div><div>${o.incoterm||'-'}</div>
+      <div>Terms</div><div>${o.payment_terms||'-'}</div>
+      <div>Currency</div><div>${o.currency||'-'}</div>
+      <div>Vendor</div><div>${o.vendor||'-'}</div>
+      <div>Test Center</div><div>${o.test_center||'-'}</div>
+      <div>Tests</div><div>${o.tests||'-'}</div>
+      <div>Notes</div><div>${o.notes||'-'}</div>
+    </div></div></div>
+
+    <div class="card"><h3>Totals</h3><div class="pad"><div class="kv">
+      <div>Total Qty</div><div class="mono">${fmtInt(qty)}</div>
+      <div>Avg Unit</div><div class="mono">${sym}${fmt(avgUnit)}</div>
+      <div>Sell</div><div class="mono">${sym}${fmt(revenue)}</div>
+      <div>Item Cost</div><div class="mono">${sym}${fmt(itemCost)}</div>
+      <div>Shipping Cost</div><div class="mono">${sym}${fmt(shipCost)}</div>
+      <div>Test Cost</div><div class="mono">${sym}${fmt(testCost)}</div>
+      <div>Total Cost</div><div class="mono">${sym}${fmt(cost)}</div>
+      <div>GP</div><div><span class="pill">${sym}${fmt(gp)}</span> <span class="muted mono">(${fmt(gpPct)}%)</span></div>
+      <div>Files</div><div>
+        ${files.poUrl?`<a class="link" target="_blank" href="${files.poUrl}">PO</a>`:''}
+        ${files.testUrl?` · <a class="link" target="_blank" href="${files.testUrl}">Test</a>`:''}
+      </div>
+    </div></div></div>
+
+    <div class="card" style="grid-column:1 / -1"><h3>Line Items</h3>
+      <div class="pad">
+        <div class="hscroll"><table class="tbl" style="min-width:900px">
+          <thead><tr><th>Part</th><th>Date Codes</th><th>Qty</th><th>Unit Sell</th><th>Unit Cost</th></tr></thead>
+          <tbody>${partsRows||'<tr><td colspan="5" class="muted">No items</td></tr>'}</tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <div class="card" style="grid-column:1 / -1"><h3>Shipments</h3>
+      <div class="pad">
+        <div class="hscroll"><table class="tbl" style="min-width:1100px">
+          <thead><tr><th>Kind</th><th>Date</th><th>Qty</th><th>From</th><th>To</th><th>Method</th><th>Ref</th><th>Courier</th><th>Tracking</th><th>Cost</th></tr></thead>
+          <tbody>${shipRows||'<tr><td colspan="10" class="muted">No shipments</td></tr>'}</tbody>
+        </table></div>
+      </div>
+    </div>
+  `;
+  $('viewDlg').showModal();
+}
+
+/* init */
+document.addEventListener('DOMContentLoaded', ()=>{
+  $('salesperson').innerHTML = SALESTEAM.map(n=>`<option>${n}</option>`).join('');
+  $('fltSales').innerHTML = `<option value="">All salespeople</option>` + SALESTEAM.map(n=>`<option>${n}</option>`).join('');
+});
+
+async function init(){
+  await supa.loadOrders(); supa.subscribeRealtime(); render();
+}
+init();
 </script>
 </body>
 </html>
+
 
 
 
