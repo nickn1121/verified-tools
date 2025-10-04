@@ -99,27 +99,29 @@
   @media (max-width:680px){.grid2,.grid3{grid-template-columns:1fr}}
 </style>
 
+<!-- ===== Generate wizard styles (slick) ===== -->
+<style>
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chipbtn{height:32px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:#fff;cursor:pointer;font-weight:700}
+  .chipbtn.active{background:var(--brand);border-color:var(--brand);color:#fff}
+  .badge-miss{display:inline-block;padding:2px 6px;border-radius:6px;background:#ffe9e9;color:#b21a1a;font-size:12px;margin-left:6px}
+  .grid-auto{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+  .input.small{height:32px}
+  .hint{color:var(--muted);font-size:12px}
+  .step{display:none}
+  .step.active{display:block}
+  .gen-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+  #genFrame{width:100%;height:78vh;border:0;border-top:1px solid var(--line)}
+  #genDlg .content{max-height:unset;height:auto;padding:0}
+</style>
+
+<!-- ===== Supabase (keep existing behaviour; rotate later if needed) ===== -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  /* ====== Supabase init (rotate later) ====== */
   const SUPABASE_URL = 'https://ijzroisggstqkfhpjndq.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  /* ensure REST fetches carry apikey/auth */
-  (function(){
-    const f=window.fetch.bind(window);
-    window.fetch=(i,init={})=>{
-      const url=typeof i==='string'?i:i?.url||'';
-      if(url.startsWith(SUPABASE_URL)){
-        const h=new Headers(init.headers||{});
-        if(!h.has('apikey')) h.set('apikey', SUPABASE_ANON_KEY);
-        if(!h.has('Authorization')) h.set('Authorization','Bearer '+SUPABASE_ANON_KEY);
-        init={...init,headers:h};
-      }
-      return f(i,init);
-    };
-  })();
+  (function(){ const f=fetch.bind(window); window.fetch=(i,init={})=>{ const u=typeof i==='string'?i:i?.url||''; if(u.startsWith(SUPABASE_URL)){ const h=new Headers(init.headers||{}); if(!h.has('apikey'))h.set('apikey',SUPABASE_ANON_KEY); if(!h.has('Authorization'))h.set('Authorization','Bearer '+SUPABASE_ANON_KEY); init={...init,headers:h}; } return f(i,init); };})();
 </script>
 </head>
 <body>
@@ -318,7 +320,7 @@
   </div>
 </dialog>
 
-<!-- ====== VIEW SUMMARY (shows Generate buttons) ====== -->
+<!-- ====== VIEW SUMMARY (with Generate button) ====== -->
 <dialog id="viewDlg">
   <div class="modal">
     <header><div class="head"><strong>Order Summary</strong><button class="btn ghost mini" type="button" onclick="$('viewDlg').close()">✕</button></div></header>
@@ -326,58 +328,35 @@
   </div>
 </dialog>
 
-<!-- ====== DOCUMENTS MODAL (iframe) ====== -->
-<dialog id="docsDlg">
+<!-- ====== GENERATE WIZARD (one slick popup) ====== -->
+<dialog id="genDlg">
   <div class="modal">
     <header>
       <div class="head">
-        <div class="row">
-          <strong>Generate Document</strong>
-          <div id="docTabs" class="row" style="gap:6px">
-            <button class="btn mini ghost" type="button" data-doc="so">Order Confirmation</button>
-            <button class="btn mini ghost" type="button" data-doc="invoice">Invoice</button>
-            <button class="btn mini ghost" type="button" data-doc="pt">Picking Ticket</button>
-            <button class="btn mini ghost" type="button" data-doc="ci">Commercial Invoice</button>
-            <button class="btn mini ghost" type="button" data-doc="rma">RMA</button>
-          </div>
-        </div>
-        <button class="btn ghost mini" type="button" onclick="$('docsDlg').close()">✕</button>
+        <strong>Generate Document</strong>
+        <button class="btn ghost mini" type="button" onclick="$('genDlg').close()">✕</button>
       </div>
     </header>
-    <div class="content" style="padding:0">
-      <iframe id="docsFrame" style="width:100%;height:80vh;border:0"></iframe>
-    </div>
-  </div>
-</dialog>
 
-<!-- ====== PREFLIGHT (collect missing details before generating) ====== -->
-<dialog id="preDlg">
-  <div class="modal">
-    <header><div class="head"><strong>Pre-flight Details</strong><button class="btn ghost mini" type="button" onclick="$('preDlg').close()">✕</button></div></header>
     <div class="content">
-      <div class="section">Basics</div>
-      <div class="grid3">
-        <div><div class="note">Currency</div><select id="pf_currency" class="select mini"><option>USD</option><option>GBP</option><option>EUR</option></select></div>
-        <div><div class="note">Incoterm</div><input id="pf_incoterm" class="input mini" placeholder="DAP / DDP / EXW / ..."/></div>
-        <div><div class="note">Payment Terms</div><input id="pf_terms" class="input mini" placeholder="Net 30 / ..."/></div>
+      <!-- STEP 1: choose type + fill missing -->
+      <div id="stepForm" class="step active" style="padding:14px">
+        <div class="note" style="margin-bottom:6px">Document type</div>
+        <div class="chips" id="docTypeChips"></div>
+
+        <div id="missingWrap" style="margin-top:14px"></div>
+        <div id="hsWrap" style="margin-top:12px"></div>
+
+        <div class="gen-footer">
+          <button class="btn ghost mini" type="button" onclick="$('genDlg').close()">Cancel</button>
+          <button class="btn primary mini" id="genGo" type="button">Generate</button>
+        </div>
       </div>
 
-      <div class="section">Addresses</div>
-      <div class="grid2">
-        <div><div class="note">Seller (from)</div><textarea id="pf_from" rows="4" class="input mini" placeholder="Verified Electronics&#10;Address line&#10;City, Country"></textarea></div>
-        <div><div class="note">Buyer (sold to)</div><textarea id="pf_soldto" rows="4" class="input mini" placeholder="Customer&#10;Billing address"></textarea></div>
-        <div><div class="note">Ship To</div><textarea id="pf_shipto" rows="4" class="input mini" placeholder="Customer&#10;Shipping address"></textarea></div>
-        <div><div class="note">Return To (RMA)</div><textarea id="pf_return" rows="4" class="input mini" placeholder="Verified Electronics&#10;Returns address"></textarea></div>
+      <!-- STEP 2: embedded generator -->
+      <div id="stepFrame" class="step">
+        <iframe id="genFrame" title="Generator"></iframe>
       </div>
-
-      <div class="section">Commercial Invoice Extras (optional)</div>
-      <div class="grid3">
-        <div><div class="note">Freight</div><input id="pf_freight" type="number" step="0.01" class="input mini mono" placeholder="0.00"/></div>
-        <div><div class="note">Insurance</div><input id="pf_ins" type="number" step="0.01" class="input mini mono" placeholder="0.00"/></div>
-        <div><div class="note">Other</div><input id="pf_other" type="number" step="0.01" class="input mini mono" placeholder="0.00"/></div>
-      </div>
-
-      <div class="right" style="margin-top:10px"><button class="btn primary mini" type="button" id="pfConfirm">Generate</button></div>
     </div>
   </div>
 </dialog>
@@ -400,8 +379,7 @@ const supa = {
 
   async loadOrders(){
     const {data:orders, error:e0} = await supabase
-      .from('orders')
-      .select('*')
+      .from('orders').select('*')
       .order('order_date',{ascending:false,nullsFirst:true})
       .order('created_at',{ascending:false});
     if(e0){ console.error('orders load error', e0); this.state.orders=[]; return; }
@@ -493,7 +471,6 @@ const supa = {
       })));
     }
 
-    // persist flags (no-op if columns missing)
     await this.quickUpdate(order_id, 'is_shipped', rec.is_shipped, true);
     await this.quickUpdate(order_id, 'is_invoiced', rec.is_invoiced, true);
 
@@ -733,7 +710,7 @@ function render(){
     td=document.createElement('td'); td.className='actions';
     td.appendChild(button('Edit','ghost',()=>openModal(o)));
     td.appendChild(button('Clone','ghost',()=>cloneOrder(o)));
-    td.appendChild(button('Docs','ghost',()=>openDocsPreflight(o,'so')));
+    td.appendChild(button('Generate','ghost',()=>openGenerateWizard(o,'so')));   /* 👈 new slick wizard */
     td.appendChild(button('Delete','ghost',async()=>{ if(!confirm('Delete this order?'))return; await supa.deleteOrder(o.id); await supa.loadOrders(); render(); }));
     tr.appendChild(td);
 
@@ -927,22 +904,27 @@ $('btnCsv').onclick=()=>{
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='orders.csv'; a.click();
 };
 
-/* -------- Documents (embedded) -------- */
+/* -------- GENERATE: config & memory -------- */
+/* IMPORTANT: repo layout (sibling folders): /order-tracker/, /commercial-invoice/, /so-confirmation/, /rma/  */
+const DOC_BASE = '../';  /* 👈 relative from /order-tracker/index.html to siblings */
 const DOC_ROUTES = {
-  so:       '/so-invoice/index.html',
-  invoice:  '/so-invoice/index.html',
-  ci:       '/commercial-invoice/index.html',
-  pt:       '/commercial-invoice/index.html#pt',
-  rma:      '/rma/index.html'
+  so:      DOC_BASE + 'so-confirmation/index.html',
+  invoice: DOC_BASE + 'so-confirmation/index.html',     // same page; we pass meta.docType='invoice'
+  ci:      DOC_BASE + 'commercial-invoice/index.html',
+  pt:      DOC_BASE + 'commercial-invoice/index.html#pt',
+  rma:     DOC_BASE + 'rma/index.html'
 };
+const HS_MEM_KEY='ve-hs-mem';
+const hsMem = JSON.parse(localStorage.getItem(HS_MEM_KEY)||'{}');
+const saveHsMem=()=>localStorage.setItem(HS_MEM_KEY,JSON.stringify(hsMem));
 
 function orderToDocPayload(o){
   const {revenue, itemCost, shipCost, testCost, cost, qty} = totals(o);
   return {
     meta:{
       orderId:o.id, customer:o.customer, salesperson:o.salesperson,
-      po:o.files?.po || null, incoterm:o.incoterm, payment_terms:o.payment_terms,
-      currency:o.currency || 'USD', order_date:o.order_date, requested_by:o.requested_by,
+      po:o.files?.po||null, incoterm:o.incoterm, payment_terms:o.payment_terms,
+      currency:o.currency||'USD', order_date:o.order_date, requested_by:o.requested_by,
       vendor:o.vendor, notes:o.notes
     },
     items:(o.items||[]).map(i=>({
@@ -954,58 +936,171 @@ function orderToDocPayload(o){
   };
 }
 
-function openDocsPreflight(order, docType){
-  const d=order;
-  $('pf_currency').value=(d.currency||'USD').toUpperCase();
-  $('pf_incoterm').value=d.incoterm||'';
-  $('pf_terms').value=d.payment_terms||'';
-  $('pf_from').value='Verified Electronics\n(Exporter / Warehouse address)';
-  $('pf_soldto').value=(d.customer||'')+'\n(Billing address)';
-  $('pf_shipto').value=(d.customer||'')+'\n(Shipping address)';
-  $('pf_return').value='Verified Electronics\n(Returns address)';
-  $('pf_freight').value=Number(d.shipping_cost_extra||0);
-  $('pf_ins').value=''; $('pf_other').value='';
+function missingFields(order, type){
+  const need = [];
+  const must = (key,label,placeholder='')=>{
+    if(!order[key]) need.push({key,label,placeholder});
+  };
+  must('currency','Currency');
+  must('incoterm','Incoterm');
+  must('payment_terms','Payment Terms');
+  need.push({key:'from',label:'Seller (From)',placeholder:'Verified Electronics\nAddress, City, Country'});
+  need.push({key:'soldto',label:'Buyer (Sold To)',placeholder:(order.customer||'')+'\nBilling address'});
+  need.push({key:'shipto',label:'Ship To',placeholder:(order.customer||'')+'\nShipping address'});
+  if(type==='rma') need.push({key:'returnTo',label:'Return To',placeholder:'Verified Electronics\nReturns address'});
+  if(type==='ci' || type==='pt'){
+    need.push({key:'freight',label:'Freight'});
+    need.push({key:'insurance',label:'Insurance'});
+    need.push({key:'other',label:'Other'});
+  }
+  return need;
+}
 
-  $('preDlg').showModal();
+function renderMissingForm(order, type){
+  const wrap=$('missingWrap'); wrap.innerHTML='';
+  const need = missingFields(order,type);
 
-  $('pfConfirm').onclick=()=>{
-    const overrides={
-      currency:$('pf_currency').value,
-      incoterm:$('pf_incoterm').value.trim()||d.incoterm||'',
-      terms:$('pf_terms').value.trim()||d.payment_terms||'',
-      from:$('pf_from').value.trim(), soldto:$('pf_soldto').value.trim(),
-      shipto:$('pf_shipto').value.trim(), returnTo:$('pf_return').value.trim(),
-      ciCharges:{freight:Number($('pf_freight').value||0),insurance:Number($('pf_ins').value||0),other:Number($('pf_other').value||0)}
+  const baseFields = document.createElement('div');
+  baseFields.className='grid-auto';
+
+  need.forEach(f=>{
+    const isAddr = /from|soldto|shipto|returnTo/.test(f.key);
+    const id = `f_${f.key}`;
+    baseFields.insertAdjacentHTML('beforeend', `
+      <div>
+        <div class="note">${f.label}${(!order[f.key] && !isAddr)?'<span class="badge-miss">missing</span>':''}</div>
+        ${isAddr
+          ? `<textarea id="${id}" class="input" rows="4" placeholder="${esc(f.placeholder||'')}"></textarea>`
+          : (f.key==='currency'
+              ? `<select id="f_currency" class="select small"><option>USD</option><option>GBP</option><option>EUR</option></select>`
+              : `<input id="${id}" class="input small" placeholder="${esc(f.placeholder||'')}"/>`)}
+      </div>
+    `);
+  });
+
+  wrap.appendChild(baseFields);
+
+  const hsWrap = $('hsWrap');
+  if(type==='ci' || type==='pt'){
+    const rows = (order.items||[]).map(i=>{
+      const mem = hsMem[i.part_number]||{};
+      return `
+        <tr>
+          <td>${esc(i.part_number)}</td>
+          <td><input class="input small mono" id="hs_${esc(i.part_number)}" value="${esc(mem.hs||'')}" placeholder="HS Code"/></td>
+          <td><input class="input small mono" id="coo_${esc(i.part_number)}" value="${esc(mem.coo||'')}" placeholder="COO"/></td>
+        </tr>`;
+    }).join('');
+    hsWrap.innerHTML = `
+      <div class="section">Per-item HS/COO</div>
+      <div class="hscroll">
+        <table class="tbl" style="min-width:540px">
+          <thead><tr><th>Part</th><th>HS Code</th><th>Country of Origin</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="3" class="muted">No items</td></tr>'}</tbody>
+        </table>
+      </div>
+      <div class="hint" style="margin-top:6px">We remember HS/COO by part number for next time.</div>
+    `;
+  }else{
+    hsWrap.innerHTML='';
+  }
+
+  $('f_currency') && ($('f_currency').value = (order.currency||'USD').toUpperCase());
+  $('f_incoterm') && ($('f_incoterm').value = order.incoterm||'');
+  $('f_payment_terms') && ($('f_payment_terms').value = order.payment_terms||'');
+  $('f_from')      && ($('f_from').value = 'Verified Electronics\nExporter/Warehouse address');
+  $('f_soldto')    && ($('f_soldto').value = (order.customer||'')+'\nBilling address');
+  $('f_shipto')    && ($('f_shipto').value = (order.customer||'')+'\nShipping address');
+  $('f_returnTo')  && (type==='rma') && ($('f_returnTo').value = 'Verified Electronics\nReturns address');
+  $('f_freight')   && ($('f_freight').value = Number(order.shipping_cost_extra||0));
+}
+
+function collectOverrides(type, order){
+  const g = k => (document.getElementById('f_'+k)||{}).value?.trim();
+  const res = {
+    currency: $('f_currency')? $('f_currency').value : (order.currency||'USD'),
+    incoterm: g('incoterm') || order.incoterm || '',
+    payment_terms: g('payment_terms') || order.payment_terms || '',
+    from: g('from') || '',
+    soldto: g('soldto') || '',
+    shipto: g('shipto') || '',
+    returnTo: (type==='rma'? g('returnTo') || '' : ''),
+    ci: undefined
+  };
+  if(type==='ci' || type==='pt'){
+    res.ci = {
+      freight: Number(g('freight')||0),
+      insurance: Number(g('insurance')||0),
+      other: Number(g('other')||0)
     };
-    const payload=orderToDocPayload(d);
-    payload.meta.currency=overrides.currency;
-    payload.meta.incoterm=overrides.incoterm;
-    payload.meta.payment_terms=overrides.terms;
-    payload.meta.from=overrides.from;
-    payload.meta.soldto=overrides.soldto;
-    payload.meta.shipto=overrides.shipto;
-    payload.meta.returnTo=overrides.returnTo;
-    payload.ci={...payload.ci,...overrides.ciCharges};
-    try{ sessionStorage.setItem('veDocData', JSON.stringify(payload)); }catch(e){ console.warn(e); }
-    $('preDlg').close(); openDocsDialog(docType);
+    (order.items||[]).forEach(i=>{
+      const hs = (document.getElementById('hs_'+i.part_number)||{}).value?.trim();
+      const coo= (document.getElementById('coo_'+i.part_number)||{}).value?.trim();
+      if(hs || coo){ hsMem[i.part_number] = {hs, coo}; }
+    });
+    saveHsMem();
+  }
+  return res;
+}
+
+function openGenerateWizard(order, defaultType='so'){
+  $('stepForm').classList.add('active'); $('stepFrame').classList.remove('active');
+  $('genDlg').showModal();
+
+  const types=[['so','Order Confirmation'],['invoice','Invoice'],['pt','Picking Ticket'],['ci','Commercial Invoice'],['rma','RMA']];
+  $('docTypeChips').innerHTML = types.map(([t,label])=>`<button class="chipbtn${t===defaultType?' active':''}" data-type="${t}">${label}</button>`).join('');
+  let currentType=defaultType;
+  $('docTypeChips').onclick=e=>{
+    const b=e.target.closest('button[data-type]'); if(!b) return;
+    currentType=b.dataset.type;
+    [...$('docTypeChips').children].forEach(x=>x.classList.toggle('active', x===b));
+    renderMissingForm(order,currentType);
   };
 
-  window._openOrderRef=d; // for View modal buttons too
+  renderMissingForm(order,currentType);
+
+  $('genGo').onclick=()=>{
+    const overrides = collectOverrides(currentType, order);
+    const payload = orderToDocPayload(order);
+    payload.meta.docType = currentType;   // hint for so-confirmation page
+    payload.meta.currency = overrides.currency;
+    payload.meta.incoterm = overrides.incoterm;
+    payload.meta.payment_terms = overrides.payment_terms;
+    payload.meta.from = overrides.from;
+    payload.meta.soldto = overrides.soldto;
+    payload.meta.shipto = overrides.shipto;
+    if(currentType==='rma') payload.meta.returnTo = overrides.returnTo;
+    if(overrides.ci){
+      const ciItems = payload.items.map(it=>{
+        const mem = hsMem[it.part]||{};
+        return { units: it.qty, um:'pcs', desc: it.part, hs: mem.hs||'', coo: mem.coo||'', unitValue: it.unitSell };
+      });
+      payload.ci = {...overrides.ci, items: ciItems};
+    }
+
+    try{ sessionStorage.setItem('veDocData', JSON.stringify(payload)); }catch(e){ console.warn('sessionStorage failed', e); }
+    $('stepForm').classList.remove('active'); $('stepFrame').classList.add('active');
+
+    const url = DOC_ROUTES[currentType] || DOC_ROUTES.so;
+    const f=$('genFrame');
+    f.src = url;
+
+    // guard if path points to self
+    f.onload = ()=>{
+      try{
+        const doc = f.contentDocument || f.contentWindow.document;
+        if(doc && /Order Tracker/i.test(doc.title)){
+          doc.body.innerHTML =
+            '<div style="font:15px system-ui;padding:24px">⚠️ The generator path points back to this page.<br>Update <code>DOC_BASE</code> (currently "<b>'+DOC_BASE+'</b>") to the correct relative folder.</div>';
+        }
+      }catch(_){}
+    };
+  };
 }
-function openDocsDialog(docType='so'){
-  const frame=$('docsFrame'); frame.src=DOC_ROUTES[docType]||DOC_ROUTES.so;
-  $('docsDlg').showModal();
-  [...$('docTabs').querySelectorAll('button')].forEach(b=>b.classList.toggle('primary', b.dataset.doc===docType));
-}
-$('docTabs').addEventListener('click', e=>{
-  const btn=e.target.closest('button[data-doc]'); if(!btn) return;
-  const type=btn.dataset.doc; $('docsFrame').src=DOC_ROUTES[type]||DOC_ROUTES.so;
-  [...$('docTabs').querySelectorAll('button')].forEach(b=>b.classList.toggle('primary', b.dataset.doc===type));
-});
 
 /* -------- View (with Generate section) -------- */
 function openView(o){
-  window._openOrderRef=o; // store for generator
+  window._openOrderRef=o;
 
   const {revenue,gp,gpPct,qty,avgUnit,itemCost,shipCost,testCost,cost} = totals(o);
   const sym=curSym(o.currency);
@@ -1022,11 +1117,7 @@ function openView(o){
     <div class="card" style="grid-column:1 / -1">
       <h3>Generate</h3>
       <div class="pad actions" style="flex-wrap:wrap">
-        <button class="btn mini" type="button" onclick="openDocsPreflight(window._openOrderRef,'so')">Order Confirmation</button>
-        <button class="btn mini" type="button" onclick="openDocsPreflight(window._openOrderRef,'invoice')">Invoice</button>
-        <button class="btn mini" type="button" onclick="openDocsPreflight(window._openOrderRef,'pt')">Picking Ticket</button>
-        <button class="btn mini" type="button" onclick="openDocsPreflight(window._openOrderRef,'ci')">Commercial Invoice</button>
-        <button class="btn mini" type="button" onclick="openDocsPreflight(window._openOrderRef,'rma')">RMA</button>
+        <button class="btn mini" type="button" onclick="openGenerateWizard(window._openOrderRef,'so')">Generate</button>
       </div>
     </div>
 
@@ -1088,6 +1179,7 @@ init();
 </script>
 </body>
 </html>
+
 
 
 
