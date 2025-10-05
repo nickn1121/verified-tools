@@ -9,7 +9,7 @@
 <style>
 :root{
   --brand:#6f57e9; --ink:#1f2432; --muted:#6d7486; --bg:#f6f7fb; --card:#fff; --line:#e9e9ef;
-  --green:#12a274; --purple:#3b2eca; --shadow:0 12px 30px rgba(23,20,68,.08),0 1px 0 rgba(0,0,0,.04)
+  --green:#12a274; --red:#d0453d; --shadow:0 12px 30px rgba(23,20,68,.08),0 1px 0 rgba(0,0,0,.04)
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -103,7 +103,6 @@ textarea.input{min-height:84px}
 @media (max-width:680px){.grid2,.grid3{grid-template-columns:1fr}}
 </style>
 
-<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ====== CONFIG ====== */
@@ -143,7 +142,7 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
           <th>Age</th><th>Tests</th><th>Vendor</th><th>Lead (d)</th><th>Incoterm</th><th>Terms</th>
           <th>Docs</th><th>Shipped</th><th>Invoiced</th><th>Files</th><th>Actions</th>
         </tr></thead>
-        <tbody id="tbody"></tbody>
+        <tbody id="tbody"><tr><td colspan="23" class="muted" style="text-align:center;padding:40px">Loading…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -211,7 +210,7 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
 <!-- SUMMARY -->
 <dialog id="viewDlg"><div class="modal">
-  <header><div class="head"><strong>Order Summary</strong><button class="btn ghost mini" onclick="$('viewDlg').close()">✕</button></div></header>
+  <header><div class="head"><strong>Order Details</strong><button class="btn ghost mini" onclick="$('viewDlg').close()">✕</button></div></header>
   <div class="content"><div id="viewBody" class="summary"></div></div>
 </div></dialog>
 
@@ -235,7 +234,7 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 </div></dialog>
 
 <!-- Tiny toast -->
-<div id="toast" style="position:fixed;right:16px;bottom:16px;background:#111;color:#fff;padding:10px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s"></div>
+<div id="toast" style="position:fixed;right:16px;bottom:16px;background:#111;color:#fff;padding:10px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s;z-index:9999"></div>
 
 <script>
 /* ================== helpers ================== */
@@ -254,7 +253,10 @@ function clearToast(){const t=$('toast'); if(t) t.style.opacity='0';}
 const supa={
   state:{orders:[]},
   async load(){
-    const {data:orders}=await supabase.from('orders').select('*').order('order_date',{ascending:false,nullsFirst:true}).order('created_at',{ascending:false});
+    const {data:orders,error}=await supabase.from('orders').select('*')
+      .order('order_date',{ascending:false,nullsFirst:true}).order('created_at',{ascending:false});
+    if(error){console.error(error); return;}
+    // hydrate related data per order (keeps memory reasonable and avoids cartesian blowups)
     this.state.orders=await Promise.all((orders||[]).map(async r=>{
       const [itemsRes,legsRes,inbRes,outRes,filesRes,notesRes]=await Promise.all([
         supabase.from('order_items').select('*').eq('order_id',r.id),
@@ -270,8 +272,9 @@ const supa={
       const inbound=(inbRes.data||[]).map(s=>({kind:'Inbound',date:s.ship_date,qty:s.qty,courier:s.courier,tracking:s.tracking}));
       const outbound=(outRes.data||[]).map(s=>({kind:'Outbound',date:s.ship_date,qty:s.qty,courier:s.courier,tracking:s.tracking}));
 
-      const filesMap=(filesRes.data||[]).reduce((a,f)=>{a[f.kind]=f.path;return a;},{});
-      const genList=(filesRes.data||[]).filter(f=>/_pdf$/.test(f.kind)).map(f=>({kind:f.kind,path:f.path,created_at:f.created_at}));
+      const filesArr=(filesRes.data||[]);
+      const filesMap=filesArr.reduce((a,f)=>{a[f.kind]=f.path;return a;},{});
+      const genList=filesArr.filter(f=>/_pdf$/.test(f.kind)).map(f=>({kind:f.kind,path:f.path,created_at:f.created_at}));
 
       // signed links for PO/Test for quick access
       let poUrl=null,testUrl=null;
@@ -290,8 +293,11 @@ const supa={
     await supabase.from('shipments_inbound').delete().eq('order_id',order_id);
     await supabase.from('shipments_outbound').delete().eq('order_id',order_id);
 
-    if(header.items?.length){ await supabase.from('order_items').insert(header.items.map(i=>({order_id,part_number:i.part_number,date_codes:i.date_codes,qty:i.qty,unit_sell:i.unit_sell,unit_cost:i.unit_cost}))); }
-
+    if(header.items?.length){
+      await supabase.from('order_items').insert(header.items.map(i=>({
+        order_id,part_number:i.part_number,date_codes:i.date_codes,qty:i.qty,unit_sell:i.unit_sell,unit_cost:i.unit_cost
+      })));
+    }
     const legs=header.shipments?.filter(s=>s.kind==='Leg')||[];
     const inbound=header.shipments?.filter(s=>s.kind==='Inbound')||[];
     const outbound=header.shipments?.filter(s=>s.kind==='Outbound')||[];
@@ -301,16 +307,15 @@ const supa={
 
     if(uploads?.po) await this.upload(order_id,'po',uploads.po);
     if(uploads?.test_report) await this.upload(order_id,'test_report',uploads.test_report);
+    return order_id;
   },
   async upload(orderId, kind, file){
     if (!file) throw new Error('No file');
     const clean=file.name.replace(/[^\w.-]+/g,'_');
     const path=`orders/${orderId}/${kind}/${Date.now()}_${clean}`;
-
     const {error:upErr}=await supabase.storage.from('order-files')
       .upload(path,file,{upsert:true,contentType:file.type||'application/octet-stream',cacheControl:'3600'});
     if(upErr) throw upErr;
-
     const {error:insErr}=await supabase.from('order_files').insert({order_id:orderId,kind,path});
     if(insErr) throw insErr;
 
@@ -394,6 +399,7 @@ function render(){
     tr.appendChild(cell(esc(o.tests||'-'))); tr.appendChild(cell(esc(o.vendor||'-'))); tr.appendChild(cell(esc((o.supplier_lead_time??'')||'-'))); tr.appendChild(cell(esc(o.incoterm||'-')));
     const tdT=document.createElement('td'); tdT.appendChild(inlineSelect(o,'payment_terms',['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90'])); tr.appendChild(tdT);
 
+    // doc buttons + quick tags
     const tdD=document.createElement('td'); tdD.style.minWidth='320px';
     [['so','OC'],['invoice','INV'],['pt','PT'],['ci','CI'],['rma','RMA']].forEach(([k,l])=>{const b=document.createElement('button');b.className='docbtn smini';b.textContent=l;b.onclick=()=>openGen(o,k);tdD.appendChild(b);});
     const tagKinds=['so','invoice','pt','ci','rma'];
@@ -420,11 +426,11 @@ function render(){
 /* =============== edit form helpers =============== */
 function addItemRow(v={part_number:'',date_codes:'',qty:'',unit_sell:'',unit_cost:''}){
   const tr=document.createElement('tr'); tr.innerHTML=
-  `<td><input class="input mini" value="${esc(v.part_number)}"/></td>
-   <td><input class="input mini" value="${esc(v.date_codes||'')}"/></td>
-   <td><input type="number" step="1" class="input mini mono" value="${v.qty||''}"/></td>
-   <td><input type="number" step="0.01" class="input mini mono" value="${v.unit_sell||''}"/></td>
-   <td><input type="number" step="0.01" class="input mini mono" value="${v.unit_cost||''}"/></td>
+  `<td><input class="input mini" value="${esc(v.part_number)}" placeholder="Part number"/></td>
+   <td><input class="input mini" value="${esc(v.date_codes||'')}" placeholder="Date codes"/></td>
+   <td><input type="number" step="1" class="input mini mono" value="${v.qty||''}" placeholder="0"/></td>
+   <td><input type="number" step="0.01" class="input mini mono" value="${v.unit_sell||''}" placeholder="0.00"/></td>
+   <td><input type="number" step="0.01" class="input mini mono" value="${v.unit_cost||''}" placeholder="0.00"/></td>
    <td class="right"><button class="btn mini ghost" onclick="this.closest('tr').remove()">−</button></td>`;
   $('itemsBody').appendChild(tr);
 }
@@ -457,7 +463,7 @@ function openModal(o){
   $('orderId').value=o?.id||'';
   $('salesperson').innerHTML=SALESTEAM.map(n=>`<option>${n}</option>`).join(''); $('salesperson').value=o?.salesperson||SALESTEAM[0];
   ['customer','priority','status','order_date','requested_by','payment_terms','payment_method','incoterm','invoice_date','due_date','currency','tests','test_center','supplier_lead_time','vendor','shipping_cost_extra','test_cost','notes','bill_to','ship_to'].forEach(id=>{$(id).value=o?.[id]??''});
-  $('itemsBody').innerHTML=''; (o?.items||[]).forEach(addItemRow);
+  $('itemsBody').innerHTML=''; (o?.items||[]).forEach(addItemRow); if(!o) addItemRow();
   $('shipBody').innerHTML=''; (o?.shipments||[]).forEach(addShipRow);
 
   $('btnSave').onclick=async()=>{
@@ -475,7 +481,7 @@ function openModal(o){
       items:itemsFromDOM(), shipments:shipsFromDOM()
     };
     const uploads={}; if($('file_po').files[0]) uploads.po=$('file_po').files[0]; if($('file_test').files[0]) uploads.test_report=$('file_test').files[0];
-    await supa.save(rec,uploads); await supa.load(); render(); $('dlg').close();
+    const id=await supa.save(rec,uploads); await supa.load(); render(); $('dlg').close();
   };
   $('btnDelete').onclick=async()=>{ if(!o?.id) return $('dlg').close(); if(!confirm('Delete this order?'))return; await supa.del(o.id); await supa.load(); render(); $('dlg').close(); };
   $('dlg').showModal();
@@ -522,7 +528,7 @@ function openView(o,keep){
       <div>Terms</div><div>${esc(o.payment_terms||'-')}</div>
       <div>Currency</div><div>${esc(o.currency||'-')}</div>
       <div>Tests</div><div>${esc(o.tests||'-')}</div>
-      <div>Notes</div><div>${esc(o.notes||'-')}</div>
+      <div>Header Notes</div><div>${esc(o.notes||'-')}</div>
     </div></div>
 
     <div class="card"><h3>Addresses</h3><div class="pad"><div class="grid2">
@@ -719,8 +725,10 @@ window.addEventListener('message',async(e)=>{
     if(!blob) throw new Error('No blob captured from generator');
 
     const fn=d.filename||`${(d.docType||'document').toUpperCase()}-${Date.now()}.pdf`;
+    // Download to PC
     try{ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fn; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),3000); }catch(_){}
 
+    // Upload to Supabase
     const meta=JSON.parse(sessionStorage.getItem('veDocData')||'{}')?.meta||{};
     const orderId=meta.orderId;
     if(orderId){
@@ -728,10 +736,10 @@ window.addEventListener('message',async(e)=>{
       await supa.uploadGenerated(orderId, d.docType||meta.docType||'doc', file);
       await supa.load(); render(); renderOpenViewIfSame();
     }
-    if ($('genDlg')?.open) $('genDlg').close();
   }catch(err){
     console.error(err); alert('Downloaded PDF, but upload failed.');
   }finally{
+    if ($('genDlg')?.open) $('genDlg').close();
     if ($('genGo')) { $('genGo').disabled=false; $('genGo').textContent='Generate…'; }
   }
 });
@@ -909,5 +917,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
 </script>
 </body>
 </html>
+
+
 
 
