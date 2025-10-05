@@ -15,7 +15,7 @@ header img{height:44px}h1{margin:0;font-size:26px;font-weight:800}.sub{color:var
 .input,.select,.btn,textarea{height:40px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:0 12px;font:inherit}
 .input{width:100%}textarea{padding:12px;resize:vertical}.select{appearance:none;padding-right:28px}
 .btn{background:#f7f5ff;color:var(--purple);border-color:#ece8ff;font-weight:700;cursor:pointer}
-.btn:hover{background:#eee8ff}.btn.primary{background:var(--brand);border-color:#var(--brand);color:#fff}
+.btn:hover{background:#eee8ff}.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
 .mini{height:32px}.smini{height:28px;padding:0 10px;border-radius:999px}
 .table-card{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}.table-wrap{overflow:auto}
 table{width:100%;border-collapse:collapse;min-width:1320px}
@@ -40,13 +40,12 @@ dialog{border:0;padding:0;margin:0 auto;max-width:1500px;width:98vw}dialog::back
 .kv{display:grid;grid-template-columns:170px 1fr;gap:8px 14px}
 .chips{display:flex;gap:10px;flex-wrap:wrap}.chipbtn{height:36px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:#fff;cursor:pointer;font-weight:800}
 .chipbtn.active{background:var(--brand);border-color:var(--brand);color:#fff}.badge-miss{display:inline-block;padding:2px 8px;border-radius:8px;background:#ffe9e9;color:#b21a1a;font-size:12px;margin-left:8px}
-.grid-auto{display:grid;grid-template-columns:repeat(3,minmax(240px,1fr));gap:12px}.input.small{height:34px}.hint{color:var(--muted);font-size:12px}
+.grid-auto{display:grid;grid-template-columns:repeat(3,minmax(240px,1fr));gap:12px}.input.small{height:34px}.hint{color:#6b6ea0;font-size:12px}
 .step{display:none}.step.active{display:block}#genFrame{width:100%;height:78vh;border:0;border-top:1px solid var(--line)}#genDlg .content{max-height:unset;height:auto;padding:0}
 textarea.input{min-height:84px}.note-item{padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff;margin-bottom:10px}
 .note-head{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:#6b7290}
 .docbtn{border:1px solid #e8e8f6;background:#fff;border-radius:999px;height:28px;padding:0 10px;cursor:pointer}.docbtn:hover{background:#f5f4ff}
 .doctag{display:inline-block;padding:2px 8px;border:1px solid #e6e6f3;border-radius:999px;background:#fafaff;margin-right:6px}
-.dzu{border:1px dashed #cfcfe6;border-radius:12px;padding:10px;text-align:center;color:#6b6ea0}
 @media (max-width:1200px){.summary{grid-template-columns:1fr}}@media (max-width:900px){.grid3{grid-template-columns:1fr 1fr}}@media (max-width:680px){.grid2,.grid3{grid-template-columns:1fr}}
 </style>
 
@@ -63,7 +62,7 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 <div class="wrap">
   <header>
     <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified">
-    <div><h1>Order Tracker</h1><div class="sub">Click Generate; only missing fields are asked. We fill the rest and auto-create the PDF.</div></div>
+    <div><h1>Order Tracker</h1><div class="sub">Generate docs with one click. Only missing inputs are asked.</div></div>
   </header>
 
   <div class="toolbar">
@@ -91,7 +90,7 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
   </div>
 </div>
 
-<!-- NEW/EDIT ORDER -->
+<!-- CREATE / EDIT -->
 <dialog id="dlg"><div class="modal">
   <header><div class="head"><strong id="dlgTitle">New Order</strong><button class="btn ghost mini" onclick="$('dlg').close()">✕</button></div></header>
   <div class="content">
@@ -112,6 +111,12 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
       <div><div class="note">Invoice Date</div><input id="invoice_date" type="date" class="input mini"/></div>
       <div><div class="note">Due Date</div><input id="due_date" type="date" class="input mini"/></div>
       <div><div class="note">Currency</div><select id="currency" class="select mini"><option value="USD" selected>USD</option><option value="GBP">GBP</option><option value="EUR">EUR</option></select></div>
+    </div>
+
+    <div class="section">Addresses</div>
+    <div class="grid2">
+      <div><div class="note">Bill To (billing address)</div><textarea id="bill_to" class="input" rows="5" placeholder="Customer billing name&#10;Address line 1&#10;Address line 2&#10;City, State ZIP&#10;Country"></textarea></div>
+      <div><div class="note">Ship To (shipping address)</div><textarea id="ship_to" class="input" rows="5" placeholder="Customer shipping name&#10;Address line 1&#10;Address line 2&#10;City, State ZIP&#10;Country"></textarea></div>
     </div>
 
     <div class="section">Tests & Files</div>
@@ -145,13 +150,13 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
   </div>
 </div></dialog>
 
-<!-- ORDER SUMMARY / NOTES -->
+<!-- VIEW / SUMMARY -->
 <dialog id="viewDlg"><div class="modal">
   <header><div class="head"><strong>Order Summary</strong><button class="btn ghost mini" onclick="$('viewDlg').close()">✕</button></div></header>
   <div class="content"><div id="viewBody" class="summary"></div></div>
 </div></dialog>
 
-<!-- GENERATE: we ask only missing bits, then auto-fill the generator page -->
+<!-- GENERATE: same clean popup -->
 <dialog id="genDlg"><div class="modal">
   <header><div class="head"><strong>Generate Document</strong><button class="btn ghost mini" onclick="$('genDlg').close()">✕</button></div></header>
   <div class="content">
@@ -168,13 +173,13 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
     </div>
     <div id="stepFrame" class="step">
       <iframe id="genFrame" title="Generator"></iframe>
-      <div style="padding:12px" class="muted">We’re auto-filling the page and clicking “Generate PDF”…</div>
+      <div style="padding:12px" class="muted">We’re auto-filling the doc and creating the PDF…</div>
     </div>
   </div>
 </div></dialog>
 
 <script>
-/* ---------- helpers ---------- */
+/* ───────── helpers ───────── */
 const $=id=>document.getElementById(id);
 const SALESTEAM=['Nick N','Dan C','Emir B','Nick K','Jake B'];
 const curSym=c=>({USD:'$',GBP:'£',EUR:'€'})[c||'USD']||'$';
@@ -182,7 +187,7 @@ const fmt=n=>(n==null||isNaN(n))?'-':Number(n).toLocaleString(undefined,{minimum
 const fmtInt=n=>(n==null||isNaN(n))?'-':Number(n).toLocaleString();
 const esc=s=>(s??'').toString().replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-/* ---------- Supabase data ---------- */
+/* ───────── Supabase data ───────── */
 const supa={
   state:{orders:[]},
   async load(){
@@ -193,19 +198,20 @@ const supa={
         supabase.from('ship_legs').select('*').eq('order_id',r.id),
         supabase.from('shipments_inbound').select('*').eq('order_id',r.id),
         supabase.from('shipments_outbound').select('*').eq('order_id',r.id),
-        supabase.from('order_files').select('*').eq('order_id',r.id),
+        supabase.from('order_files').select('id,kind,path,created_at').eq('order_id',r.id).order('created_at',{ascending:true}),
         supabase.from('order_notes').select('*').eq('order_id',r.id).order('created_at',{ascending:true}),
       ]);
       const items=(itemsRes.data||[]).map(i=>({part_number:i.part_number,date_codes:i.date_codes,qty:i.qty,unit_sell:i.unit_sell,unit_cost:i.unit_cost}));
       const legs=(legsRes.data||[]).map(l=>({kind:'Leg',date:'',qty:'',from:l.from_loc,to:l.to_loc,method:l.method,ref:l.ref,cost:l.cost}));
       const inbound=(inbRes.data||[]).map(s=>({kind:'Inbound',date:s.ship_date,qty:s.qty,courier:s.courier,tracking:s.tracking}));
       const outbound=(outRes.data||[]).map(s=>({kind:'Outbound',date:s.ship_date,qty:s.qty,courier:s.courier,tracking:s.tracking}));
-      const files=(filesRes.data||[]).reduce((a,f)=>{a[f.kind]=f.path;return a;},{});
+      const filesMap=(filesRes.data||[]).reduce((a,f)=>{a[f.kind]=f.path;return a;},{});
+      const genList=(filesRes.data||[]).filter(f=>/_pdf$/.test(f.kind)).map(f=>({kind:f.kind,path:f.path,created_at:f.created_at}));
       let poUrl=null,testUrl=null;
-      if(files.po){const {data:s}=await supabase.storage.from('order-files').createSignedUrl(files.po,3600);poUrl=s?.signedUrl||null;}
-      if(files.test_report){const {data:s}=await supabase.storage.from('order-files').createSignedUrl(files.test_report,3600);testUrl=s?.signedUrl||null;}
+      if(filesMap.po){const {data:s}=await supabase.storage.from('order-files').createSignedUrl(filesMap.po,3600);poUrl=s?.signedUrl||null;}
+      if(filesMap.test_report){const {data:s}=await supabase.storage.from('order-files').createSignedUrl(filesMap.test_report,3600);testUrl=s?.signedUrl||null;}
       window._sessionFiles ||= {}; window._sessionFiles[r.id]={poUrl,testUrl};
-      return { ...r, items, shipments:[...legs,...inbound,...outbound], files, staff_notes:notesRes.data||[] };
+      return { ...r, items, shipments:[...legs,...inbound,...outbound], files:filesMap, staff_notes:notesRes.data||[], generated_docs:genList };
     }));
   },
   async save(header,uploads){
@@ -241,10 +247,11 @@ const supa={
   rt(){ supabase.channel('rt')
       .on('postgres_changes',{event:'*',schema:'public',table:'orders'},async()=>{await supa.load(); render();})
       .on('postgres_changes',{event:'*',schema:'public',table:'order_notes'},async()=>{await supa.load(); renderOpenViewIfSame();})
+      .on('postgres_changes',{event:'*',schema:'public',table:'order_files'},async()=>{await supa.load(); renderOpenViewIfSame(); render();})
       .subscribe(); }
 };
 
-/* ---------- totals & helpers ---------- */
+/* ───────── totals ───────── */
 function totals(o){
   const revenue=(o.items||[]).reduce((s,i)=>s+(+i.qty||0)*(+i.unit_sell||0),0);
   const qty=(o.items||[]).reduce((s,i)=>s+(+i.qty||0),0);
@@ -256,7 +263,7 @@ function totals(o){
 }
 const age=d=>d?(Math.max(0,Math.floor((Date.now()-new Date(d))/86400000))+' d'):'-';
 
-/* ---------- inline select renderer ---------- */
+/* ───────── table render ───────── */
 function inlineSelect(o,field,options){
   const w=document.createElement('div');w.className='ie';
   const chip=document.createElement('span');chip.className='chip';chip.textContent=o[field]||'-';
@@ -266,12 +273,20 @@ function inlineSelect(o,field,options){
   sel.onchange=async()=>{await supa.quickUpdate(o.id,field,sel.value);chip.textContent=sel.value;w.classList.remove('editing');};
   sel.onblur=()=>w.classList.remove('editing'); w.append(chip,btn,sel); return w;
 }
-
-/* ---------- list render ---------- */
+async function openGenerated(orderId, shortType){
+  const kind = `${shortType}_pdf`;
+  const { data, error } = await supabase
+    .from('order_files').select('path').eq('order_id',orderId).eq('kind',kind)
+    .order('created_at',{ascending:false}).limit(1).maybeSingle();
+  if (error || !data) return alert('No PDF found for '+shortType.toUpperCase());
+  const { data:signed, error:e2 } = await supabase.storage.from('order-files').createSignedUrl(data.path, 3600);
+  if (e2 || !signed?.signedUrl) return alert('Could not create a signed URL.');
+  window.open(signed.signedUrl,'_blank');
+}
 function render(){
   const q=$('q').value.toLowerCase(), s1=$('fltSales').value, s2=$('fltStatus').value, s3=$('fltPriority').value;
   const rows=supa.state.orders.filter(o=>{
-    const txt=[o.customer,o.salesperson,o.id,...(o.items||[]).map(i=>i.part_number)].join(' ').toLowerCase();
+    const txt=[o.customer,o.salesperson,o.id,o.bill_to,o.ship_to,...(o.items||[]).map(i=>i.part_number)].join(' ').toLowerCase();
     if(q && !txt.includes(q)) return false; if(s1 && o.salesperson!==s1) return false; if(s2 && (o.status||'')!==s2) return false; if(s3 && (o.priority||'')!==s3) return false; return true;
   });
   const tb=$('tbody'); tb.innerHTML='';
@@ -291,15 +306,21 @@ function render(){
     tr.appendChild(cell(esc(o.order_date||'-'))); tr.appendChild(cell(esc(o.requested_by||'-'))); tr.appendChild(cell(esc(age(o.order_date))));
     tr.appendChild(cell(esc(o.tests||'-'))); tr.appendChild(cell(esc(o.vendor||'-'))); tr.appendChild(cell(esc((o.supplier_lead_time??'')||'-'))); tr.appendChild(cell(esc(o.incoterm||'-')));
     const tdT=document.createElement('td'); tdT.appendChild(inlineSelect(o,'payment_terms',['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90'])); tr.appendChild(tdT);
-    const tdD=document.createElement('td'); tdD.style.minWidth='270px';
+
+    const tdD=document.createElement('td'); tdD.style.minWidth='320px';
     [['so','OC'],['invoice','INV'],['pt','PT'],['ci','CI'],['rma','RMA']].forEach(([k,l])=>{const b=document.createElement('button');b.className='docbtn smini';b.textContent=l;b.onclick=()=>openGen(o,k);tdD.appendChild(b);});
-    const tags=['so_pdf','invoice_pdf','pt_pdf','ci_pdf','rma_pdf'].filter(k=>o.files?.[k]).map(k=>`<span class="doctag">${k.replace('_pdf','').toUpperCase()}</span>`).join(' ');
-    if(tags){const d=document.createElement('div');d.style.marginTop='4px';d.innerHTML=tags;tdD.appendChild(d);} tr.appendChild(tdD);
+    const tagKinds=['so','invoice','pt','ci','rma'];
+    const tagLinks=tagKinds.filter(k=>o.files?.[`${k}_pdf`]).map(k=>`<a href="#" class="doctag" onclick="openGenerated('${o.id}','${k}');return false;">${k.toUpperCase()}</a>`).join(' ');
+    if(tagLinks){const d=document.createElement('div');d.style.marginTop='6px';d.innerHTML=tagLinks;tdD.appendChild(d);}
+    tr.appendChild(tdD);
+
     const mk=f=>{const c=document.createElement('input');c.type='checkbox';c.checked=!!o[f];c.onchange=()=>supa.quickUpdate(o.id,f,c.checked);return c;}
     tr.appendChild(cell('').appendChild(mk('is_shipped'))||tr.lastChild);
     tr.appendChild(cell('').appendChild(mk('is_invoiced'))||tr.lastChild);
+
     const po=window._sessionFiles?.[o.id]?.poUrl, test=window._sessionFiles?.[o.id]?.testUrl;
     tr.appendChild(cell([po?`<a class="link" target="_blank" href="${po}">PO</a>`:'',test?`<a class="link" target="_blank" href="${test}">Test</a>`:''].filter(Boolean).join(' · ')||''));
+
     const tdA=document.createElement('td'); tdA.className='actions';
     tdA.innerHTML=`<button class="btn mini ghost" onclick="openModalById('${o.id}')">Edit</button>
                    <button class="btn mini ghost" onclick="cloneById('${o.id}')">Clone</button>
@@ -309,7 +330,7 @@ function render(){
   });
 }
 
-/* ---------- edit modal helpers ---------- */
+/* ───────── edit form helpers ───────── */
 function addItemRow(v={part_number:'',date_codes:'',qty:'',unit_sell:'',unit_cost:''}){
   const tr=document.createElement('tr'); tr.innerHTML=
   `<td><input class="input mini" value="${esc(v.part_number)}"/></td>
@@ -342,13 +363,13 @@ function shipsFromDOM(){return [...$('shipBody').querySelectorAll('tr')].map(tr=
   return {kind:sel,date,qty:+qty||0,from,to,method,ref,courier,tracking,cost:+cost||0};
 }).filter(Boolean)}
 
-/* ---------- open / clone / delete ---------- */
+/* ───────── open/clone/delete ───────── */
 function openModalById(id){openModal(supa.state.orders.find(x=>x.id===id))}
 function openModal(o){
   $('dlgTitle').textContent=o?'Edit Order':'New Order';
   $('orderId').value=o?.id||'';
   $('salesperson').innerHTML=SALESTEAM.map(n=>`<option>${n}</option>`).join(''); $('salesperson').value=o?.salesperson||SALESTEAM[0];
-  ['customer','priority','status','order_date','requested_by','payment_terms','payment_method','incoterm','invoice_date','due_date','currency','tests','test_center','supplier_lead_time','vendor','shipping_cost_extra','test_cost','notes'].forEach(id=>{$(id).value=o?.[id]??''});
+  ['customer','priority','status','order_date','requested_by','payment_terms','payment_method','incoterm','invoice_date','due_date','currency','tests','test_center','supplier_lead_time','vendor','shipping_cost_extra','test_cost','notes','bill_to','ship_to'].forEach(id=>{$(id).value=o?.[id]??''});
   $('itemsBody').innerHTML=''; (o?.items||[]).forEach(addItemRow);
   $('shipBody').innerHTML=''; (o?.shipments||[]).forEach(addShipRow);
   $('btnSave').onclick=async()=>{
@@ -360,6 +381,7 @@ function openModal(o){
       invoice_date:$('invoice_date').value||null,due_date:$('due_date').value||null,currency:$('currency').value,
       tests:$('tests').value,test_center:$('test_center').value,vendor:$('vendor').value,incoterm:$('incoterm').value,
       supplier_lead_time:$('supplier_lead_time').value?+$('supplier_lead_time').value:null,
+      bill_to:$('bill_to').value, ship_to:$('ship_to').value,
       shipping_cost_extra:+($('shipping_cost_extra').value||0), test_cost:+($('test_cost').value||0),
       notes:$('notes').value,
       items:itemsFromDOM(), shipments:shipsFromDOM()
@@ -373,7 +395,7 @@ function openModal(o){
 async function cloneById(id){ const o=supa.state.orders.find(x=>x.id===id); const c=structuredClone(o); delete c.id; c.status='Open'; c.order_date=new Date().toISOString().slice(0,10); await supa.save(c,{}); await supa.load(); render(); }
 async function delById(id){ if(!confirm('Delete this order?'))return; await supa.del(id); await supa.load(); render(); }
 
-/* ---------- view + notes ---------- */
+/* ───────── view + notes + documents ───────── */
 let OPEN_VIEW_ID=null;
 function openViewById(id){const o=supa.state.orders.find(x=>x.id===id); if(o) openView(o)}
 function renderOpenViewIfSame(){ if(!OPEN_VIEW_ID) return; const o=supa.state.orders.find(x=>x.id===OPEN_VIEW_ID); if(o) openView(o,true); }
@@ -383,6 +405,8 @@ function openView(o,keep){
   const parts=(o.items||[]).map(i=>`<tr><td>${esc(i.part_number)}</td><td>${esc(i.date_codes||'')}</td><td class="mono">${fmtInt(i.qty)}</td><td class="mono">${sym}${fmt(i.unit_sell)}</td><td class="mono">${sym}${fmt(i.unit_cost)}</td></tr>`).join('');
   const ships=(o.shipments||[]).map(s=>`<tr><td>${s.kind}</td><td class="mono">${esc(s.date||'')}</td><td class="mono">${fmtInt(s.qty||'')}</td><td>${esc(s.from||'')}</td><td>${esc(s.to||'')}</td><td>${esc(s.method||'')}</td><td>${esc(s.ref||'')}</td><td>${esc(s.courier||'')}</td><td>${esc(s.tracking||'')}</td><td class="mono">${s.cost? sym+fmt(s.cost):''}</td></tr>`).join('');
   const notes=(o.staff_notes||[]).map(n=>`<div class="note-item"><div class="note-head"><b>${esc(n.author)}</b><span>${new Date(n.created_at).toLocaleString()}</span></div><div>${esc(n.body)}</div></div>`).join('');
+  const genRows=(o.generated_docs||[]).slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))
+     .map(g=>`<tr><td>${g.kind.replace('_pdf','').toUpperCase()}</td><td class="mono">${new Date(g.created_at).toLocaleString()}</td><td><button class="docbtn smini" onclick="openSigned('${o.id}','${g.path}')">View</button></td></tr>`).join('') || '<tr><td colspan="3" class="muted">No generated documents yet</td></tr>';
   $('viewBody').innerHTML=`
     <div class="card" style="grid-column:1 / -1"><h3>Generate</h3><div class="pad">
       <button class="docbtn smini" onclick="openGenById('${o.id}','so')">OC</button>
@@ -391,7 +415,8 @@ function openView(o,keep){
       <button class="docbtn smini" onclick="openGenById('${o.id}','ci')">CI</button>
       <button class="docbtn smini" onclick="openGenById('${o.id}','rma')">RMA</button>
     </div></div>
-    <div class="card"><h3>Header</h3><div class="pad"><div class="kv">
+
+    <div class="card"><h3>Order Details</h3><div class="pad"><div class="kv">
       <div>Status</div><div>${esc(o.status||'-')}</div>
       <div>Customer</div><div>${esc(o.customer||'-')}</div>
       <div>Salesperson</div><div>${esc(o.salesperson||'-')}</div>
@@ -406,6 +431,12 @@ function openView(o,keep){
       <div>Tests</div><div>${esc(o.tests||'-')}</div>
       <div>Notes</div><div>${esc(o.notes||'-')}</div>
     </div></div>
+
+    <div class="card"><h3>Addresses</h3><div class="pad"><div class="grid2">
+      <div><div class="note">Bill To</div><pre style="white-space:pre-wrap;margin:0">${esc(o.bill_to||'-')}</pre></div>
+      <div><div class="note">Ship To</div><pre style="white-space:pre-wrap;margin:0">${esc(o.ship_to||'-')}</pre></div>
+    </div></div></div>
+
     <div class="card"><h3>Totals</h3><div class="pad"><div class="kv">
       <div>Total Qty</div><div class="mono">${fmtInt(t.qty)}</div>
       <div>Sell</div><div class="mono">${sym}${fmt(t.revenue)}</div>
@@ -414,14 +445,17 @@ function openView(o,keep){
       <div>Test Cost</div><div class="mono">${sym}${fmt(t.testCost)}</div>
       <div>Total Cost</div><div class="mono">${sym}${fmt(t.cost)}</div>
       <div>GP</div><div><span class="pill">${sym}${fmt(t.gp)}</span> <span class="muted mono">(${fmt(t.gpPct)}%)</span></div>
-      <div>Files</div><div>${files.poUrl?`<a class="link" target="_blank" href="${files.poUrl}">PO</a>`:''}${files.testUrl?` · <a class="link" target="_blank" href="${files.testUrl}">Test</a>`:''}</div>
+      <div>Files</div><div>${[files.poUrl?`<a class="link" target="_blank" href="${files.poUrl}">PO</a>`:'',files.testUrl?`<a class="link" target="_blank" href="${files.testUrl}">Test</a>`:''].filter(Boolean).join(' · ')||'-'}</div>
     </div></div>
+
     <div class="card" style="grid-column:1 / -1"><h3>Line Items</h3><div class="pad"><div class="hscroll">
       <table class="tbl" style="min-width:900px"><thead><tr><th>Part</th><th>Date Codes</th><th>Qty</th><th>Unit Sell</th><th>Unit Cost</th></tr></thead><tbody>${parts||'<tr><td colspan="5" class="muted">No items</td></tr>'}</tbody></table>
     </div></div></div>
+
     <div class="card" style="grid-column:1 / -1"><h3>Shipments</h3><div class="pad"><div class="hscroll">
       <table class="tbl" style="min-width:1100px"><thead><tr><th>Kind</th><th>Date</th><th>Qty</th><th>From</th><th>To</th><th>Method</th><th>Ref</th><th>Courier</th><th>Tracking</th><th>Cost</th></tr></thead><tbody>${ships||'<tr><td colspan="10" class="muted">No shipments</td></tr>'}</tbody></table>
     </div></div></div>
+
     <div class="card" style="grid-column:1 / -1"><h3>Staff Notes</h3><div class="pad">
       <div id="notesList">${notes||'<div class="muted">No notes</div>'}</div>
       <div class="actions" style="margin-top:10px">
@@ -429,12 +463,22 @@ function openView(o,keep){
         <input id="noteBody" class="input mini" placeholder="Write a note…"/>
         <button class="btn mini" onclick="addNote('${o.id}')">Add</button>
       </div>
+    </div></div>
+
+    <div class="card" style="grid-column:1 / -1"><h3>Documents</h3><div class="pad">
+      <div class="hscroll">
+        <table class="tbl" style="min-width:560px">
+          <thead><tr><th>Type</th><th>Created</th><th>Open</th></tr></thead>
+          <tbody>${genRows}</tbody>
+        </table>
+      </div>
     </div></div>`;
   if(!keep)$('viewDlg').showModal();
 }
 async function addNote(order_id){const a=$('noteAuthor').value,b=$('noteBody').value.trim();if(!b)return;await supa.addNote(order_id,a,b);$('noteBody').value='';await supa.load();renderOpenViewIfSame();}
+async function openSigned(orderId,path){const {data:signed,error}=await supabase.storage.from('order-files').createSignedUrl(path,3600); if(error||!signed?.signedUrl)return alert('Could not open.'); window.open(signed.signedUrl,'_blank');}
 
-/* ---------- GENERATE flow ---------- */
+/* ───────── GENERATE flow (auto-fill + auto-save) ───────── */
 const DOC_ROUTES={so:'../so-confirmation/index.html',invoice:'../so-confirmation/index.html',pt:'../commercial-invoice/index.html#pt',ci:'../commercial-invoice/index.html',rma:'../rma/index.html'};
 const HS_MEM=JSON.parse(localStorage.getItem('ve-hs-mem')||'{}'); const saveHs=()=>localStorage.setItem('ve-hs-mem',JSON.stringify(HS_MEM));
 function openGenById(id,type){openGen(supa.state.orders.find(x=>x.id===id),type)}
@@ -450,9 +494,7 @@ function openGen(order,type='so'){
     const frame=$('genFrame'); frame.src=DOC_ROUTES[cur];
     frame.onload=()=>{ try{
         const d=frame.contentDocument||frame.contentWindow.document;
-        // 1) inject bridge (captures jsPDF.save)
         const s1=d.createElement('script'); s1.textContent=BRIDGE_CODE; d.documentElement.appendChild(s1);
-        // 2) inject auto-fill + auto-generate
         const s2=d.createElement('script'); s2.textContent="("+AUTO_FILL.toString()+")("+JSON.stringify(payload)+");"; d.documentElement.appendChild(s2);
       }catch(e){ console.warn('Injection failed:',e); }
     };
@@ -469,7 +511,7 @@ function mkPayload(o,type,ov){
   return p;
 }
 function renderMissingForm(order,type){
-  const need=[{key:'from',label:'Seller (From)',placeholder:'Verified Electronics\nAddress…'},{key:'soldto',label:'Buyer (Sold To)',placeholder:`${order.customer||''}\nBilling address`},{key:'shipto',label:'Ship To',placeholder:`${order.customer||''}\nShipping address`}];
+  const need=[{key:'from',label:'Seller (From)',placeholder:'Verified Electronics\nAddress…'},{key:'soldto',label:'Buyer (Bill To)',placeholder:`${order.customer||''}\nBilling address`},{key:'shipto',label:'Ship To',placeholder:`${order.customer||''}\nShipping address`}];
   if(type==='rma') need.push({key:'returnTo',label:'Return To',placeholder:'Verified Returns address'});
   const fixed=[{key:'currency',label:'Currency'},{key:'incoterm',label:'Incoterm'},{key:'payment_terms',label:'Payment Terms'}];
   const wrap=$('missingWrap'); wrap.innerHTML='<div class="grid-auto"></div>'; const grid=wrap.firstChild;
@@ -481,8 +523,8 @@ function renderMissingForm(order,type){
   $('f_currency').value=(order.currency||'USD').toUpperCase();
   $('f_incoterm').value=order.incoterm||''; $('f_payment_terms').value=order.payment_terms||'';
   $('f_from').value='Verified Electronics\nExporter/Warehouse address';
-  $('f_soldto').value=(order.customer||'')+'\nBilling address';
-  $('f_shipto').value=(order.customer||'')+'\nShipping address';
+  $('f_soldto').value=order.bill_to || ((order.customer||'')+'\nBilling address');
+  $('f_shipto').value=order.ship_to || ((order.customer||'')+'\nShipping address');
   if(type==='rma'){ $('extraWrap').innerHTML=`
     <div class="section">RMA Details</div>
     <div class="grid-auto">
@@ -515,7 +557,7 @@ function getOverrides(type,order){
   return o;
 }
 
-/* ---------- receive PDFs ---------- */
+/* ───────── bridge & receive PDFs ───────── */
 window.addEventListener('message',async(e)=>{
   const d=e.data||{}; if(d.type!=='ve-doc-generated') return;
   try{
@@ -524,12 +566,10 @@ window.addEventListener('message',async(e)=>{
     const fn=d.filename||`${(d.docType||'document').toUpperCase()}-${Date.now()}.pdf`;
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fn; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),3000);
     const orderId=JSON.parse(sessionStorage.getItem('veDocData')||'{}')?.meta?.orderId;
-    if(orderId){ await supa.uploadGenerated(orderId,d.docType||'doc',new File([blob],fn,{type:'application/pdf'})); await supa.load(); render(); }
+    if(orderId){ await supa.uploadGenerated(orderId,d.docType||'doc',new File([blob],fn,{type:'application/pdf'})); await supa.load(); render(); renderOpenViewIfSame(); }
     alert('Saved to Supabase & downloaded.');
   }catch(err){ console.error(err); alert('Downloaded, but upload failed.'); }
 });
-
-/* ---------- injected bridge (captures jsPDF.save) ---------- */
 const BRIDGE_CODE = `
 (function(){
   const getMeta=()=>{try{return JSON.parse(sessionStorage.getItem('veDocData')||'{}').meta||{}}catch(e){return{}}};
@@ -549,76 +589,50 @@ const BRIDGE_CODE = `
     const origOut=Proto.output; if(typeof origOut==='function'){ Proto.output=function(type){ const r=origOut.apply(this,arguments); if(String(type||'').toLowerCase()==='save'){ try{const b=this.output('blob'); VE.emitPdfFromBlob(b);}catch(e){} } return r;}; }
   }catch(e){}
 })();`;
-
-/* ---------- injected auto-fill for your generator UI ---------- */
 function AUTO_FILL(payload){
-  function textMatch(el, txt){ return el && (el.textContent||'').trim().toLowerCase().includes((txt||'').toLowerCase()); }
-  function q(sa){ try{return document.querySelector(sa)}catch(e){return null} }
+  function q(sa){try{return document.querySelector(sa)}catch(e){return null}}
+  function text(el){return (el?.textContent||'').trim().toLowerCase()}
+  function has(el,txt){return el && text(el).includes((txt||'').toLowerCase())}
   function byLabel(txt){
-    // try label[for]
     for(const lab of document.querySelectorAll('label')){
-      if(textMatch(lab,txt)){ const id=lab.getAttribute('for'); if(id){ const el=document.getElementById(id); if(el) return el; }
-        // otherwise sibling input/select
+      if(has(lab,txt)){ const id=lab.getAttribute('for'); if(id){ const el=document.getElementById(id); if(el) return el; }
         let p=lab.parentElement; for(let i=0;i<3 && p;i++,p=p.parentElement){ const el=p.querySelector('input,textarea,select'); if(el) return el; }
       }
     }
-    // try placeholders or titles
-    let el=q(`input[placeholder*="${txt}"],textarea[placeholder*="${txt}"]`)||q(`input[title*="${txt}"],textarea[title*="${txt}"]`);
-    if(el) return el;
-    // try generic select near text node
-    for(const sel of document.querySelectorAll('select')){
-      const prev=sel.previousElementSibling; if(prev && textMatch(prev,txt)) return sel;
-      const parent=sel.closest('div'); if(parent && textMatch(parent.firstChild,txt)) return sel;
-    }
+    let el=q(`input[placeholder*="${txt}"],textarea[placeholder*="${txt}"]`)||q(`input[title*="${txt}"],textarea[title*="${txt}"]`); if(el) return el;
+    for(const sel of document.querySelectorAll('select')){const prev=sel.previousElementSibling; if(prev && has(prev,txt)) return sel;}
     return null;
   }
   function setVal(el,val){ if(!el) return; if(el.tagName==='SELECT'){ const opts=[...el.options]; const hit=opts.find(o=>o.textContent.trim().toLowerCase()===(val||'').toLowerCase())||opts.find(o=>o.value.toLowerCase()===(val||'').toLowerCase()); if(hit){ el.value=hit.value; el.dispatchEvent(new Event('change',{bubbles:true})); } }
     else { el.value=val; el.dispatchEvent(new Event('input',{bubbles:true})); } }
-
-  // doc type
   const typeMap={so:'Sales Order Confirmation',invoice:'Invoice',ci:'Commercial Invoice',pt:'Picking Ticket',rma:'RMA'};
   setVal(byLabel('DOCUMENT TYPE')||byLabel('Document type')||q('select'), typeMap[payload.meta.docType]||typeMap.so);
-  // currency & shipping/freight
   setVal(byLabel('CURRENCY')||byLabel('Currency'), payload.meta.currency||'USD');
   if(payload.ci && payload.ci.freight!=null){ setVal(byLabel('SHIPPING')||byLabel('Shipping'), String(payload.ci.freight)); }
-
-  // seller / buyer / addresses
   const sellerLines=(payload.meta.from||'').split('\n');
   setVal(byLabel('Seller Name')||byLabel('Company name'), sellerLines.shift()||'Verified Electronics');
   setVal(byLabel('Address')||byLabel('Address lines'), sellerLines.join('\n'));
-
   setVal(byLabel('Buyer / Company')||byLabel('Customer Company')||byLabel('Company'), payload.meta.customer||'');
   setVal(byLabel('Bill To'), payload.meta.soldto||'');
   setVal(byLabel('Ship To'), payload.meta.shipto||'');
-
-  // meta
   setVal(byLabel('Salesperson')||byLabel('Name'), payload.meta.salesperson||'');
   setVal(byLabel('Delivery Terms')||byLabel('Incoterms'), payload.meta.incoterm||'');
   setVal(byLabel('Payment Terms'), payload.meta.payment_terms||'');
-
-  // number
   const num=byLabel('Number')||byLabel('Order Number'); if(num){ num.value=((payload.meta.docType==='invoice'?'INV-':'SO-')+(payload.meta.orderId||'')); num.dispatchEvent(new Event('input',{bubbles:true})); }
-
-  // lines
   function addLine(){ const btn=[...document.querySelectorAll('button')].find(b=>/add (line|item)/i.test(b.textContent)); if(btn) btn.click(); }
-  function fillLastLine(it){
-    // heuristics: find all inputs inside the last line row
+  function fillLast(it){
     const rows=[...document.querySelectorAll('table, .items, .lines')]; let container=rows.find(r=>/qty/i.test(r.textContent||''))||document.body;
-    const inputs=[...container.querySelectorAll('tr:last-child input, tr:last-child textarea, .item-row:last-child input, .item-row:last-child textarea')];
-    const pick=(...qs)=>qs.map(s=>container.querySelector(s)).find(Boolean);
-    const part = container.querySelector('tr:last-child input[placeholder*="Part"], input[name*="part"], input[aria-label*="Part"]') || inputs[0];
-    const desc = container.querySelector('tr:last-child textarea, input[placeholder*="Desc"], textarea[placeholder*="Desc"], input[name*="desc"], textarea[name*="desc"]') || inputs[1];
-    const qty  = container.querySelector('tr:last-child input[placeholder*="Qty"], input[name*="qty"], input[aria-label*="Qty"]') || inputs[2];
-    const unit = container.querySelector('tr:last-child input[placeholder*="Unit"], input[name*="unit"], input[placeholder*="Price"], input[aria-label*="Unit"]') || inputs[3];
-    if(part){ part.value=it.part; part.dispatchEvent(new Event('input',{bubbles:true})); }
-    if(desc){ desc.value=it.desc||''; desc.dispatchEvent(new Event('input',{bubbles:true})); }
-    if(qty){ qty.value=it.qty; qty.dispatchEvent(new Event('input',{bubbles:true})); }
-    if(unit){ unit.value=it.unitSell; unit.dispatchEvent(new Event('input',{bubbles:true})); }
+    const sel=(s)=>container.querySelector(s);
+    const part=sel('tr:last-child input[placeholder*="Part"], input[name*="part"]')||container.querySelector('tr:last-child input')||null;
+    const desc=sel('tr:last-child textarea, input[placeholder*="Desc"]')||null;
+    const qty =sel('tr:last-child input[placeholder*="Qty"], input[name*="qty"]')||null;
+    const unit=sel('tr:last-child input[placeholder*="Unit"], input[placeholder*="Price"], input[name*="unit"]')||null;
+    if(part){part.value=it.part;part.dispatchEvent(new Event('input',{bubbles:true}))}
+    if(desc){desc.value=it.desc||'';desc.dispatchEvent(new Event('input',{bubbles:true}))}
+    if(qty){qty.value=it.qty;qty.dispatchEvent(new Event('input',{bubbles:true}))}
+    if(unit){unit.value=it.unitSell;unit.dispatchEvent(new Event('input',{bubbles:true}))}
   }
-  // add/fill
-  (payload.items||[]).forEach(it=>{ addLine(); fillLastLine(it); });
-
-  // RMA-only
+  (payload.items||[]).forEach(it=>{addLine();fillLast(it)});
   if(payload.meta.docType==='rma' && payload.rma){
     setVal(byLabel('Return To'), payload.meta.returnTo||'');
     setVal(byLabel('Return Reason'), payload.rma.reason||'');
@@ -628,12 +642,10 @@ function AUTO_FILL(payload){
     setVal(byLabel('Phone'), payload.rma.phone||'');
     const rnum=byLabel('RMA Number')||byLabel('Number'); if(rnum) setVal(rnum, payload.rma.number||'');
   }
-
-  // click Generate
-  setTimeout(()=>{ const gen=[...document.querySelectorAll('button')].find(b=>/generate pdf/i.test(b.textContent)); if(gen) gen.click(); }, 700);
+  setTimeout(()=>{ const gen=[...document.querySelectorAll('button')].find(b=>/generate pdf/i.test(b.textContent)); if(gen) gen.click(); },700);
 }
 
-/* ---------- CSV ---------- */
+/* ───────── CSV ───────── */
 $('btnCsv').onclick=()=>{
   const head=[...document.querySelectorAll('#tbl thead th')].map(x=>x.innerText);
   const rows=[...document.querySelectorAll('#tbody tr')].map(tr=>[...tr.children].map(td=>td.innerText.replace(/\s+/g,' ').trim()));
@@ -641,7 +653,7 @@ $('btnCsv').onclick=()=>{
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='orders.csv'; a.click();
 };
 
-/* ---------- boot ---------- */
+/* ───────── boot ───────── */
 document.addEventListener('DOMContentLoaded',async()=>{
   $('fltSales').innerHTML='<option value="">All salespeople</option>'+SALESTEAM.map(n=>`<option>${n}</option>`).join('');
   $('q').oninput=()=>render(); ['fltSales','fltStatus','fltPriority'].forEach(id=>$(id).oninput=render);
@@ -650,6 +662,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
 </script>
 </body>
 </html>
+
 
 
 
