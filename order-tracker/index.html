@@ -87,8 +87,6 @@ dialog::backdrop{background:rgba(17,17,33,.35)}
 .input.small{height:34px}
 .hint{color:#6b6ea0;font-size:12px}
 
-.step{display:block}
-#stepFrame{display:none} /* we never show the generator */
 #genFrame{position:absolute;left:-100000px;top:-100000px;width:0;height:0;visibility:hidden;border:0}
 
 textarea.input{min-height:84px}
@@ -107,11 +105,12 @@ textarea.input{min-height:84px}
 <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+/* ====== CONFIG (rotate keys later) ====== */
 const SUPABASE_URL='https://ijzroisggstqkfhpjndq.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
 const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
-// ensure anon header on fetch to Supabase URLs
+/* Ensure anon headers on Supabase fetches */
 (function(){const f=fetch.bind(window);window.fetch=(i,init={})=>{const u=typeof i==='string'?i:i?.url||'';if(u.startsWith(SUPABASE_URL)){const h=new Headers(init.headers||{});if(!h.has('apikey'))h.set('apikey',SUPABASE_ANON_KEY);if(!h.has('Authorization'))h.set('Authorization','Bearer '+SUPABASE_ANON_KEY);init={...init,headers:h}}return f(i,init)}})();
 </script>
 </head>
@@ -120,7 +119,7 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 <div class="wrap">
   <header>
     <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified">
-    <div><h1>Order Tracker</h1><div class="sub">Generate docs with one click. Only missing inputs are asked.</div></div>
+    <div><h1>Order Tracker</h1><div class="sub">Click a doc button → only missing bits pop up → PDF downloads & saves to Supabase.</div></div>
   </header>
 
   <div class="toolbar">
@@ -229,15 +228,15 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
         <button class="btn primary mini" id="genGo">Generate…</button>
       </div>
     </div>
-    <div id="stepFrame"><iframe id="genFrame" title="Generator"></iframe></div>
+    <iframe id="genFrame" title="Generator"></iframe>
   </div>
 </div></dialog>
 
-<!-- Toast -->
+<!-- Tiny toast -->
 <div id="toast" style="position:fixed;right:16px;bottom:16px;background:#111;color:#fff;padding:10px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s"></div>
 
 <script>
-/* -------- helpers -------- */
+/* ================== helpers ================== */
 const $=id=>document.getElementById(id);
 const SALESTEAM=['Nick N','Dan C','Emir B','Nick K','Jake B'];
 const curSym=c=>({USD:'$',GBP:'£',EUR:'€'})[c||'USD']||'$';
@@ -249,7 +248,7 @@ const esc=s=>(s??'').toString().replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;',
 function setToast(msg, danger){const t=$('toast'); if(!t) return; t.textContent=msg; t.style.background=danger?'#b21a1a':'#111'; t.style.opacity='1';}
 function clearToast(){const t=$('toast'); if(t) t.style.opacity='0';}
 
-/* -------- Supabase data layer -------- */
+/* =============== Supabase data layer =============== */
 const supa={
   state:{orders:[]},
   async load(){
@@ -337,7 +336,7 @@ const supa={
       .subscribe(); }
 };
 
-/* -------- totals -------- */
+/* =============== totals & formatting =============== */
 function totals(o){
   const revenue=(o.items||[]).reduce((s,i)=>s+(+i.qty||0)*(+i.unit_sell||0),0);
   const qty=(o.items||[]).reduce((s,i)=>s+(+i.qty||0),0);
@@ -349,7 +348,7 @@ function totals(o){
 }
 const age=d=>d?(Math.max(0,Math.floor((Date.now()-new Date(d))/86400000))+' d'):'-';
 
-/* -------- table render -------- */
+/* ================= table render ================= */
 function inlineSelect(o,field,options){
   const w=document.createElement('div');w.className='ie';
   const chip=document.createElement('span');chip.className='chip';chip.textContent=o[field]||'-';
@@ -401,7 +400,7 @@ function render(){
     if(tagLinks){const d=document.createElement('div');d.style.marginTop='6px';d.innerHTML=tagLinks;tdD.appendChild(d);}
     tr.appendChild(tdD);
 
-    const mk=f=>{const c=document.createElement('input');c.type='checkbox';c.checked=!!o[f];c.onchange=()=>supa.quickUpdate(o.id,f,c.checked);return c;}
+    const mk=f=>{const c=document.createElement('input');c.type='checkbox';c.checked=!!o[f];c.onchange=()=>supa.quickUpdate(o.id,f,c.checked);return c}
     tr.appendChild(cell('').appendChild(mk('is_shipped'))||tr.lastChild);
     tr.appendChild(cell('').appendChild(mk('is_invoiced'))||tr.lastChild);
 
@@ -417,7 +416,7 @@ function render(){
   });
 }
 
-/* -------- edit form helpers -------- */
+/* =============== edit form helpers =============== */
 function addItemRow(v={part_number:'',date_codes:'',qty:'',unit_sell:'',unit_cost:''}){
   const tr=document.createElement('tr'); tr.innerHTML=
   `<td><input class="input mini" value="${esc(v.part_number)}"/></td>
@@ -450,7 +449,7 @@ function shipsFromDOM(){return [...$('shipBody').querySelectorAll('tr')].map(tr=
   return {kind:sel,date,qty:+qty||0,from,to,method,ref,courier,tracking,cost:+cost||0};
 }).filter(Boolean)}
 
-/* -------- open/clone/delete -------- */
+/* =============== open/clone/delete =============== */
 function openModalById(id){openModal(supa.state.orders.find(x=>x.id===id))}
 function openModal(o){
   $('dlgTitle').textContent=o?'Edit Order':'New Order';
@@ -483,7 +482,7 @@ function openModal(o){
 async function cloneById(id){ const o=supa.state.orders.find(x=>x.id===id); const c=structuredClone(o); delete c.id; c.status='Open'; c.order_date=new Date().toISOString().slice(0,10); await supa.save(c,{}); await supa.load(); render(); }
 async function delById(id){ if(!confirm('Delete this order?'))return; await supa.del(id); await supa.load(); render(); }
 
-/* -------- view + notes + attachments + documents -------- */
+/* =============== view + notes + attachments + docs =============== */
 let OPEN_VIEW_ID=null;
 function openViewById(id){const o=supa.state.orders.find(x=>x.id===id); if(o) openView(o)}
 function renderOpenViewIfSame(){ if(!OPEN_VIEW_ID) return; const o=supa.state.orders.find(x=>x.id===OPEN_VIEW_ID); if(o) openView(o,true); }
@@ -601,12 +600,12 @@ async function quickUploadFile(orderId, kind, file) {
 }
 function bindDocUploaders(orderId){ const po=$('qUpPO'), tr=$('qUpTR'); if(po) po.onchange=(e)=>quickUploadFile(orderId,'po',e.target.files[0]); if(tr) tr.onchange=(e)=>quickUploadFile(orderId,'test_report',e.target.files[0]); }
 
-/* -------- GENERATE flow (hidden iframe) -------- */
+/* ================= GENERATE (hidden iframe) ================= */
 const DOC_ROUTES={so:'../so-confirmation/index.html',invoice:'../so-confirmation/index.html',pt:'../commercial-invoice/index.html#pt',ci:'../commercial-invoice/index.html',rma:'../rma/index.html'};
 const HS_MEM=JSON.parse(localStorage.getItem('ve-hs-mem')||'{}'); const saveHs=()=>localStorage.setItem('ve-hs-mem',JSON.stringify(HS_MEM));
 function openGenById(id,type){openGen(supa.state.orders.find(x=>x.id===id),type)}
 function openGen(order,type='so'){
-  $('genDlg').showModal(); $('genGo').disabled=false; $('genGo').textContent='Generate';
+  $('genDlg').showModal(); $('genGo').disabled=false; $('genGo').textContent='Generate…';
   $('docTypeChips').innerHTML=[['so','Order Confirmation'],['invoice','Invoice'],['pt','Picking Ticket'],['ci','Commercial Invoice'],['rma','RMA']].map(([t,l])=>`<button class="chipbtn${t===type?' active':''}" data-type="${t}">${l}</button>`).join('');
   let cur=type; $('docTypeChips').onclick=e=>{const b=e.target.closest('button[data-type]'); if(!b)return; cur=b.dataset.type; [...$('docTypeChips').children].forEach(x=>x.classList.toggle('active',x===b)); renderMissingForm(order,cur);};
   renderMissingForm(order,cur);
@@ -615,14 +614,10 @@ function openGen(order,type='so'){
     const overrides=getOverrides(cur,order); const payload=mkPayload(order,cur,overrides);
     try{sessionStorage.setItem('veDocData',JSON.stringify(payload));}catch(e){}
     $('genGo').disabled = true; $('genGo').textContent = 'Generating…';
-
     const frame=$('genFrame'); frame.src=DOC_ROUTES[cur];
-    frame.onload=()=>{ try{
-        const d=frame.contentDocument||frame.contentWindow.document;
-        const s1=d.createElement('script'); s1.textContent=BRIDGE_CODE; d.documentElement.appendChild(s1);
-        const s2=d.createElement('script'); s2.textContent="("+AUTO_FILL.toString()+")("+JSON.stringify(payload)+");"; d.documentElement.appendChild(s2);
-      }catch(e){ console.warn('Injection failed:',e); }
-    };
+
+    const start=performance.now();
+    frame.onload=()=>injectBridgeUntilReady(frame.contentWindow, frame.contentDocument||frame.contentWindow.document, payload, start);
   };
 }
 function mkPayload(o,type,ov){
@@ -684,33 +679,69 @@ function getOverrides(type,order){
   return o;
 }
 
-/* -------- bridge & receive PDFs -------- */
+/* =============== robust bridge injection =============== */
+function injectScriptViaBlob(doc, code) {
+  const blob = new Blob([code], { type: 'text/javascript' });
+  const url  = doc.defaultView.URL.createObjectURL(blob);
+  const s    = doc.createElement('script');
+  s.src = url;
+  s.onload = () => doc.defaultView.URL.revokeObjectURL(url);
+  doc.documentElement.appendChild(s);
+}
+function injectBridgeUntilReady(win, doc, payload, startTime){
+  const tryInject = () => {
+    if(!doc || !win) return;
+    // 1) Bridge
+    injectScriptViaBlob(doc, BRIDGE_CODE);
+    // 2) Auto-fill runner with payload
+    injectScriptViaBlob(doc, `(${AUTO_FILL.toString()})(${JSON.stringify(payload)});`);
+  };
+  tryInject();
+
+  let attempts = 0;
+  const timer = setInterval(()=>{
+    attempts++;
+    try {
+      if (win.__VE_BRIDGE_READY) { clearInterval(timer); return; }
+      tryInject();
+      if (performance.now() - startTime > 10000) clearInterval(timer); // stop after ~10s
+    } catch(_){}
+  }, 500);
+}
+
+/* Receive generated PDFs from iframe, upload & close modal */
 window.addEventListener('message',async(e)=>{
   const d=e.data||{}; if(d.type!=='ve-doc-generated') return;
   try{
-    let blob=d.blob||null; if(!blob && d.objUrl){ blob=await fetch(d.objUrl).then(r=>r.blob()); }
+    let blob=d.blob||null;
+    if(!blob && d.objUrl){ blob=await fetch(d.objUrl).then(r=>r.blob()); }
     if(!blob && d.dataUrl){ blob=await fetch(d.dataUrl).then(r=>r.blob()); }
+    if(!blob) throw new Error('No blob captured from generator');
+
     const fn=d.filename||`${(d.docType||'document').toUpperCase()}-${Date.now()}.pdf`;
+    // local download (safety)
+    try{ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fn; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),3000); }catch(_){}
 
-    // local download (already happens in generator, but safe)
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fn; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),3000);
-
-    // upload + immediate refresh
     const meta=JSON.parse(sessionStorage.getItem('veDocData')||'{}')?.meta||{};
     const orderId=meta.orderId;
-    if(orderId){ await supa.uploadGenerated(orderId,d.docType||meta.docType||'doc',new File([blob],fn,{type:'application/pdf'})); await supa.load(); render(); renderOpenViewIfSame(); }
-
+    if(orderId){
+      const file = new File([blob], fn, { type:'application/pdf' });
+      await supa.uploadGenerated(orderId, d.docType||meta.docType||'doc', file);
+      await supa.load(); render(); renderOpenViewIfSame();
+    }
     if ($('genDlg')?.open) $('genDlg').close();
   }catch(err){
     console.error(err); alert('Downloaded PDF, but upload failed.');
   }finally{
-    if ($('genGo')) { $('genGo').disabled=false; $('genGo').textContent='Generate'; }
+    if ($('genGo')) { $('genGo').disabled=false; $('genGo').textContent='Generate…'; }
   }
 });
 
-/* NEW bridge: catches jsPDF *and* anchor downloads */
+/* Bridge code injected into the generator iframe */
 const BRIDGE_CODE = `
 (function(){
+  if (window.__VE_BRIDGE_READY) return; window.__VE_BRIDGE_READY = true;
+
   const getMeta=()=>{try{return JSON.parse(sessionStorage.getItem('veDocData')||'{}').meta||{}}catch(e){return{}}};
   const infer=()=>{const m=getMeta();if(m.docType)return m.docType;const p=(location.pathname+location.hash).toLowerCase();
     if(p.includes('/rma'))return'rma'; if(p.includes('/commercial-invoice')&&p.includes('#pt'))return'pt';
@@ -725,6 +756,7 @@ const BRIDGE_CODE = `
              emitPdfBytes(bytes,f,dt){const u8=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);const b=new Blob([u8],{type:'application/pdf'});VE.emitPdfFromBlob(b,f,dt)} };
   window.VE=VE; window.VE_SEND_PDF=function(p){if(p.blob)return VE.emitPdfFromBlob(p.blob,p.filename,p.docType); if(p.objUrl)return VE.emitPdfFromObjectUrl(p.objUrl,p.filename,p.docType); if(p.dataUrl)return VE.emitPdfFromDataUrl(p.dataUrl,p.filename,p.docType);};
 
+  /* jsPDF hooks */
   try{
     const jspdfNS=window.jspdf||window.jsPDF;
     const Proto=jspdfNS?.jsPDF?.prototype||jspdfNS?.API||window.jsPDF?.API;
@@ -750,20 +782,23 @@ const BRIDGE_CODE = `
     }
   }catch(e){}
 
+  /* FileSaver / saveAs */
+  try{
+    const prev = window.saveAs;
+    window.saveAs = function(blob, filename){ try{ VE.emitPdfFromBlob(blob, filename||name()); }catch(_){ } return prev?prev.apply(this,arguments):undefined; };
+  }catch(_){}
+
+  /* URL.createObjectURL + anchor click */
   (function(){
     let lastPdfUrl=null;
     const origCreate=URL.createObjectURL;
     if(typeof origCreate==='function'){
       URL.createObjectURL=function(obj){
         const url=origCreate.apply(this,arguments);
-        try{
-          const t=(obj&&obj.type)||'';
-          if(/pdf/i.test(t)) lastPdfUrl=url;
-        }catch(_){}
+        try{ const t=(obj&&obj.type)||''; if(/pdf/i.test(t)) lastPdfUrl=url; }catch(_){}
         return url;
       };
     }
-
     const OrigA=HTMLAnchorElement.prototype.click;
     HTMLAnchorElement.prototype.click=function(){
       try{
@@ -777,9 +812,28 @@ const BRIDGE_CODE = `
       return OrigA.apply(this,arguments);
     };
   })();
+
+  /* window.open(blob) */
+  (function(){
+    const origOpen = window.open;
+    window.open = function(url, ...rest){
+      try{
+        if(typeof url==='string' && (url.startsWith('blob:') || url.startsWith('data:application/pdf'))){
+          post({type:'ve-doc-generated',docType:infer(),filename:name(),objUrl:url});
+        }
+      }catch(_){}
+      return origOpen ? origOpen.apply(this,[url, ...rest]) : null;
+    };
+  })();
+
+  /* IE/Edge legacy */
+  try{
+    navigator.msSaveOrOpenBlob = function(blob, filename){ VE.emitPdfFromBlob(blob, filename||name()); };
+  }catch(_){}
 })();
 `;
 
+/* Auto-fill script that runs inside generator after the bridge */
 function AUTO_FILL(payload){
   function q(sa){try{return document.querySelector(sa)}catch(e){return null}}
   function text(el){return (el?.textContent||'').trim().toLowerCase()}
@@ -790,7 +844,7 @@ function AUTO_FILL(payload){
         let p=lab.parentElement; for(let i=0;i<3 && p;i++,p=p.parentElement){ const el=p.querySelector('input,textarea,select'); if(el) return el; }
       }
     }
-    let el=q(`input[placeholder*="${txt}"],textarea[placeholder*="${txt}"]`)||q(`input[title*="${txt}"],textarea[title*="${txt}"]`); if(el) return el;
+    let el=q(\`input[placeholder*="\${txt}"],textarea[placeholder*="\${txt}"]\`)||q(\`input[title*="\${txt}"],textarea[title*="\${txt}"]\`); if(el) return el;
     for(const sel of document.querySelectorAll('select')){const prev=sel.previousElementSibling; if(prev && has(prev,txt)) return sel;}
     return null;
   }
@@ -802,9 +856,9 @@ function AUTO_FILL(payload){
   setVal(byLabel('CURRENCY')||byLabel('Currency'), payload.meta.currency||'USD');
   if(payload.ci && payload.ci.freight!=null){ setVal(byLabel('SHIPPING')||byLabel('Shipping'), String(payload.ci.freight)); }
 
-  const sellerLines=(payload.meta.from||'').split('\n');
+  const sellerLines=(payload.meta.from||'').split('\\n');
   setVal(byLabel('Seller Name')||byLabel('Company name'), sellerLines.shift()||'Verified Electronics');
-  setVal(byLabel('Address')||byLabel('Address lines'), sellerLines.join('\n'));
+  setVal(byLabel('Address')||byLabel('Address lines'), sellerLines.join('\\n'));
 
   setVal(byLabel('Buyer / Company')||byLabel('Customer Company')||byLabel('Company'), payload.meta.customer||'');
   setVal(byLabel('Bill To'), payload.meta.soldto||'');
@@ -844,7 +898,7 @@ function AUTO_FILL(payload){
   setTimeout(()=>{ const gen=[...document.querySelectorAll('button')].find(b=>/generate pdf/i.test(b.textContent)); if(gen) gen.click(); },700);
 }
 
-/* -------- CSV -------- */
+/* ================= CSV ================= */
 $('btnCsv').onclick=()=>{
   const head=[...document.querySelectorAll('#tbl thead th')].map(x=>x.innerText);
   const rows=[...document.querySelectorAll('#tbody tr')].map(tr=>[...tr.children].map(td=>td.innerText.replace(/\s+/g,' ').trim()));
@@ -852,7 +906,7 @@ $('btnCsv').onclick=()=>{
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='orders.csv'; a.click();
 };
 
-/* -------- boot -------- */
+/* ================= boot ================= */
 document.addEventListener('DOMContentLoaded',async()=>{
   $('fltSales').innerHTML='<option value="">All salespeople</option>'+SALESTEAM.map(n=>`<option>${n}</option>`).join('');
   $('q').oninput=()=>render(); ['fltSales','fltStatus','fltPriority'].forEach(id=>$(id).oninput=render);
@@ -861,16 +915,3 @@ document.addEventListener('DOMContentLoaded',async()=>{
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
