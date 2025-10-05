@@ -15,7 +15,7 @@ header img{height:44px}h1{margin:0;font-size:26px;font-weight:800}.sub{color:var
 .input,.select,.btn,textarea{height:40px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:0 12px;font:inherit}
 .input{width:100%}textarea{padding:12px;resize:vertical}.select{appearance:none;padding-right:28px}
 .btn{background:#f7f5ff;color:var(--purple);border-color:#ece8ff;font-weight:700;cursor:pointer}
-.btn:hover{background:#eee8ff}.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn:hover{background:#eee8ff}.btn.primary{background:var(--brand);border-color:#var(--brand);color:#fff}
 .mini{height:32px}.smini{height:28px;padding:0 10px;border-radius:999px}
 .table-card{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}.table-wrap{overflow:auto}
 table{width:100%;border-collapse:collapse;min-width:1320px}
@@ -63,7 +63,7 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 <div class="wrap">
   <header>
     <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified">
-    <div><h1>Order Tracker</h1><div class="sub">Generate docs here; we’ll inject the bridge into your existing pages automatically.</div></div>
+    <div><h1>Order Tracker</h1><div class="sub">Click Generate; only missing fields are asked. We fill the rest and auto-create the PDF.</div></div>
   </header>
 
   <div class="toolbar">
@@ -91,7 +91,7 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
   </div>
 </div>
 
-<!-- NEW/EDIT -->
+<!-- NEW/EDIT ORDER -->
 <dialog id="dlg"><div class="modal">
   <header><div class="head"><strong id="dlgTitle">New Order</strong><button class="btn ghost mini" onclick="$('dlg').close()">✕</button></div></header>
   <div class="content">
@@ -145,13 +145,13 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
   </div>
 </div></dialog>
 
-<!-- VIEW + NOTES -->
+<!-- ORDER SUMMARY / NOTES -->
 <dialog id="viewDlg"><div class="modal">
   <header><div class="head"><strong>Order Summary</strong><button class="btn ghost mini" onclick="$('viewDlg').close()">✕</button></div></header>
   <div class="content"><div id="viewBody" class="summary"></div></div>
 </div></dialog>
 
-<!-- GENERATE: roomy + auto-bridge-injection -->
+<!-- GENERATE: we ask only missing bits, then auto-fill the generator page -->
 <dialog id="genDlg"><div class="modal">
   <header><div class="head"><strong>Generate Document</strong><button class="btn ghost mini" onclick="$('genDlg').close()">✕</button></div></header>
   <div class="content">
@@ -168,15 +168,13 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
     </div>
     <div id="stepFrame" class="step">
       <iframe id="genFrame" title="Generator"></iframe>
-      <div style="padding:12px">
-        <div class="note">If a PDF doesn’t appear, just use the generator’s own button — our bridge is injected automatically and will capture it.</div>
-      </div>
+      <div style="padding:12px" class="muted">We’re auto-filling the page and clicking “Generate PDF”…</div>
     </div>
   </div>
 </div></dialog>
 
 <script>
-/* ====== helpers ====== */
+/* ---------- helpers ---------- */
 const $=id=>document.getElementById(id);
 const SALESTEAM=['Nick N','Dan C','Emir B','Nick K','Jake B'];
 const curSym=c=>({USD:'$',GBP:'£',EUR:'€'})[c||'USD']||'$';
@@ -184,7 +182,7 @@ const fmt=n=>(n==null||isNaN(n))?'-':Number(n).toLocaleString(undefined,{minimum
 const fmtInt=n=>(n==null||isNaN(n))?'-':Number(n).toLocaleString();
 const esc=s=>(s??'').toString().replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-/* ====== Supabase data ====== */
+/* ---------- Supabase data ---------- */
 const supa={
   state:{orders:[]},
   async load(){
@@ -246,7 +244,7 @@ const supa={
       .subscribe(); }
 };
 
-/* ====== totals ====== */
+/* ---------- totals & helpers ---------- */
 function totals(o){
   const revenue=(o.items||[]).reduce((s,i)=>s+(+i.qty||0)*(+i.unit_sell||0),0);
   const qty=(o.items||[]).reduce((s,i)=>s+(+i.qty||0),0);
@@ -258,7 +256,7 @@ function totals(o){
 }
 const age=d=>d?(Math.max(0,Math.floor((Date.now()-new Date(d))/86400000))+' d'):'-';
 
-/* ====== render list ====== */
+/* ---------- inline select renderer ---------- */
 function inlineSelect(o,field,options){
   const w=document.createElement('div');w.className='ie';
   const chip=document.createElement('span');chip.className='chip';chip.textContent=o[field]||'-';
@@ -268,6 +266,8 @@ function inlineSelect(o,field,options){
   sel.onchange=async()=>{await supa.quickUpdate(o.id,field,sel.value);chip.textContent=sel.value;w.classList.remove('editing');};
   sel.onblur=()=>w.classList.remove('editing'); w.append(chip,btn,sel); return w;
 }
+
+/* ---------- list render ---------- */
 function render(){
   const q=$('q').value.toLowerCase(), s1=$('fltSales').value, s2=$('fltStatus').value, s3=$('fltPriority').value;
   const rows=supa.state.orders.filter(o=>{
@@ -291,19 +291,15 @@ function render(){
     tr.appendChild(cell(esc(o.order_date||'-'))); tr.appendChild(cell(esc(o.requested_by||'-'))); tr.appendChild(cell(esc(age(o.order_date))));
     tr.appendChild(cell(esc(o.tests||'-'))); tr.appendChild(cell(esc(o.vendor||'-'))); tr.appendChild(cell(esc((o.supplier_lead_time??'')||'-'))); tr.appendChild(cell(esc(o.incoterm||'-')));
     const tdT=document.createElement('td'); tdT.appendChild(inlineSelect(o,'payment_terms',['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90'])); tr.appendChild(tdT);
-
     const tdD=document.createElement('td'); tdD.style.minWidth='270px';
     [['so','OC'],['invoice','INV'],['pt','PT'],['ci','CI'],['rma','RMA']].forEach(([k,l])=>{const b=document.createElement('button');b.className='docbtn smini';b.textContent=l;b.onclick=()=>openGen(o,k);tdD.appendChild(b);});
     const tags=['so_pdf','invoice_pdf','pt_pdf','ci_pdf','rma_pdf'].filter(k=>o.files?.[k]).map(k=>`<span class="doctag">${k.replace('_pdf','').toUpperCase()}</span>`).join(' ');
     if(tags){const d=document.createElement('div');d.style.marginTop='4px';d.innerHTML=tags;tdD.appendChild(d);} tr.appendChild(tdD);
-
     const mk=f=>{const c=document.createElement('input');c.type='checkbox';c.checked=!!o[f];c.onchange=()=>supa.quickUpdate(o.id,f,c.checked);return c;}
     tr.appendChild(cell('').appendChild(mk('is_shipped'))||tr.lastChild);
     tr.appendChild(cell('').appendChild(mk('is_invoiced'))||tr.lastChild);
-
     const po=window._sessionFiles?.[o.id]?.poUrl, test=window._sessionFiles?.[o.id]?.testUrl;
     tr.appendChild(cell([po?`<a class="link" target="_blank" href="${po}">PO</a>`:'',test?`<a class="link" target="_blank" href="${test}">Test</a>`:''].filter(Boolean).join(' · ')||''));
-
     const tdA=document.createElement('td'); tdA.className='actions';
     tdA.innerHTML=`<button class="btn mini ghost" onclick="openModalById('${o.id}')">Edit</button>
                    <button class="btn mini ghost" onclick="cloneById('${o.id}')">Clone</button>
@@ -313,7 +309,7 @@ function render(){
   });
 }
 
-/* ====== edit modal helpers ====== */
+/* ---------- edit modal helpers ---------- */
 function addItemRow(v={part_number:'',date_codes:'',qty:'',unit_sell:'',unit_cost:''}){
   const tr=document.createElement('tr'); tr.innerHTML=
   `<td><input class="input mini" value="${esc(v.part_number)}"/></td>
@@ -346,7 +342,7 @@ function shipsFromDOM(){return [...$('shipBody').querySelectorAll('tr')].map(tr=
   return {kind:sel,date,qty:+qty||0,from,to,method,ref,courier,tracking,cost:+cost||0};
 }).filter(Boolean)}
 
-/* ====== open/clone/delete ====== */
+/* ---------- open / clone / delete ---------- */
 function openModalById(id){openModal(supa.state.orders.find(x=>x.id===id))}
 function openModal(o){
   $('dlgTitle').textContent=o?'Edit Order':'New Order';
@@ -377,7 +373,7 @@ function openModal(o){
 async function cloneById(id){ const o=supa.state.orders.find(x=>x.id===id); const c=structuredClone(o); delete c.id; c.status='Open'; c.order_date=new Date().toISOString().slice(0,10); await supa.save(c,{}); await supa.load(); render(); }
 async function delById(id){ if(!confirm('Delete this order?'))return; await supa.del(id); await supa.load(); render(); }
 
-/* ====== view + notes ====== */
+/* ---------- view + notes ---------- */
 let OPEN_VIEW_ID=null;
 function openViewById(id){const o=supa.state.orders.find(x=>x.id===id); if(o) openView(o)}
 function renderOpenViewIfSame(){ if(!OPEN_VIEW_ID) return; const o=supa.state.orders.find(x=>x.id===OPEN_VIEW_ID); if(o) openView(o,true); }
@@ -438,7 +434,7 @@ function openView(o,keep){
 }
 async function addNote(order_id){const a=$('noteAuthor').value,b=$('noteBody').value.trim();if(!b)return;await supa.addNote(order_id,a,b);$('noteBody').value='';await supa.load();renderOpenViewIfSame();}
 
-/* ====== GENERATE ====== */
+/* ---------- GENERATE flow ---------- */
 const DOC_ROUTES={so:'../so-confirmation/index.html',invoice:'../so-confirmation/index.html',pt:'../commercial-invoice/index.html#pt',ci:'../commercial-invoice/index.html',rma:'../rma/index.html'};
 const HS_MEM=JSON.parse(localStorage.getItem('ve-hs-mem')||'{}'); const saveHs=()=>localStorage.setItem('ve-hs-mem',JSON.stringify(HS_MEM));
 function openGenById(id,type){openGen(supa.state.orders.find(x=>x.id===id),type)}
@@ -452,7 +448,14 @@ function openGen(order,type='so'){
     try{sessionStorage.setItem('veDocData',JSON.stringify(payload));}catch(e){}
     $('stepForm').classList.remove('active'); $('stepFrame').classList.add('active');
     const frame=$('genFrame'); frame.src=DOC_ROUTES[cur];
-    frame.onload=()=>{ try{ const doc=frame.contentDocument||frame.contentWindow.document; const s=doc.createElement('script'); s.textContent=BRIDGE_CODE; doc.documentElement.appendChild(s);}catch(e){console.warn('Bridge inject failed',e);} };
+    frame.onload=()=>{ try{
+        const d=frame.contentDocument||frame.contentWindow.document;
+        // 1) inject bridge (captures jsPDF.save)
+        const s1=d.createElement('script'); s1.textContent=BRIDGE_CODE; d.documentElement.appendChild(s1);
+        // 2) inject auto-fill + auto-generate
+        const s2=d.createElement('script'); s2.textContent="("+AUTO_FILL.toString()+")("+JSON.stringify(payload)+");"; d.documentElement.appendChild(s2);
+      }catch(e){ console.warn('Injection failed:',e); }
+    };
   };
 }
 function mkPayload(o,type,ov){
@@ -512,23 +515,21 @@ function getOverrides(type,order){
   return o;
 }
 
-/* ====== auto-receive PDFs (bridge listener) ====== */
+/* ---------- receive PDFs ---------- */
 window.addEventListener('message',async(e)=>{
   const d=e.data||{}; if(d.type!=='ve-doc-generated') return;
   try{
     let blob=d.blob||null; if(!blob && d.objUrl){ blob=await fetch(d.objUrl).then(r=>r.blob()); }
     if(!blob && d.dataUrl){ blob=await fetch(d.dataUrl).then(r=>r.blob()); }
     const fn=d.filename||`${(d.docType||'document').toUpperCase()}-${Date.now()}.pdf`;
-    // Download to PC
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fn; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),3000);
-    // Save to Supabase
     const orderId=JSON.parse(sessionStorage.getItem('veDocData')||'{}')?.meta?.orderId;
     if(orderId){ await supa.uploadGenerated(orderId,d.docType||'doc',new File([blob],fn,{type:'application/pdf'})); await supa.load(); render(); }
     alert('Saved to Supabase & downloaded.');
   }catch(err){ console.error(err); alert('Downloaded, but upload failed.'); }
 });
 
-/* ====== the injected bridge code (no changes to generator files) ====== */
+/* ---------- injected bridge (captures jsPDF.save) ---------- */
 const BRIDGE_CODE = `
 (function(){
   const getMeta=()=>{try{return JSON.parse(sessionStorage.getItem('veDocData')||'{}').meta||{}}catch(e){return{}}};
@@ -549,7 +550,90 @@ const BRIDGE_CODE = `
   }catch(e){}
 })();`;
 
-/* ====== CSV ====== */
+/* ---------- injected auto-fill for your generator UI ---------- */
+function AUTO_FILL(payload){
+  function textMatch(el, txt){ return el && (el.textContent||'').trim().toLowerCase().includes((txt||'').toLowerCase()); }
+  function q(sa){ try{return document.querySelector(sa)}catch(e){return null} }
+  function byLabel(txt){
+    // try label[for]
+    for(const lab of document.querySelectorAll('label')){
+      if(textMatch(lab,txt)){ const id=lab.getAttribute('for'); if(id){ const el=document.getElementById(id); if(el) return el; }
+        // otherwise sibling input/select
+        let p=lab.parentElement; for(let i=0;i<3 && p;i++,p=p.parentElement){ const el=p.querySelector('input,textarea,select'); if(el) return el; }
+      }
+    }
+    // try placeholders or titles
+    let el=q(`input[placeholder*="${txt}"],textarea[placeholder*="${txt}"]`)||q(`input[title*="${txt}"],textarea[title*="${txt}"]`);
+    if(el) return el;
+    // try generic select near text node
+    for(const sel of document.querySelectorAll('select')){
+      const prev=sel.previousElementSibling; if(prev && textMatch(prev,txt)) return sel;
+      const parent=sel.closest('div'); if(parent && textMatch(parent.firstChild,txt)) return sel;
+    }
+    return null;
+  }
+  function setVal(el,val){ if(!el) return; if(el.tagName==='SELECT'){ const opts=[...el.options]; const hit=opts.find(o=>o.textContent.trim().toLowerCase()===(val||'').toLowerCase())||opts.find(o=>o.value.toLowerCase()===(val||'').toLowerCase()); if(hit){ el.value=hit.value; el.dispatchEvent(new Event('change',{bubbles:true})); } }
+    else { el.value=val; el.dispatchEvent(new Event('input',{bubbles:true})); } }
+
+  // doc type
+  const typeMap={so:'Sales Order Confirmation',invoice:'Invoice',ci:'Commercial Invoice',pt:'Picking Ticket',rma:'RMA'};
+  setVal(byLabel('DOCUMENT TYPE')||byLabel('Document type')||q('select'), typeMap[payload.meta.docType]||typeMap.so);
+  // currency & shipping/freight
+  setVal(byLabel('CURRENCY')||byLabel('Currency'), payload.meta.currency||'USD');
+  if(payload.ci && payload.ci.freight!=null){ setVal(byLabel('SHIPPING')||byLabel('Shipping'), String(payload.ci.freight)); }
+
+  // seller / buyer / addresses
+  const sellerLines=(payload.meta.from||'').split('\n');
+  setVal(byLabel('Seller Name')||byLabel('Company name'), sellerLines.shift()||'Verified Electronics');
+  setVal(byLabel('Address')||byLabel('Address lines'), sellerLines.join('\n'));
+
+  setVal(byLabel('Buyer / Company')||byLabel('Customer Company')||byLabel('Company'), payload.meta.customer||'');
+  setVal(byLabel('Bill To'), payload.meta.soldto||'');
+  setVal(byLabel('Ship To'), payload.meta.shipto||'');
+
+  // meta
+  setVal(byLabel('Salesperson')||byLabel('Name'), payload.meta.salesperson||'');
+  setVal(byLabel('Delivery Terms')||byLabel('Incoterms'), payload.meta.incoterm||'');
+  setVal(byLabel('Payment Terms'), payload.meta.payment_terms||'');
+
+  // number
+  const num=byLabel('Number')||byLabel('Order Number'); if(num){ num.value=((payload.meta.docType==='invoice'?'INV-':'SO-')+(payload.meta.orderId||'')); num.dispatchEvent(new Event('input',{bubbles:true})); }
+
+  // lines
+  function addLine(){ const btn=[...document.querySelectorAll('button')].find(b=>/add (line|item)/i.test(b.textContent)); if(btn) btn.click(); }
+  function fillLastLine(it){
+    // heuristics: find all inputs inside the last line row
+    const rows=[...document.querySelectorAll('table, .items, .lines')]; let container=rows.find(r=>/qty/i.test(r.textContent||''))||document.body;
+    const inputs=[...container.querySelectorAll('tr:last-child input, tr:last-child textarea, .item-row:last-child input, .item-row:last-child textarea')];
+    const pick=(...qs)=>qs.map(s=>container.querySelector(s)).find(Boolean);
+    const part = container.querySelector('tr:last-child input[placeholder*="Part"], input[name*="part"], input[aria-label*="Part"]') || inputs[0];
+    const desc = container.querySelector('tr:last-child textarea, input[placeholder*="Desc"], textarea[placeholder*="Desc"], input[name*="desc"], textarea[name*="desc"]') || inputs[1];
+    const qty  = container.querySelector('tr:last-child input[placeholder*="Qty"], input[name*="qty"], input[aria-label*="Qty"]') || inputs[2];
+    const unit = container.querySelector('tr:last-child input[placeholder*="Unit"], input[name*="unit"], input[placeholder*="Price"], input[aria-label*="Unit"]') || inputs[3];
+    if(part){ part.value=it.part; part.dispatchEvent(new Event('input',{bubbles:true})); }
+    if(desc){ desc.value=it.desc||''; desc.dispatchEvent(new Event('input',{bubbles:true})); }
+    if(qty){ qty.value=it.qty; qty.dispatchEvent(new Event('input',{bubbles:true})); }
+    if(unit){ unit.value=it.unitSell; unit.dispatchEvent(new Event('input',{bubbles:true})); }
+  }
+  // add/fill
+  (payload.items||[]).forEach(it=>{ addLine(); fillLastLine(it); });
+
+  // RMA-only
+  if(payload.meta.docType==='rma' && payload.rma){
+    setVal(byLabel('Return To'), payload.meta.returnTo||'');
+    setVal(byLabel('Return Reason'), payload.rma.reason||'');
+    setVal(byLabel('Action'), payload.rma.action||'');
+    setVal(byLabel('Contact'), payload.rma.contact||'');
+    setVal(byLabel('Email'), payload.rma.email||'');
+    setVal(byLabel('Phone'), payload.rma.phone||'');
+    const rnum=byLabel('RMA Number')||byLabel('Number'); if(rnum) setVal(rnum, payload.rma.number||'');
+  }
+
+  // click Generate
+  setTimeout(()=>{ const gen=[...document.querySelectorAll('button')].find(b=>/generate pdf/i.test(b.textContent)); if(gen) gen.click(); }, 700);
+}
+
+/* ---------- CSV ---------- */
 $('btnCsv').onclick=()=>{
   const head=[...document.querySelectorAll('#tbl thead th')].map(x=>x.innerText);
   const rows=[...document.querySelectorAll('#tbody tr')].map(tr=>[...tr.children].map(td=>td.innerText.replace(/\s+/g,' ').trim()));
@@ -557,7 +641,7 @@ $('btnCsv').onclick=()=>{
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='orders.csv'; a.click();
 };
 
-/* ====== boot ====== */
+/* ---------- boot ---------- */
 document.addEventListener('DOMContentLoaded',async()=>{
   $('fltSales').innerHTML='<option value="">All salespeople</option>'+SALESTEAM.map(n=>`<option>${n}</option>`).join('');
   $('q').oninput=()=>render(); ['fltSales','fltStatus','fltPriority'].forEach(id=>$(id).oninput=render);
@@ -566,6 +650,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
 </script>
 </body>
 </html>
+
 
 
 
