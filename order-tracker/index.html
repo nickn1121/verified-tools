@@ -19,6 +19,7 @@ header{display:flex;gap:16px;align-items:center;padding:18px;border:1px solid va
 header img{height:44px}
 h1{margin:0;font-size:26px;font-weight:800}
 .sub{color:var(--muted)}
+
 .toolbar{position:sticky;top:8px;z-index:3;background:var(--bg);display:grid;grid-template-columns:1fr 200px 180px 180px auto auto;gap:12px;margin:18px 0}
 .input,.select,.btn,textarea{height:40px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:0 12px;font:inherit}
 .input{width:100%}
@@ -105,7 +106,7 @@ textarea.input{min-height:84px}
 <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ====== CONFIG (rotate keys later) ====== */
+/* ====== CONFIG ====== */
 const SUPABASE_URL='https://ijzroisggstqkfhpjndq.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
 const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
@@ -126,7 +127,7 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
     <input id="q" class="input" placeholder="Search customer, part, order id…"/>
     <select id="fltSales" class="select"><option value="">All salespeople</option></select>
     <select id="fltStatus" class="select"><option value="">All status</option><option>Open</option><option>Closed</option><option>Problem</option></select>
-    <select id="fltPriority" class="select"><option value="">All priorities</option><option>High</option><option selected>Normal</option><option>Low</option></select>
+    <select id="fltPriority" class="select"><option value="">All priorities</option><option>High</option><option>Normal</option><option>Low</option></select>
     <button class="btn" onclick="openModal(null)">+ New Order</button>
     <button class="btn ghost" id="btnCsv">Export CSV</button>
   </div>
@@ -137,7 +138,8 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
         <thead><tr>
           <th>View</th><th>Customer</th><th>Part(s)</th><th>Sales</th>
           <th>Total Qty</th><th>Avg Unit $</th><th>Sell</th><th>GP</th>
-          <th>Priority</th><th>Status</th><th>Order Date</th><th>Requested by</th>
+          <th>Priority</th><th>Status</th>
+          <th>Order Date</th><th>Requested by</th>
           <th>Age</th><th>Tests</th><th>Vendor</th><th>Lead (d)</th><th>Incoterm</th><th>Terms</th>
           <th>Docs</th><th>Shipped</th><th>Invoiced</th><th>Files</th><th>Actions</th>
         </tr></thead>
@@ -300,7 +302,6 @@ const supa={
     if(uploads?.po) await this.upload(order_id,'po',uploads.po);
     if(uploads?.test_report) await this.upload(order_id,'test_report',uploads.test_report);
   },
-  // hardened upload (contentType + immediate session links)
   async upload(orderId, kind, file){
     if (!file) throw new Error('No file');
     const clean=file.name.replace(/[^\w.-]+/g,'_');
@@ -691,10 +692,9 @@ function injectScriptViaBlob(doc, code) {
 function injectBridgeUntilReady(win, doc, payload, startTime){
   const tryInject = () => {
     if(!doc || !win) return;
-    // 1) Bridge
     injectScriptViaBlob(doc, BRIDGE_CODE);
-    // 2) Auto-fill runner with payload
-    injectScriptViaBlob(doc, `(${AUTO_FILL.toString()})(${JSON.stringify(payload)});`);
+    const inj='('+AUTO_FILL.toString()+')('+JSON.stringify(payload)+');';
+    injectScriptViaBlob(doc, inj);
   };
   tryInject();
 
@@ -704,7 +704,7 @@ function injectBridgeUntilReady(win, doc, payload, startTime){
     try {
       if (win.__VE_BRIDGE_READY) { clearInterval(timer); return; }
       tryInject();
-      if (performance.now() - startTime > 10000) clearInterval(timer); // stop after ~10s
+      if (performance.now() - startTime > 10000) clearInterval(timer);
     } catch(_){}
   }, 500);
 }
@@ -719,7 +719,6 @@ window.addEventListener('message',async(e)=>{
     if(!blob) throw new Error('No blob captured from generator');
 
     const fn=d.filename||`${(d.docType||'document').toUpperCase()}-${Date.now()}.pdf`;
-    // local download (safety)
     try{ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fn; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),3000); }catch(_){}
 
     const meta=JSON.parse(sessionStorage.getItem('veDocData')||'{}')?.meta||{};
@@ -737,8 +736,8 @@ window.addEventListener('message',async(e)=>{
   }
 });
 
-/* Bridge code injected into the generator iframe */
-const BRIDGE_CODE = `
+/* Bridge code injected into the generator iframe — String.raw prevents back-tick parsing issues */
+const BRIDGE_CODE = String.raw`
 (function(){
   if (window.__VE_BRIDGE_READY) return; window.__VE_BRIDGE_READY = true;
 
@@ -756,7 +755,6 @@ const BRIDGE_CODE = `
              emitPdfBytes(bytes,f,dt){const u8=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);const b=new Blob([u8],{type:'application/pdf'});VE.emitPdfFromBlob(b,f,dt)} };
   window.VE=VE; window.VE_SEND_PDF=function(p){if(p.blob)return VE.emitPdfFromBlob(p.blob,p.filename,p.docType); if(p.objUrl)return VE.emitPdfFromObjectUrl(p.objUrl,p.filename,p.docType); if(p.dataUrl)return VE.emitPdfFromDataUrl(p.dataUrl,p.filename,p.docType);};
 
-  /* jsPDF hooks */
   try{
     const jspdfNS=window.jspdf||window.jsPDF;
     const Proto=jspdfNS?.jsPDF?.prototype||jspdfNS?.API||window.jsPDF?.API;
@@ -782,13 +780,11 @@ const BRIDGE_CODE = `
     }
   }catch(e){}
 
-  /* FileSaver / saveAs */
   try{
     const prev = window.saveAs;
     window.saveAs = function(blob, filename){ try{ VE.emitPdfFromBlob(blob, filename||name()); }catch(_){ } return prev?prev.apply(this,arguments):undefined; };
   }catch(_){}
 
-  /* URL.createObjectURL + anchor click */
   (function(){
     let lastPdfUrl=null;
     const origCreate=URL.createObjectURL;
@@ -813,7 +809,6 @@ const BRIDGE_CODE = `
     };
   })();
 
-  /* window.open(blob) */
   (function(){
     const origOpen = window.open;
     window.open = function(url, ...rest){
@@ -826,7 +821,6 @@ const BRIDGE_CODE = `
     };
   })();
 
-  /* IE/Edge legacy */
   try{
     navigator.msSaveOrOpenBlob = function(blob, filename){ VE.emitPdfFromBlob(blob, filename||name()); };
   }catch(_){}
@@ -844,7 +838,7 @@ function AUTO_FILL(payload){
         let p=lab.parentElement; for(let i=0;i<3 && p;i++,p=p.parentElement){ const el=p.querySelector('input,textarea,select'); if(el) return el; }
       }
     }
-    let el=q(\`input[placeholder*="\${txt}"],textarea[placeholder*="\${txt}"]\`)||q(\`input[title*="\${txt}"],textarea[title*="\${txt}"]\`); if(el) return el;
+    let el=q('input[placeholder*="'+txt+'"],textarea[placeholder*="'+txt+'"]')||q('input[title*="'+txt+'"],textarea[title*="'+txt+'"]'); if(el) return el;
     for(const sel of document.querySelectorAll('select')){const prev=sel.previousElementSibling; if(prev && has(prev,txt)) return sel;}
     return null;
   }
@@ -856,9 +850,9 @@ function AUTO_FILL(payload){
   setVal(byLabel('CURRENCY')||byLabel('Currency'), payload.meta.currency||'USD');
   if(payload.ci && payload.ci.freight!=null){ setVal(byLabel('SHIPPING')||byLabel('Shipping'), String(payload.ci.freight)); }
 
-  const sellerLines=(payload.meta.from||'').split('\\n');
+  const sellerLines=(payload.meta.from||'').split('\n');
   setVal(byLabel('Seller Name')||byLabel('Company name'), sellerLines.shift()||'Verified Electronics');
-  setVal(byLabel('Address')||byLabel('Address lines'), sellerLines.join('\\n'));
+  setVal(byLabel('Address')||byLabel('Address lines'), sellerLines.join('\n'));
 
   setVal(byLabel('Buyer / Company')||byLabel('Customer Company')||byLabel('Company'), payload.meta.customer||'');
   setVal(byLabel('Bill To'), payload.meta.soldto||'');
@@ -915,3 +909,5 @@ document.addEventListener('DOMContentLoaded',async()=>{
 </script>
 </body>
 </html>
+
+
