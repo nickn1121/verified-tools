@@ -13,7 +13,7 @@
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;font:15px/1.56 ui-sans-serif, system-ui, -apple-system, Segoe UI, Inter, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;color:var(--ink);background:var(--bg)}
+body{margin:0;font:15px/1.56 ui-sans-serif,system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,Apple Color Emoji,Segoe UI Emoji;color:var(--ink);background:var(--bg)}
 .wrap{max-width:1600px;margin:26px auto;padding:0 16px}
 header{display:flex;gap:16px;align-items:center;padding:18px;border:1px solid var(--line);border-radius:20px;background:#fff;box-shadow:var(--shadow)}
 header img{height:44px}
@@ -124,7 +124,7 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
   </header>
 
   <div class="toolbar">
-    <input id="q" class="input" placeholder="Search…"/>
+    <input id="q" class="input" placeholder="Search customer, part, order id…"/>
     <select id="fltSales" class="select"><option value="">All salespeople</option></select>
     <select id="fltStatus" class="select"><option value="">All status</option><option>Open</option><option>Closed</option><option>Problem</option></select>
     <select id="fltPriority" class="select"><option value="">All priorities</option><option>High</option><option selected>Normal</option><option>Low</option></select>
@@ -226,12 +226,15 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
       <div id="hsWrap" style="margin-top:12px"></div>
       <div class="right">
         <button class="btn ghost mini" onclick="$('genDlg').close()">Cancel</button>
-        <button class="btn primary mini" id="genGo">Generate</button>
+        <button class="btn primary mini" id="genGo">Generate…</button>
       </div>
     </div>
     <div id="stepFrame"><iframe id="genFrame" title="Generator"></iframe></div>
   </div>
 </div></dialog>
+
+<!-- Toast -->
+<div id="toast" style="position:fixed;right:16px;bottom:16px;background:#111;color:#fff;padding:10px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s"></div>
 
 <script>
 /* -------- helpers -------- */
@@ -241,6 +244,10 @@ const curSym=c=>({USD:'$',GBP:'£',EUR:'€'})[c||'USD']||'$';
 const fmt=n=>(n==null||isNaN(n))?'-':Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtInt=n=>(n==null||isNaN(n))?'-':Number(n).toLocaleString();
 const esc=s=>(s??'').toString().replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+/* toasts */
+function setToast(msg, danger){const t=$('toast'); if(!t) return; t.textContent=msg; t.style.background=danger?'#b21a1a':'#111'; t.style.opacity='1';}
+function clearToast(){const t=$('toast'); if(t) t.style.opacity='0';}
 
 /* -------- Supabase data layer -------- */
 const supa={
@@ -294,11 +301,25 @@ const supa={
     if(uploads?.po) await this.upload(order_id,'po',uploads.po);
     if(uploads?.test_report) await this.upload(order_id,'test_report',uploads.test_report);
   },
-  async upload(orderId,kind,file){
-    const path=`orders/${orderId}/${kind}/${Date.now()}_${file.name.replace(/[^a-z0-9._-]+/gi,'_')}`;
-    const {error}=await supabase.storage.from('order-files').upload(path,file,{upsert:true});
-    if(error) throw error;
-    await supabase.from('order_files').insert({order_id:orderId,kind,path});
+  // hardened upload (contentType + immediate session links)
+  async upload(orderId, kind, file){
+    if (!file) throw new Error('No file');
+    const clean=file.name.replace(/[^\w.-]+/g,'_');
+    const path=`orders/${orderId}/${kind}/${Date.now()}_${clean}`;
+
+    const {error:upErr}=await supabase.storage.from('order-files')
+      .upload(path,file,{upsert:true,contentType:file.type||'application/octet-stream',cacheControl:'3600'});
+    if(upErr) throw upErr;
+
+    const {error:insErr}=await supabase.from('order_files').insert({order_id:orderId,kind,path});
+    if(insErr) throw insErr;
+
+    if(kind==='po'||kind==='test_report'){
+      const {data:signed}=await supabase.storage.from('order-files').createSignedUrl(path,3600);
+      window._sessionFiles ||= {}; window._sessionFiles[orderId] ||= {};
+      window._sessionFiles[orderId][kind==='po'?'poUrl':'testUrl']=signed?.signedUrl||null;
+    }
+    return path;
   },
   async uploadGenerated(orderId,docType,file){
     const path=`generated/${orderId}/${docType}/${Date.now()}_${file.name.replace(/[^a-z0-9._-]+/gi,'_')}`;
@@ -559,7 +580,25 @@ function openView(o,keep){
 async function addNote(order_id){const a=$('noteAuthor').value,b=$('noteBody').value.trim();if(!b)return;await supa.addNote(order_id,a,b);$('noteBody').value='';await supa.load();renderOpenViewIfSame();}
 
 async function openSigned(orderId,path){const {data:signed,error}=await supabase.storage.from('order-files').createSignedUrl(path,3600); if(error||!signed?.signedUrl)return alert('Could not open.'); window.open(signed.signedUrl,'_blank');}
-async function quickUploadFile(orderId, kind, file){ if(!file) return; await supa.upload(orderId, kind, file); await supa.load(); renderOpenViewIfSame(); render(); }
+async function quickUploadFile(orderId, kind, file) {
+  if (!file) return;
+  try {
+    setToast('Uploading '+kind+' …');
+    await supa.upload(orderId, kind, file);
+    setToast((kind.toUpperCase())+' uploaded');
+    await supa.load();
+    renderOpenViewIfSame();
+    render();
+  } catch (e) {
+    console.error('[upload]', e);
+    setToast('Upload failed: ' + (e.message || e), true);
+    alert('Upload failed: ' + (e.message || e));
+  } finally {
+    const inp = kind === 'po' ? $('qUpPO') : $('qUpTR');
+    if (inp) inp.value = '';
+    setTimeout(clearToast, 1500);
+  }
+}
 function bindDocUploaders(orderId){ const po=$('qUpPO'), tr=$('qUpTR'); if(po) po.onchange=(e)=>quickUploadFile(orderId,'po',e.target.files[0]); if(tr) tr.onchange=(e)=>quickUploadFile(orderId,'test_report',e.target.files[0]); }
 
 /* -------- GENERATE flow (hidden iframe) -------- */
@@ -653,12 +692,13 @@ window.addEventListener('message',async(e)=>{
     if(!blob && d.dataUrl){ blob=await fetch(d.dataUrl).then(r=>r.blob()); }
     const fn=d.filename||`${(d.docType||'document').toUpperCase()}-${Date.now()}.pdf`;
 
-    // local download
+    // local download (already happens in generator, but safe)
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fn; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),3000);
 
     // upload + immediate refresh
-    const orderId=JSON.parse(sessionStorage.getItem('veDocData')||'{}')?.meta?.orderId;
-    if(orderId){ await supa.uploadGenerated(orderId,d.docType||'doc',new File([blob],fn,{type:'application/pdf'})); await supa.load(); render(); renderOpenViewIfSame(); }
+    const meta=JSON.parse(sessionStorage.getItem('veDocData')||'{}')?.meta||{};
+    const orderId=meta.orderId;
+    if(orderId){ await supa.uploadGenerated(orderId,d.docType||meta.docType||'doc',new File([blob],fn,{type:'application/pdf'})); await supa.load(); render(); renderOpenViewIfSame(); }
 
     if ($('genDlg')?.open) $('genDlg').close();
   }catch(err){
@@ -668,6 +708,7 @@ window.addEventListener('message',async(e)=>{
   }
 });
 
+/* NEW bridge: catches jsPDF *and* anchor downloads */
 const BRIDGE_CODE = `
 (function(){
   const getMeta=()=>{try{return JSON.parse(sessionStorage.getItem('veDocData')||'{}').meta||{}}catch(e){return{}}};
@@ -677,16 +718,67 @@ const BRIDGE_CODE = `
     if(p.includes('/so-confirmation'))return'so'; return'doc';};
   const name=(t)=>{const id=getMeta().orderId||'ORDER';const d=new Date().toISOString().slice(0,10);return (t||'document').toUpperCase()+"-"+id+"-"+d+".pdf"};
   const post=(pl)=>{try{parent.postMessage(pl,'*')}catch(e){}};
+
   const VE={ emitPdfFromBlob(b,f,dt){post({type:'ve-doc-generated',docType:dt||infer(),filename:f||name(dt),blob:b})},
              emitPdfFromDataUrl(u,f,dt){post({type:'ve-doc-generated',docType:dt||infer(),filename:f||name(dt),dataUrl:u})},
              emitPdfFromObjectUrl(u,f,dt){post({type:'ve-doc-generated',docType:dt||infer(),filename:f||name(dt),objUrl:u})},
              emitPdfBytes(bytes,f,dt){const u8=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);const b=new Blob([u8],{type:'application/pdf'});VE.emitPdfFromBlob(b,f,dt)} };
   window.VE=VE; window.VE_SEND_PDF=function(p){if(p.blob)return VE.emitPdfFromBlob(p.blob,p.filename,p.docType); if(p.objUrl)return VE.emitPdfFromObjectUrl(p.objUrl,p.filename,p.docType); if(p.dataUrl)return VE.emitPdfFromDataUrl(p.dataUrl,p.filename,p.docType);};
-  try{const jspdfNS=window.jspdf||window.jsPDF; const Proto=jspdfNS?.jsPDF?.prototype||jspdfNS?.API||window.jsPDF?.API; if(!Proto) return;
-    const origSave=Proto.save; if(typeof origSave==='function'){ Proto.save=function(fn){ try{const b=this.output('blob'); VE.emitPdfFromBlob(b,fn);}catch(e){ try{const u=this.output('datauristring'); VE.emitPdfFromDataUrl(u,fn);}catch(e2){} } return origSave.apply(this,arguments);}; }
-    const origOut=Proto.output; if(typeof origOut==='function'){ Proto.output=function(type){ const r=origOut.apply(this,arguments); if(String(type||'').toLowerCase()==='save'){ try{const b=this.output('blob'); VE.emitPdfFromBlob(b);}catch(e){} } return r;}; }
+
+  try{
+    const jspdfNS=window.jspdf||window.jsPDF;
+    const Proto=jspdfNS?.jsPDF?.prototype||jspdfNS?.API||window.jsPDF?.API;
+    if(Proto){
+      const origSave=Proto.save;
+      if(typeof origSave==='function'){
+        Proto.save=function(fn){
+          try{const b=this.output('blob'); VE.emitPdfFromBlob(b,fn);}catch(e){
+            try{const u=this.output('datauristring'); VE.emitPdfFromDataUrl(u,fn);}catch(_){} }
+          return origSave.apply(this,arguments);
+        };
+      }
+      const origOut=Proto.output;
+      if(typeof origOut==='function'){
+        Proto.output=function(type){
+          const r=origOut.apply(this,arguments);
+          if(String(type||'').toLowerCase()==='save'){
+            try{const b=this.output('blob'); VE.emitPdfFromBlob(b);}catch(_){}
+          }
+          return r;
+        };
+      }
+    }
   }catch(e){}
-})();`;
+
+  (function(){
+    let lastPdfUrl=null;
+    const origCreate=URL.createObjectURL;
+    if(typeof origCreate==='function'){
+      URL.createObjectURL=function(obj){
+        const url=origCreate.apply(this,arguments);
+        try{
+          const t=(obj&&obj.type)||'';
+          if(/pdf/i.test(t)) lastPdfUrl=url;
+        }catch(_){}
+        return url;
+      };
+    }
+
+    const OrigA=HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click=function(){
+      try{
+        let href=this.getAttribute('href')||'';
+        const dl=this.getAttribute('download')||'';
+        if((!href||href==='') && lastPdfUrl) href=lastPdfUrl;
+        if(href && (href.startsWith('blob:') || href.startsWith('data:application/pdf'))){
+          post({type:'ve-doc-generated',docType:infer(),filename:dl||name(),objUrl:href});
+        }
+      }catch(_){}
+      return OrigA.apply(this,arguments);
+    };
+  })();
+})();
+`;
 
 function AUTO_FILL(payload){
   function q(sa){try{return document.querySelector(sa)}catch(e){return null}}
@@ -769,6 +861,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
 </script>
 </body>
 </html>
+
 
 
 
