@@ -5,48 +5,103 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Order Tracker — Verified</title>
 <link rel="icon" href="data:;base64,iVBORw0KGgo="/>
+
 <style>
-:root{--brand:#6f57e9;--ink:#1f2432;--muted:#6d7486;--bg:#f6f7fb;--card:#fff;--line:#e9e9ef;--green:#12a274;--purple:#3b2eca}
-*{box-sizing:border-box}html,body{height:100%}body{margin:0;font:15px/1.56 system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg)}
-.wrap{max-width:1600px;margin:24px auto;padding:0 16px}
-header{display:flex;gap:16px;align-items:center;padding:18px;border:1px solid var(--line);border-radius:18px;background:#fff;box-shadow:0 8px 26px rgba(111,87,233,.08),0 1px 0 rgba(0,0,0,.04)}
-header img{height:44px}h1{margin:0;font-size:26px;font-weight:800}.sub{color:var(--muted)}
-.toolbar{position:sticky;top:8px;z-index:3;background:var(--bg);display:grid;grid-template-columns:1fr 200px 180px 180px auto auto;gap:12px;margin:16px 0}
+:root{
+  --brand:#6f57e9; --ink:#1f2432; --muted:#6d7486; --bg:#f6f7fb; --card:#fff; --line:#e9e9ef;
+  --green:#12a274; --purple:#3b2eca; --shadow:0 12px 30px rgba(23,20,68,.08),0 1px 0 rgba(0,0,0,.04)
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font:15px/1.56 ui-sans-serif, system-ui, -apple-system, Segoe UI, Inter, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji;color:var(--ink);background:var(--bg)}
+.wrap{max-width:1600px;margin:26px auto;padding:0 16px}
+header{display:flex;gap:16px;align-items:center;padding:18px;border:1px solid var(--line);border-radius:20px;background:#fff;box-shadow:var(--shadow)}
+header img{height:44px}
+h1{margin:0;font-size:26px;font-weight:800}
+.sub{color:var(--muted)}
+.toolbar{position:sticky;top:8px;z-index:3;background:var(--bg);display:grid;grid-template-columns:1fr 200px 180px 180px auto auto;gap:12px;margin:18px 0}
 .input,.select,.btn,textarea{height:40px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:0 12px;font:inherit}
-.input{width:100%}textarea{padding:12px;resize:vertical}.select{appearance:none;padding-right:28px}
-.btn{background:#f7f5ff;color:var(--purple);border-color:#ece8ff;font-weight:700;cursor:pointer}
-.btn:hover{background:#eee8ff}.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
-.mini{height:32px}.smini{height:28px;padding:0 10px;border-radius:999px}
-.table-card{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}.table-wrap{overflow:auto}
+.input{width:100%}
+textarea{padding:12px;resize:vertical}
+.select{appearance:none;padding-right:28px}
+.btn{background:#f6f4ff;color:#3d35d1;border-color:#ece8ff;font-weight:700;cursor:pointer}
+.btn:hover{background:#eee8ff}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.mini{height:32px}
+.smini{height:28px;padding:0 10px;border-radius:999px}
+
+.table-card{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden;box-shadow:var(--shadow)}
+.table-wrap{overflow:auto}
 table{width:100%;border-collapse:collapse;min-width:1320px}
 thead th{position:sticky;top:0;background:#fafaff;border-bottom:1px solid var(--line);text-align:left;font-size:13px;color:#4a4f64;padding:12px}
-tbody td{border-bottom:1px solid var(--line);padding:12px;vertical-align:top}tbody tr:hover{background:#fcfbff}
-.mono{font-variant-numeric:tabular-nums}.muted{color:var(--muted)}.chip{display:inline-block;border-radius:999px;padding:3px 10px;border:1px solid #eee;background:#fafafa;font-size:12px;color:#5d6480}
+tbody td{border-bottom:1px solid var(--line);padding:12px;vertical-align:top}
+tbody tr:hover{background:#fcfbff}
+
+.mono{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.chip{display:inline-block;border-radius:999px;padding:3px 10px;border:1px solid #eee;background:#fafafa;font-size:12px;color:#5d6480}
 .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #e6f2ec;padding:3px 10px;border-radius:999px;background:#f0fbf7;color:var(--green);font-weight:800}
-.ie{display:inline-flex;align-items:center;gap:6px}.ie button{border:0;background:transparent;color:#6d6fe5;cursor:pointer;padding:0 6px;border-radius:6px}.ie button:hover{background:#f0efff}
-.ie select{display:none;height:30px;border-radius:10px}.ie.editing select{display:inline-block}.ie.editing .chip{display:none}
-.actions{display:flex;gap:8px;flex-wrap:wrap}.link{color:#362dc7;text-decoration:none}.link:hover{text-decoration:underline}
-dialog{border:0;padding:0;margin:0 auto;max-width:1500px;width:98vw}dialog::backdrop{background:rgba(17,17,33,.35)}
-.modal{display:flex;flex-direction:column;max-height:92vh;border-radius:20px;overflow:hidden;background:#fff}
+
+.ie{display:inline-flex;align-items:center;gap:6px}
+.ie button{border:0;background:transparent;color:#6d6fe5;cursor:pointer;padding:0 6px;border-radius:6px}
+.ie button:hover{background:#f0efff}
+.ie select{display:none;height:30px;border-radius:10px}
+.ie.editing select{display:inline-block}.ie.editing .chip{display:none}
+
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.link{color:#362dc7;text-decoration:none}
+.link:hover{text-decoration:underline}
+
+dialog{border:0;padding:0;margin:0 auto;max-width:1500px;width:98vw}
+dialog::backdrop{background:rgba(17,17,33,.35)}
+.modal{display:flex;flex-direction:column;max-height:92vh;border-radius:20px;overflow:hidden;background:#fff;box-shadow:var(--shadow)}
 .modal header{position:sticky;top:0;z-index:2;border-bottom:1px solid var(--line);border-radius:20px 20px 0 0;background:#fff}
 .modal .head{padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
 .content{padding:16px;overflow:auto;max-height:calc(92vh - 56px)}
-.grid2,.grid3{gap:12px}.grid2{display:grid;grid-template-columns:1fr 1fr}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr}
-.section{margin:16px 0 8px;font-weight:900;color:#262b3a}.note{font-size:12px;color:var(--muted);margin-bottom:6px}
-.tbl{width:100%;border-collapse:collapse;table-layout:fixed}.tbl th,.tbl td{border:1px solid #ececf3;padding:10px;text-align:left;white-space:nowrap}
-.hscroll{overflow:auto;border:1px solid #ececf3;border-radius:12px;background:#fff}.right{display:flex;gap:10px;justify-content:flex-end;margin:12px 0 2px}
-.summary{display:grid;grid-template-columns:1.05fr .95fr;gap:14px}.card{border:1px solid var(--line);border-radius:14px;background:#fff}
-.card h3{margin:0;padding:10px 12px;border-bottom:1px solid var(--line);background:#fafaff;font-size:15px}.card .pad{padding:12px}
+
+.grid2,.grid3{gap:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr}
+
+.section{margin:16px 0 8px;font-weight:900;color:#262b3a}
+.note{font-size:12px;color:var(--muted);margin-bottom:6px}
+
+.tbl{width:100%;border-collapse:collapse;table-layout:fixed}
+.tbl th,.tbl td{border:1px solid #ececf3;padding:10px;text-align:left;white-space:nowrap}
+
+.hscroll{overflow:auto;border:1px solid #ececf3;border-radius:12px;background:#fff}
+.right{display:flex;gap:10px;justify-content:flex-end;margin:12px 0 2px}
+
+.summary{display:grid;grid-template-columns:1.05fr .95fr;gap:14px}
+.card{border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow)}
+.card h3{margin:0;padding:10px 12px;border-bottom:1px solid var(--line);background:#fafaff;font-size:15px}
+.card .pad{padding:12px}
 .kv{display:grid;grid-template-columns:170px 1fr;gap:8px 14px}
-.chips{display:flex;gap:10px;flex-wrap:wrap}.chipbtn{height:36px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:#fff;cursor:pointer;font-weight:800}
-.chipbtn.active{background:var(--brand);border-color:var(--brand);color:#fff}.badge-miss{display:inline-block;padding:2px 8px;border-radius:8px;background:#ffe9e9;color:#b21a1a;font-size:12px;margin-left:8px}
-.grid-auto{display:grid;grid-template-columns:repeat(3,minmax(240px,1fr));gap:12px}.input.small{height:34px}.hint{color:#6b6ea0;font-size:12px}
-.step{display:none}.step.active{display:block}#genFrame{width:100%;height:78vh;border:0;border-top:1px solid var(--line)}#genDlg .content{max-height:unset;height:auto;padding:0}
-textarea.input{min-height:84px}.note-item{padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff;margin-bottom:10px}
+
+.chips{display:flex;gap:10px;flex-wrap:wrap}
+.chipbtn{height:36px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:#fff;cursor:pointer;font-weight:800}
+.chipbtn.active{background:var(--brand);border-color:var(--brand);color:#fff}
+.badge-miss{display:inline-block;padding:2px 8px;border-radius:8px;background:#ffe9e9;color:#b21a1a;font-size:12px;margin-left:8px}
+
+.grid-auto{display:grid;grid-template-columns:repeat(3,minmax(240px,1fr));gap:12px}
+.input.small{height:34px}
+.hint{color:#6b6ea0;font-size:12px}
+
+.step{display:block}
+#stepFrame{display:none} /* we never show the generator */
+#genFrame{position:absolute;left:-100000px;top:-100000px;width:0;height:0;visibility:hidden;border:0}
+
+textarea.input{min-height:84px}
+.note-item{padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff;margin-bottom:10px}
 .note-head{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:#6b7290}
-.docbtn{border:1px solid #e8e8f6;background:#fff;border-radius:999px;height:28px;padding:0 10px;cursor:pointer}.docbtn:hover{background:#f5f4ff}
+
+.docbtn{border:1px solid #e8e8f6;background:#fff;border-radius:999px;height:28px;padding:0 10px;cursor:pointer}
+.docbtn:hover{background:#f5f4ff}
 .doctag{display:inline-block;padding:2px 8px;border:1px solid #e6e6f3;border-radius:999px;background:#fafaff;margin-right:6px}
-@media (max-width:1200px){.summary{grid-template-columns:1fr}}@media (max-width:900px){.grid3{grid-template-columns:1fr 1fr}}@media (max-width:680px){.grid2,.grid3{grid-template-columns:1fr}}
+
+@media (max-width:1200px){.summary{grid-template-columns:1fr}}
+@media (max-width:900px){.grid3{grid-template-columns:1fr 1fr}}
+@media (max-width:680px){.grid2,.grid3{grid-template-columns:1fr}}
 </style>
 
 <!-- Supabase -->
@@ -55,9 +110,12 @@ textarea.input{min-height:84px}.note-item{padding:10px;border:1px solid var(--li
 const SUPABASE_URL='https://ijzroisggstqkfhpjndq.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
 const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+// ensure anon header on fetch to Supabase URLs
 (function(){const f=fetch.bind(window);window.fetch=(i,init={})=>{const u=typeof i==='string'?i:i?.url||'';if(u.startsWith(SUPABASE_URL)){const h=new Headers(init.headers||{});if(!h.has('apikey'))h.set('apikey',SUPABASE_ANON_KEY);if(!h.has('Authorization'))h.set('Authorization','Bearer '+SUPABASE_ANON_KEY);init={...init,headers:h}}return f(i,init)}})();
 </script>
 </head>
+
 <body>
 <div class="wrap">
   <header>
@@ -90,7 +148,7 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
   </div>
 </div>
 
-<!-- CREATE / EDIT -->
+<!-- EDIT / CREATE -->
 <dialog id="dlg"><div class="modal">
   <header><div class="head"><strong id="dlgTitle">New Order</strong><button class="btn ghost mini" onclick="$('dlg').close()">✕</button></div></header>
   <div class="content">
@@ -115,8 +173,8 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
     <div class="section">Addresses</div>
     <div class="grid2">
-      <div><div class="note">Bill To (billing address)</div><textarea id="bill_to" class="input" rows="5" placeholder="Customer billing name&#10;Address line 1&#10;Address line 2&#10;City, State ZIP&#10;Country"></textarea></div>
-      <div><div class="note">Ship To (shipping address)</div><textarea id="ship_to" class="input" rows="5" placeholder="Customer shipping name&#10;Address line 1&#10;Address line 2&#10;City, State ZIP&#10;Country"></textarea></div>
+      <div><div class="note">Bill To (billing)</div><textarea id="bill_to" class="input" rows="5" placeholder="Customer billing name&#10;Address line 1&#10;Address line 2&#10;City, State ZIP&#10;Country"></textarea></div>
+      <div><div class="note">Ship To (shipping)</div><textarea id="ship_to" class="input" rows="5" placeholder="Customer shipping name&#10;Address line 1&#10;Address line 2&#10;City, State ZIP&#10;Country"></textarea></div>
     </div>
 
     <div class="section">Tests & Files</div>
@@ -150,17 +208,17 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
   </div>
 </div></dialog>
 
-<!-- VIEW / SUMMARY -->
+<!-- SUMMARY -->
 <dialog id="viewDlg"><div class="modal">
   <header><div class="head"><strong>Order Summary</strong><button class="btn ghost mini" onclick="$('viewDlg').close()">✕</button></div></header>
   <div class="content"><div id="viewBody" class="summary"></div></div>
 </div></dialog>
 
-<!-- GENERATE: same clean popup -->
+<!-- GENERATE -->
 <dialog id="genDlg"><div class="modal">
   <header><div class="head"><strong>Generate Document</strong><button class="btn ghost mini" onclick="$('genDlg').close()">✕</button></div></header>
   <div class="content">
-    <div id="stepForm" class="step active" style="padding:16px">
+    <div id="stepForm" style="padding:16px">
       <div class="note" style="margin-bottom:8px">Document type</div>
       <div class="chips" id="docTypeChips"></div>
       <div id="missingWrap" style="margin-top:16px"></div>
@@ -171,15 +229,12 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
         <button class="btn primary mini" id="genGo">Generate</button>
       </div>
     </div>
-    <div id="stepFrame" class="step">
-      <iframe id="genFrame" title="Generator"></iframe>
-      <div style="padding:12px" class="muted">We’re auto-filling the doc and creating the PDF…</div>
-    </div>
+    <div id="stepFrame"><iframe id="genFrame" title="Generator"></iframe></div>
   </div>
 </div></dialog>
 
 <script>
-/* ───────── helpers ───────── */
+/* -------- helpers -------- */
 const $=id=>document.getElementById(id);
 const SALESTEAM=['Nick N','Dan C','Emir B','Nick K','Jake B'];
 const curSym=c=>({USD:'$',GBP:'£',EUR:'€'})[c||'USD']||'$';
@@ -187,7 +242,7 @@ const fmt=n=>(n==null||isNaN(n))?'-':Number(n).toLocaleString(undefined,{minimum
 const fmtInt=n=>(n==null||isNaN(n))?'-':Number(n).toLocaleString();
 const esc=s=>(s??'').toString().replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-/* ───────── Supabase data ───────── */
+/* -------- Supabase data layer -------- */
 const supa={
   state:{orders:[]},
   async load(){
@@ -201,16 +256,21 @@ const supa={
         supabase.from('order_files').select('id,kind,path,created_at').eq('order_id',r.id).order('created_at',{ascending:true}),
         supabase.from('order_notes').select('*').eq('order_id',r.id).order('created_at',{ascending:true}),
       ]);
+
       const items=(itemsRes.data||[]).map(i=>({part_number:i.part_number,date_codes:i.date_codes,qty:i.qty,unit_sell:i.unit_sell,unit_cost:i.unit_cost}));
       const legs=(legsRes.data||[]).map(l=>({kind:'Leg',date:'',qty:'',from:l.from_loc,to:l.to_loc,method:l.method,ref:l.ref,cost:l.cost}));
       const inbound=(inbRes.data||[]).map(s=>({kind:'Inbound',date:s.ship_date,qty:s.qty,courier:s.courier,tracking:s.tracking}));
       const outbound=(outRes.data||[]).map(s=>({kind:'Outbound',date:s.ship_date,qty:s.qty,courier:s.courier,tracking:s.tracking}));
+
       const filesMap=(filesRes.data||[]).reduce((a,f)=>{a[f.kind]=f.path;return a;},{});
       const genList=(filesRes.data||[]).filter(f=>/_pdf$/.test(f.kind)).map(f=>({kind:f.kind,path:f.path,created_at:f.created_at}));
+
+      // signed links for PO/Test for quick access
       let poUrl=null,testUrl=null;
       if(filesMap.po){const {data:s}=await supabase.storage.from('order-files').createSignedUrl(filesMap.po,3600);poUrl=s?.signedUrl||null;}
       if(filesMap.test_report){const {data:s}=await supabase.storage.from('order-files').createSignedUrl(filesMap.test_report,3600);testUrl=s?.signedUrl||null;}
       window._sessionFiles ||= {}; window._sessionFiles[r.id]={poUrl,testUrl};
+
       return { ...r, items, shipments:[...legs,...inbound,...outbound], files:filesMap, staff_notes:notesRes.data||[], generated_docs:genList };
     }));
   },
@@ -221,24 +281,29 @@ const supa={
     await supabase.from('ship_legs').delete().eq('order_id',order_id);
     await supabase.from('shipments_inbound').delete().eq('order_id',order_id);
     await supabase.from('shipments_outbound').delete().eq('order_id',order_id);
+
     if(header.items?.length){ await supabase.from('order_items').insert(header.items.map(i=>({order_id,part_number:i.part_number,date_codes:i.date_codes,qty:i.qty,unit_sell:i.unit_sell,unit_cost:i.unit_cost}))); }
+
     const legs=header.shipments?.filter(s=>s.kind==='Leg')||[];
     const inbound=header.shipments?.filter(s=>s.kind==='Inbound')||[];
     const outbound=header.shipments?.filter(s=>s.kind==='Outbound')||[];
     if(legs.length){ await supabase.from('ship_legs').insert(legs.map(l=>({order_id,from_loc:l.from,to_loc:l.to,method:l.method,ref:l.ref,cost:Number(l.cost||0)}))); }
     if(inbound.length){ await supabase.from('shipments_inbound').insert(inbound.map(s=>({order_id,ship_date:s.date||null,qty:Number(s.qty||0),courier:s.courier||null,tracking:s.tracking||null}))); }
     if(outbound.length){ await supabase.from('shipments_outbound').insert(outbound.map(s=>({order_id,ship_date:s.date||null,qty:Number(s.qty||0),courier:s.courier||null,tracking:s.tracking||null}))); }
+
     if(uploads?.po) await this.upload(order_id,'po',uploads.po);
     if(uploads?.test_report) await this.upload(order_id,'test_report',uploads.test_report);
   },
   async upload(orderId,kind,file){
     const path=`orders/${orderId}/${kind}/${Date.now()}_${file.name.replace(/[^a-z0-9._-]+/gi,'_')}`;
-    const {error}=await supabase.storage.from('order-files').upload(path,file,{upsert:true}); if(error) throw error;
+    const {error}=await supabase.storage.from('order-files').upload(path,file,{upsert:true});
+    if(error) throw error;
     await supabase.from('order_files').insert({order_id:orderId,kind,path});
   },
   async uploadGenerated(orderId,docType,file){
     const path=`generated/${orderId}/${docType}/${Date.now()}_${file.name.replace(/[^a-z0-9._-]+/gi,'_')}`;
-    const {error}=await supabase.storage.from('order-files').upload(path,file,{upsert:true,contentType:'application/pdf'}); if(error) throw error;
+    const {error}=await supabase.storage.from('order-files').upload(path,file,{upsert:true,contentType:'application/pdf'});
+    if(error) throw error;
     await supabase.from('order_files').insert({order_id:orderId,kind:`${docType}_pdf`,path});
   },
   async quickUpdate(id, field, value){ await supabase.from('orders').update({[field]:value}).eq('id',id); },
@@ -251,7 +316,7 @@ const supa={
       .subscribe(); }
 };
 
-/* ───────── totals ───────── */
+/* -------- totals -------- */
 function totals(o){
   const revenue=(o.items||[]).reduce((s,i)=>s+(+i.qty||0)*(+i.unit_sell||0),0);
   const qty=(o.items||[]).reduce((s,i)=>s+(+i.qty||0),0);
@@ -263,7 +328,7 @@ function totals(o){
 }
 const age=d=>d?(Math.max(0,Math.floor((Date.now()-new Date(d))/86400000))+' d'):'-';
 
-/* ───────── table render ───────── */
+/* -------- table render -------- */
 function inlineSelect(o,field,options){
   const w=document.createElement('div');w.className='ie';
   const chip=document.createElement('span');chip.className='chip';chip.textContent=o[field]||'-';
@@ -295,6 +360,7 @@ function render(){
     const t=totals(o), sym=curSym(o.currency);
     const parts=o.items?.length?o.items[0].part_number+(o.items.length>1?` +${o.items.length-1} more`: ''):'-';
     const tr=document.createElement('tr'), cell=html=>{const td=document.createElement('td');td.innerHTML=html;return td};
+
     tr.appendChild(cell(`<button class="btn mini ghost" onclick="openViewById('${o.id}')">View</button>`));
     tr.appendChild(cell(esc(o.customer||'-'))); tr.appendChild(cell(esc(parts))); tr.appendChild(cell(esc(o.salesperson||'-')));
     tr.appendChild(cell(`<span class="mono">${fmtInt(t.qty)}</span>`));
@@ -330,7 +396,7 @@ function render(){
   });
 }
 
-/* ───────── edit form helpers ───────── */
+/* -------- edit form helpers -------- */
 function addItemRow(v={part_number:'',date_codes:'',qty:'',unit_sell:'',unit_cost:''}){
   const tr=document.createElement('tr'); tr.innerHTML=
   `<td><input class="input mini" value="${esc(v.part_number)}"/></td>
@@ -363,7 +429,7 @@ function shipsFromDOM(){return [...$('shipBody').querySelectorAll('tr')].map(tr=
   return {kind:sel,date,qty:+qty||0,from,to,method,ref,courier,tracking,cost:+cost||0};
 }).filter(Boolean)}
 
-/* ───────── open/clone/delete ───────── */
+/* -------- open/clone/delete -------- */
 function openModalById(id){openModal(supa.state.orders.find(x=>x.id===id))}
 function openModal(o){
   $('dlgTitle').textContent=o?'Edit Order':'New Order';
@@ -372,6 +438,7 @@ function openModal(o){
   ['customer','priority','status','order_date','requested_by','payment_terms','payment_method','incoterm','invoice_date','due_date','currency','tests','test_center','supplier_lead_time','vendor','shipping_cost_extra','test_cost','notes','bill_to','ship_to'].forEach(id=>{$(id).value=o?.[id]??''});
   $('itemsBody').innerHTML=''; (o?.items||[]).forEach(addItemRow);
   $('shipBody').innerHTML=''; (o?.shipments||[]).forEach(addShipRow);
+
   $('btnSave').onclick=async()=>{
     const rec={
       id:$('orderId').value||undefined,
@@ -395,7 +462,7 @@ function openModal(o){
 async function cloneById(id){ const o=supa.state.orders.find(x=>x.id===id); const c=structuredClone(o); delete c.id; c.status='Open'; c.order_date=new Date().toISOString().slice(0,10); await supa.save(c,{}); await supa.load(); render(); }
 async function delById(id){ if(!confirm('Delete this order?'))return; await supa.del(id); await supa.load(); render(); }
 
-/* ───────── view + notes + documents ───────── */
+/* -------- view + notes + attachments + documents -------- */
 let OPEN_VIEW_ID=null;
 function openViewById(id){const o=supa.state.orders.find(x=>x.id===id); if(o) openView(o)}
 function renderOpenViewIfSame(){ if(!OPEN_VIEW_ID) return; const o=supa.state.orders.find(x=>x.id===OPEN_VIEW_ID); if(o) openView(o,true); }
@@ -407,6 +474,11 @@ function openView(o,keep){
   const notes=(o.staff_notes||[]).map(n=>`<div class="note-item"><div class="note-head"><b>${esc(n.author)}</b><span>${new Date(n.created_at).toLocaleString()}</span></div><div>${esc(n.body)}</div></div>`).join('');
   const genRows=(o.generated_docs||[]).slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at))
      .map(g=>`<tr><td>${g.kind.replace('_pdf','').toUpperCase()}</td><td class="mono">${new Date(g.created_at).toLocaleString()}</td><td><button class="docbtn smini" onclick="openSigned('${o.id}','${g.path}')">View</button></td></tr>`).join('') || '<tr><td colspan="3" class="muted">No generated documents yet</td></tr>';
+
+  const poLink = files.poUrl ? `<a class="link" target="_blank" href="${files.poUrl}">PO</a>` : '';
+  const trLink = files.testUrl ? `<a class="link" target="_blank" href="${files.testUrl}">Test</a>` : '';
+  const filesRow = [poLink, trLink].filter(Boolean).join(' · ') || '-';
+
   $('viewBody').innerHTML=`
     <div class="card" style="grid-column:1 / -1"><h3>Generate</h3><div class="pad">
       <button class="docbtn smini" onclick="openGenById('${o.id}','so')">OC</button>
@@ -445,7 +517,7 @@ function openView(o,keep){
       <div>Test Cost</div><div class="mono">${sym}${fmt(t.testCost)}</div>
       <div>Total Cost</div><div class="mono">${sym}${fmt(t.cost)}</div>
       <div>GP</div><div><span class="pill">${sym}${fmt(t.gp)}</span> <span class="muted mono">(${fmt(t.gpPct)}%)</span></div>
-      <div>Files</div><div>${[files.poUrl?`<a class="link" target="_blank" href="${files.poUrl}">PO</a>`:'',files.testUrl?`<a class="link" target="_blank" href="${files.testUrl}">Test</a>`:''].filter(Boolean).join(' · ')||'-'}</div>
+      <div>Files</div><div>${filesRow}</div>
     </div></div>
 
     <div class="card" style="grid-column:1 / -1"><h3>Line Items</h3><div class="pad"><div class="hscroll">
@@ -465,6 +537,14 @@ function openView(o,keep){
       </div>
     </div></div>
 
+    <div class="card" style="grid-column:1 / -1"><h3>Attachments</h3><div class="pad">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+        <div><div class="note">Customer PO</div><input id="qUpPO" type="file" class="input mini" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"/></div>
+        <div><div class="note">Test Report</div><input id="qUpTR" type="file" class="input mini" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"/></div>
+        <div class="muted" style="margin-top:24px">${filesRow}</div>
+      </div>
+    </div></div>
+
     <div class="card" style="grid-column:1 / -1"><h3>Documents</h3><div class="pad">
       <div class="hscroll">
         <table class="tbl" style="min-width:560px">
@@ -474,23 +554,29 @@ function openView(o,keep){
       </div>
     </div></div>`;
   if(!keep)$('viewDlg').showModal();
+  bindDocUploaders(o.id);
 }
 async function addNote(order_id){const a=$('noteAuthor').value,b=$('noteBody').value.trim();if(!b)return;await supa.addNote(order_id,a,b);$('noteBody').value='';await supa.load();renderOpenViewIfSame();}
-async function openSigned(orderId,path){const {data:signed,error}=await supabase.storage.from('order-files').createSignedUrl(path,3600); if(error||!signed?.signedUrl)return alert('Could not open.'); window.open(signed.signedUrl,'_blank');}
 
-/* ───────── GENERATE flow (auto-fill + auto-save) ───────── */
+async function openSigned(orderId,path){const {data:signed,error}=await supabase.storage.from('order-files').createSignedUrl(path,3600); if(error||!signed?.signedUrl)return alert('Could not open.'); window.open(signed.signedUrl,'_blank');}
+async function quickUploadFile(orderId, kind, file){ if(!file) return; await supa.upload(orderId, kind, file); await supa.load(); renderOpenViewIfSame(); render(); }
+function bindDocUploaders(orderId){ const po=$('qUpPO'), tr=$('qUpTR'); if(po) po.onchange=(e)=>quickUploadFile(orderId,'po',e.target.files[0]); if(tr) tr.onchange=(e)=>quickUploadFile(orderId,'test_report',e.target.files[0]); }
+
+/* -------- GENERATE flow (hidden iframe) -------- */
 const DOC_ROUTES={so:'../so-confirmation/index.html',invoice:'../so-confirmation/index.html',pt:'../commercial-invoice/index.html#pt',ci:'../commercial-invoice/index.html',rma:'../rma/index.html'};
 const HS_MEM=JSON.parse(localStorage.getItem('ve-hs-mem')||'{}'); const saveHs=()=>localStorage.setItem('ve-hs-mem',JSON.stringify(HS_MEM));
 function openGenById(id,type){openGen(supa.state.orders.find(x=>x.id===id),type)}
 function openGen(order,type='so'){
-  $('genDlg').showModal(); $('stepForm').classList.add('active'); $('stepFrame').classList.remove('active');
+  $('genDlg').showModal(); $('genGo').disabled=false; $('genGo').textContent='Generate';
   $('docTypeChips').innerHTML=[['so','Order Confirmation'],['invoice','Invoice'],['pt','Picking Ticket'],['ci','Commercial Invoice'],['rma','RMA']].map(([t,l])=>`<button class="chipbtn${t===type?' active':''}" data-type="${t}">${l}</button>`).join('');
   let cur=type; $('docTypeChips').onclick=e=>{const b=e.target.closest('button[data-type]'); if(!b)return; cur=b.dataset.type; [...$('docTypeChips').children].forEach(x=>x.classList.toggle('active',x===b)); renderMissingForm(order,cur);};
   renderMissingForm(order,cur);
+
   $('genGo').onclick=()=>{
     const overrides=getOverrides(cur,order); const payload=mkPayload(order,cur,overrides);
     try{sessionStorage.setItem('veDocData',JSON.stringify(payload));}catch(e){}
-    $('stepForm').classList.remove('active'); $('stepFrame').classList.add('active');
+    $('genGo').disabled = true; $('genGo').textContent = 'Generating…';
+
     const frame=$('genFrame'); frame.src=DOC_ROUTES[cur];
     frame.onload=()=>{ try{
         const d=frame.contentDocument||frame.contentWindow.document;
@@ -511,7 +597,7 @@ function mkPayload(o,type,ov){
   return p;
 }
 function renderMissingForm(order,type){
-  const need=[{key:'from',label:'Seller (From)',placeholder:'Verified Electronics\nAddress…'},{key:'soldto',label:'Buyer (Bill To)',placeholder:`${order.customer||''}\nBilling address`},{key:'shipto',label:'Ship To',placeholder:`${order.customer||''}\nShipping address`}];
+  const need=[{key:'from',label:'Seller (From)',placeholder:'Verified Electronics\nAddress…'},{key:'soldto',label:'Buyer (Bill To)',placeholder:order.bill_to||`${order.customer||''}\nBilling address`},{key:'shipto',label:'Ship To',placeholder:order.ship_to||`${order.customer||''}\nShipping address`}];
   if(type==='rma') need.push({key:'returnTo',label:'Return To',placeholder:'Verified Returns address'});
   const fixed=[{key:'currency',label:'Currency'},{key:'incoterm',label:'Incoterm'},{key:'payment_terms',label:'Payment Terms'}];
   const wrap=$('missingWrap'); wrap.innerHTML='<div class="grid-auto"></div>'; const grid=wrap.firstChild;
@@ -525,6 +611,7 @@ function renderMissingForm(order,type){
   $('f_from').value='Verified Electronics\nExporter/Warehouse address';
   $('f_soldto').value=order.bill_to || ((order.customer||'')+'\nBilling address');
   $('f_shipto').value=order.ship_to || ((order.customer||'')+'\nShipping address');
+
   if(type==='rma'){ $('extraWrap').innerHTML=`
     <div class="section">RMA Details</div>
     <div class="grid-auto">
@@ -535,6 +622,7 @@ function renderMissingForm(order,type){
       <div><div class="note">Email</div><input id="f_rma_email" class="input small"/></div>
       <div><div class="note">Phone</div><input id="f_rma_phone" class="input small"/></div>
     </div>`; } else {$('extraWrap').innerHTML='';}
+
   if(type==='ci'||type==='pt'){
     const rows=(order.items||[]).map(i=>`<tr><td>${esc(i.part_number)}</td>
       <td><input class="input small mono" id="hs_${esc(i.part_number)}" value="${esc(HS_MEM[i.part_number]?.hs||'')}" placeholder="HS Code"/></td>
@@ -557,19 +645,29 @@ function getOverrides(type,order){
   return o;
 }
 
-/* ───────── bridge & receive PDFs ───────── */
+/* -------- bridge & receive PDFs -------- */
 window.addEventListener('message',async(e)=>{
   const d=e.data||{}; if(d.type!=='ve-doc-generated') return;
   try{
     let blob=d.blob||null; if(!blob && d.objUrl){ blob=await fetch(d.objUrl).then(r=>r.blob()); }
     if(!blob && d.dataUrl){ blob=await fetch(d.dataUrl).then(r=>r.blob()); }
     const fn=d.filename||`${(d.docType||'document').toUpperCase()}-${Date.now()}.pdf`;
+
+    // local download
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fn; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+
+    // upload + immediate refresh
     const orderId=JSON.parse(sessionStorage.getItem('veDocData')||'{}')?.meta?.orderId;
     if(orderId){ await supa.uploadGenerated(orderId,d.docType||'doc',new File([blob],fn,{type:'application/pdf'})); await supa.load(); render(); renderOpenViewIfSame(); }
-    alert('Saved to Supabase & downloaded.');
-  }catch(err){ console.error(err); alert('Downloaded, but upload failed.'); }
+
+    if ($('genDlg')?.open) $('genDlg').close();
+  }catch(err){
+    console.error(err); alert('Downloaded PDF, but upload failed.');
+  }finally{
+    if ($('genGo')) { $('genGo').disabled=false; $('genGo').textContent='Generate'; }
+  }
 });
+
 const BRIDGE_CODE = `
 (function(){
   const getMeta=()=>{try{return JSON.parse(sessionStorage.getItem('veDocData')||'{}').meta||{}}catch(e){return{}}};
@@ -589,6 +687,7 @@ const BRIDGE_CODE = `
     const origOut=Proto.output; if(typeof origOut==='function'){ Proto.output=function(type){ const r=origOut.apply(this,arguments); if(String(type||'').toLowerCase()==='save'){ try{const b=this.output('blob'); VE.emitPdfFromBlob(b);}catch(e){} } return r;}; }
   }catch(e){}
 })();`;
+
 function AUTO_FILL(payload){
   function q(sa){try{return document.querySelector(sa)}catch(e){return null}}
   function text(el){return (el?.textContent||'').trim().toLowerCase()}
@@ -605,20 +704,26 @@ function AUTO_FILL(payload){
   }
   function setVal(el,val){ if(!el) return; if(el.tagName==='SELECT'){ const opts=[...el.options]; const hit=opts.find(o=>o.textContent.trim().toLowerCase()===(val||'').toLowerCase())||opts.find(o=>o.value.toLowerCase()===(val||'').toLowerCase()); if(hit){ el.value=hit.value; el.dispatchEvent(new Event('change',{bubbles:true})); } }
     else { el.value=val; el.dispatchEvent(new Event('input',{bubbles:true})); } }
+
   const typeMap={so:'Sales Order Confirmation',invoice:'Invoice',ci:'Commercial Invoice',pt:'Picking Ticket',rma:'RMA'};
   setVal(byLabel('DOCUMENT TYPE')||byLabel('Document type')||q('select'), typeMap[payload.meta.docType]||typeMap.so);
   setVal(byLabel('CURRENCY')||byLabel('Currency'), payload.meta.currency||'USD');
   if(payload.ci && payload.ci.freight!=null){ setVal(byLabel('SHIPPING')||byLabel('Shipping'), String(payload.ci.freight)); }
+
   const sellerLines=(payload.meta.from||'').split('\n');
   setVal(byLabel('Seller Name')||byLabel('Company name'), sellerLines.shift()||'Verified Electronics');
   setVal(byLabel('Address')||byLabel('Address lines'), sellerLines.join('\n'));
+
   setVal(byLabel('Buyer / Company')||byLabel('Customer Company')||byLabel('Company'), payload.meta.customer||'');
   setVal(byLabel('Bill To'), payload.meta.soldto||'');
   setVal(byLabel('Ship To'), payload.meta.shipto||'');
+
   setVal(byLabel('Salesperson')||byLabel('Name'), payload.meta.salesperson||'');
   setVal(byLabel('Delivery Terms')||byLabel('Incoterms'), payload.meta.incoterm||'');
   setVal(byLabel('Payment Terms'), payload.meta.payment_terms||'');
+
   const num=byLabel('Number')||byLabel('Order Number'); if(num){ num.value=((payload.meta.docType==='invoice'?'INV-':'SO-')+(payload.meta.orderId||'')); num.dispatchEvent(new Event('input',{bubbles:true})); }
+
   function addLine(){ const btn=[...document.querySelectorAll('button')].find(b=>/add (line|item)/i.test(b.textContent)); if(btn) btn.click(); }
   function fillLast(it){
     const rows=[...document.querySelectorAll('table, .items, .lines')]; let container=rows.find(r=>/qty/i.test(r.textContent||''))||document.body;
@@ -633,6 +738,7 @@ function AUTO_FILL(payload){
     if(unit){unit.value=it.unitSell;unit.dispatchEvent(new Event('input',{bubbles:true}))}
   }
   (payload.items||[]).forEach(it=>{addLine();fillLast(it)});
+
   if(payload.meta.docType==='rma' && payload.rma){
     setVal(byLabel('Return To'), payload.meta.returnTo||'');
     setVal(byLabel('Return Reason'), payload.rma.reason||'');
@@ -642,10 +748,11 @@ function AUTO_FILL(payload){
     setVal(byLabel('Phone'), payload.rma.phone||'');
     const rnum=byLabel('RMA Number')||byLabel('Number'); if(rnum) setVal(rnum, payload.rma.number||'');
   }
+
   setTimeout(()=>{ const gen=[...document.querySelectorAll('button')].find(b=>/generate pdf/i.test(b.textContent)); if(gen) gen.click(); },700);
 }
 
-/* ───────── CSV ───────── */
+/* -------- CSV -------- */
 $('btnCsv').onclick=()=>{
   const head=[...document.querySelectorAll('#tbl thead th')].map(x=>x.innerText);
   const rows=[...document.querySelectorAll('#tbody tr')].map(tr=>[...tr.children].map(td=>td.innerText.replace(/\s+/g,' ').trim()));
@@ -653,7 +760,7 @@ $('btnCsv').onclick=()=>{
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='orders.csv'; a.click();
 };
 
-/* ───────── boot ───────── */
+/* -------- boot -------- */
 document.addEventListener('DOMContentLoaded',async()=>{
   $('fltSales').innerHTML='<option value="">All salespeople</option>'+SALESTEAM.map(n=>`<option>${n}</option>`).join('');
   $('q').oninput=()=>render(); ['fltSales','fltStatus','fltPriority'].forEach(id=>$(id).oninput=render);
@@ -662,6 +769,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
 </script>
 </body>
 </html>
+
+
 
 
 
