@@ -43,16 +43,19 @@ dialog[open]{display:block}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+/* Supabase details (rotate later) */
 const SUPABASE_URL='https://ijzroisggstqkfhpjndq.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
 const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+/* ensure apikey headers for direct fetches */
 (function(){const f=fetch.bind(window);window.fetch=(i,init={})=>{const u=typeof i==='string'?i:i?.url||'';if(u.startsWith(SUPABASE_URL)){const h=new Headers(init.headers||{});if(!h.has('apikey'))h.set('apikey',SUPABASE_ANON_KEY);if(!h.has('Authorization'))h.set('Authorization','Bearer '+SUPABASE_ANON_KEY);init={...init,headers:h};}return f(i,init);};})();
 </script>
 </head>
 <body>
 
 <script>
-(function(){const supported=!!window.HTMLDialogElement&&!!HTMLDialogElement.prototype.showModal;window.showDlg=id=>{const el=document.getElementById(id);if(!el)return;if(supported){try{el.showModal();}catch(e){el.setAttribute('open','');el.style.display='block';}}else{el.setAttribute('open','');el.style.display='block';document.documentElement.style.overflow='hidden';}};window.closeDlg=id=>{const el=document.getElementById(id);if(!el)return;if(supported){try{el.close();}catch(e){el.removeAttribute('open');el.style.display='none';}}else{el.removeAttribute('open');el.style.display='none';document.documentElement.style.overflow='';}};})();
+/* dialog polyfill-ish for older browsers */
+(function(){const ok=!!window.HTMLDialogElement&&!!HTMLDialogElement.prototype.showModal;window.showDlg=id=>{const el=document.getElementById(id);if(!el)return; if(ok){try{el.showModal();}catch{el.setAttribute('open','');el.style.display='block';}}else{el.setAttribute('open','');el.style.display='block';document.documentElement.style.overflow='hidden';}};window.closeDlg=id=>{const el=document.getElementById(id);if(!el)return; if(ok){try{el.close();}catch{el.removeAttribute('open');el.style.display='none';}}else{el.removeAttribute('open');el.style.display='none';document.documentElement.style.overflow='';}};})();
 </script>
 
 <div class="wrap">
@@ -123,7 +126,7 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
     <div class="section">Tests & Files</div>
     <div class="grid3">
       <div><div class="note">Tests</div><input id="tests" class="input mini" placeholder="EVI, Electrical…"/></div>
-      <div><div class="note">Test Center</div><select id="test_center" class="select mini"><option>GETs HK</option><option>GETs Shenzhen</option><option>GETs US</option><option>White Horse US</option><option>White Horse China</option><option>White Horse EU</option><option>Other</option></select></div>
+      <div><div class="note">Test Center</div><select id="test_center" class="select mini"><option>GETs HK</option><option>GETs Shenzhen</option><option>GETs US</option><option>White Horse US</option><option>White Horse China</option><option>White Horse EU</option><option>EVI</option><option>All</option><option>Other</option></select></div>
       <div><div class="note">Supplier Lead Time (days)</div><input id="supplier_lead_time" type="number" class="input mini mono" placeholder="e.g. 21"/></div>
       <div><div class="note">PO (file)</div><input id="file_po" type="file" class="input mini" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"/></div>
       <div><div class="note">Test Report (file)</div><input id="file_test" type="file" class="input mini" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"/></div>
@@ -136,7 +139,8 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
         <thead>
           <tr>
             <th>Part</th><th>Date Codes</th><th>Qty</th><th>Shipped Qty</th>
-            <th>Unit Sell</th><th>Unit Cost</th><th>Delivery</th><th>Vendor (line)</th><th></th>
+            <th>Unit Sell</th><th>Unit Cost</th><th>Delivery</th><th>Vendor (line)</th>
+            <th>Test Center (line)</th><th>Vendor PO</th><th></th>
           </tr>
         </thead>
         <tbody id="itemsBody"></tbody>
@@ -147,7 +151,11 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
     <div class="section">Shipments / Legs</div>
     <div class="hscroll">
       <table class="tbl">
-        <thead><tr><th>Kind</th><th>Date</th><th>Qty</th><th>From</th><th>To</th><th>Method</th><th>Ref</th><th>Courier</th><th>Tracking</th><th>Cost</th><th></th></tr></thead>
+        <thead>
+          <tr>
+            <th>Kind</th><th>Date</th><th>Qty</th><th>Parts</th><th>From</th><th>To</th><th>Method</th><th>Ref</th><th>Courier</th><th>Tracking</th><th>Cost</th><th></th>
+          </tr>
+        </thead>
         <tbody id="shipBody"></tbody>
       </table>
     </div>
@@ -201,6 +209,7 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 <div id="toast" style="position:fixed;right:16px;bottom:16px;background:#111;color:#fff;padding:10px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s"></div>
 
 <script>
+/* utils */
 const $=id=>document.getElementById(id);
 const SALESTEAM=['Nick N','Dan C','Emir B','Nick K','Jake B'];
 const todayStr=()=>new Date().toISOString().slice(0,10);
@@ -211,7 +220,7 @@ const esc=s=>(s??'').toString().replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;',
 const age=d=>d?(Math.max(0,Math.floor((Date.now()-new Date(d))/86400000))+' d'):'-';
 function setToast(msg,d=false){const t=$('toast');t.textContent=msg;t.style.background=d?'#b21a1a':'#111';t.style.opacity='1';setTimeout(()=>t.style.opacity='0',1500);}
 
-/* ===== Supabase layer ===== */
+/* supabase layer */
 const supa={
   state:{orders:[]},
 
@@ -227,15 +236,27 @@ const supa={
         supabase.from('order_files').select('id,kind,path,created_at,updated_at').eq('order_id',r.id).order('created_at',{ascending:true}),
         supabase.from('order_notes').select('*').eq('order_id',r.id).order('created_at',{ascending:true})
       ]);
+
       const items=(itemsRes.data||[]).map(i=>({
-        part_number:i.part_number,date_codes:i.date_codes,qty:i.qty,qty_shipped:i.qty_shipped||0,
-        unit_sell:i.unit_sell,unit_cost:i.unit_cost,delivery_date:i.delivery_date||null,vendor_line:i.vendor_line||null
+        part_number:i.part_number,
+        date_codes:i.date_codes,
+        qty:i.qty,
+        qty_shipped:i.qty_shipped||0,
+        unit_sell:i.unit_sell,
+        unit_cost:i.unit_cost,
+        delivery_date:i.delivery_date||null,
+        vendor_line:i.vendor_line||null,
+        test_center_line:i.test_center_line||null,
+        vendor_po:i.vendor_po||null
       }));
-      const legs=(legsRes.data||[]).map(l=>({kind:'Leg',date:'',qty:'',from:l.from_loc,to:l.to_loc,method:l.method,ref:l.ref,courier:'',tracking:'',cost:l.cost}));
-      const inbound=(inbRes.data||[]).map(s=>({kind:'Inbound',date:s.ship_date,qty:s.qty,courier:s.courier,tracking:s.tracking}));
-      const outbound=(outRes.data||[]).map(s=>({kind:'Outbound',date:s.ship_date,qty:s.qty,courier:s.courier,tracking:s.tracking}));
+
+      const legs=(legsRes.data||[]).map(l=>({kind:'Leg',date:'',qty:'',from:l.from_loc,to:l.to_loc,method:l.method,ref:l.ref,courier:'',tracking:'',cost:l.cost,parts:l.parts||null}));
+      const inbound=(inbRes.data||[]).map(s=>({kind:'Inbound',date:s.ship_date,qty:s.qty,courier:s.courier,tracking:s.tracking,parts:s.parts||null}));
+      const outbound=(outRes.data||[]).map(s=>({kind:'Outbound',date:s.ship_date,qty:s.qty,courier:s.courier,tracking:s.tracking,parts:s.parts||null}));
+
       const filesMap=(filesRes.data||[]).reduce((a,f)=>{a[f.kind]=f.path;return a;},{}); // { po, test_report, so_pdf, ... }
       const genList=(filesRes.data||[]).filter(f=>/_pdf$/.test(f.kind)).map(f=>({kind:f.kind,path:f.path,created_at:f.created_at||f.updated_at}));
+
       return {...r,items,shipments:[...legs,...inbound,...outbound],files:filesMap,staff_notes:notesRes.data||[],generated_docs:genList};
     }));
   },
@@ -253,16 +274,32 @@ const supa={
     if(items?.length){
       await supabase.from('order_items').insert(items.map(i=>({
         order_id,
-        part_number:i.part_number,date_codes:i.date_codes,qty:i.qty,qty_shipped:i.qty_shipped||0,
-        unit_sell:i.unit_sell,unit_cost:i.unit_cost,delivery_date:i.delivery_date||null,vendor_line:i.vendor_line||null
+        part_number:i.part_number,
+        date_codes : i.date_codes,
+        qty        : i.qty,
+        qty_shipped: i.qty_shipped||0,
+        unit_sell  : i.unit_sell,
+        unit_cost  : i.unit_cost,
+        delivery_date   : i.delivery_date || null,
+        vendor_line     : i.vendor_line   || null,
+        test_center_line: i.test_center_line || null,
+        vendor_po       : i.vendor_po || null
       })));
     }
+
     const legs=(shipments||[]).filter(s=>s.kind==='Leg');
     const inbound=(shipments||[]).filter(s=>s.kind==='Inbound');
     const outbound=(shipments||[]).filter(s=>s.kind==='Outbound');
-    if(legs.length)await supabase.from('ship_legs').insert(legs.map(l=>({order_id,from_loc:l.from,to_loc:l.to,method:l.method,ref:l.ref,cost:Number(l.cost||0)})));
-    if(inbound.length)await supabase.from('shipments_inbound').insert(inbound.map(s=>({order_id,ship_date:s.date||null,qty:+(s.qty||0),courier:s.courier||null,tracking:s.tracking||null})));
-    if(outbound.length)await supabase.from('shipments_outbound').insert(outbound.map(s=>({order_id,ship_date:s.date||null,qty:+(s.qty||0),courier:s.courier||null,tracking:s.tracking||null})));
+
+    if(legs.length)await supabase.from('ship_legs').insert(
+      legs.map(l=>({order_id,from_loc:l.from,to_loc:l.to,method:l.method,ref:l.ref,cost:Number(l.cost||0),parts:l.parts||null}))
+    );
+    if(inbound.length)await supabase.from('shipments_inbound').insert(
+      inbound.map(s=>({order_id,ship_date:s.date||null,qty:+(s.qty||0),courier:s.courier||null,tracking:s.tracking||null,parts:s.parts||null}))
+    );
+    if(outbound.length)await supabase.from('shipments_outbound').insert(
+      outbound.map(s=>({order_id,ship_date:s.date||null,qty:+(s.qty||0),courier:s.courier||null,tracking:s.tracking||null,parts:s.parts||null}))
+    );
 
     if(uploads?.po)await this.upload(order_id,'po',uploads.po);
     if(uploads?.test_report)await this.upload(order_id,'test_report',uploads.test_report);
@@ -296,7 +333,7 @@ const supa={
     .subscribe();}
 };
 
-/* ===== totals ===== */
+/* totals */
 function totals(o){
   const revenue=(o.items||[]).reduce((s,i)=>s+(+i.qty||0)*(+i.unit_sell||0),0);
   const qty=(o.items||[]).reduce((s,i)=>s+(+i.qty||0),0);
@@ -310,7 +347,7 @@ function totals(o){
   return {revenue,qty,shipped,shippedPct,avgUnit,itemCost,shipCost,testCost,cost,gp,gpPct};
 }
 
-/* ===== parts summary ===== */
+/* parts summary (compact cell) */
 function summarizeItems(items){
   if(!items || !items.length) return '-';
   const lines = items.length;
@@ -328,7 +365,7 @@ function summarizeItems(items){
   return `<span class="chip" title="${esc(tip)}">${esc(chips)}</span>`;
 }
 
-/* ===== table render ===== */
+/* inline editable select */
 function inlineSelect(o,field,options){
   const w=document.createElement('div');w.className='ie';
   const chip=document.createElement('span');chip.className='chip';chip.textContent=o[field]||'-';
@@ -340,6 +377,7 @@ function inlineSelect(o,field,options){
   w.append(chip,btn,sel);return w;
 }
 
+/* main grid render */
 function render(){
   const q=$('q').value.toLowerCase(),s1=$('fltSales').value,s2=$('fltStatus').value,s3=$('fltPriority').value;
   const rows=supa.state.orders.filter(o=>{
@@ -368,7 +406,7 @@ function render(){
     td=document.createElement('td');td.textContent=o.incoterm||'-';tr.appendChild(td);
     td=document.createElement('td');td.appendChild(inlineSelect(o,'payment_terms',['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90']));tr.appendChild(td);
 
-    td=document.createElement('td'); // generated doc tags
+    td=document.createElement('td');
     const tagKinds=['so','invoice','pt','ci','rma'];
     const tagLinks=tagKinds.filter(k=>o.files?.[`${k}_pdf`]).map(k=>`<a href="#" class="link" onclick="openSigned('${o.id}','${o.files[`${k}_pdf`]}');return false;">${k.toUpperCase()}</a>`).join(' · ');
     td.innerHTML=tagLinks||'<span class="muted">None</span>';tr.appendChild(td);
@@ -388,8 +426,8 @@ function render(){
   });
 }
 
-/* ===== edit form ===== */
-function addItemRow(v={part_number:'',date_codes:'',qty:'',qty_shipped:'',unit_sell:'',unit_cost:'',delivery_date:'',vendor_line:''}){
+/* edit form helpers */
+function addItemRow(v={part_number:'',date_codes:'',qty:'',qty_shipped:'',unit_sell:'',unit_cost:'',delivery_date:'',vendor_line:'',test_center_line:'',vendor_po:''}){
   const tr=document.createElement('tr');
   tr.innerHTML=`
     <td><input class="input mini" value="${esc(v.part_number)}"/></td>
@@ -400,22 +438,45 @@ function addItemRow(v={part_number:'',date_codes:'',qty:'',qty_shipped:'',unit_s
     <td><input type="number" step="0.01" class="input mini mono" value="${v.unit_cost||''}"/></td>
     <td><input type="date" class="input mini" value="${v.delivery_date||''}"/></td>
     <td><input class="input mini" value="${esc(v.vendor_line||'')}"/></td>
+    <td>
+      <select class="select mini">
+        ${['GETs HK','GETs Shenzhen','GETs US','White Horse US','White Horse China','White Horse EU','EVI','Other']
+          .map(x=>`<option ${v.test_center_line===x?'selected':''}>${x}</option>`).join('')}
+      </select>
+    </td>
+    <td><input class="input mini" placeholder="Vendor PO…" value="${esc(v.vendor_po||'')}"/></td>
     <td class="right"><button class="btn mini ghost" type="button" onclick="this.closest('tr').remove()">−</button></td>`;
   $('itemsBody').appendChild(tr);
 }
 function itemsFromDOM(){
   return[...$('itemsBody').querySelectorAll('tr')].map(tr=>{
-    const [pn,dc,qty,qs,us,uc,dd,vn]=[...tr.querySelectorAll('input')].map(i=>i.value.trim());
-    if(!pn) return null;
-    return {part_number:pn,date_codes:dc,qty:+qty||0,qty_shipped:+qs||0,unit_sell:+us||0,unit_cost:+uc||0,delivery_date:dd||null,vendor_line:vn||null};
+    const inputs=[...tr.querySelectorAll('input')];
+    // order: pn, dc, qty, qs, us, uc, dd, vendor_line, vendor_po
+    const [pn,dc,qty,qs,us,uc,dd,vn,vpo]=inputs;
+    const sc=tr.querySelector('select'); // test_center_line
+    if(!pn.value.trim()) return null;
+    return {
+      part_number: pn.value.trim(),
+      date_codes : (dc.value||'').trim(),
+      qty        : +qty.value||0,
+      qty_shipped: +qs.value||0,
+      unit_sell  : +us.value||0,
+      unit_cost  : +uc.value||0,
+      delivery_date  : dd.value || null,
+      vendor_line    : (vn.value||'').trim() || null,
+      test_center_line: sc?.value || null,
+      vendor_po       : (vpo?.value||'').trim() || null
+    };
   }).filter(Boolean);
 }
-function addShipRow(v={kind:'Leg',date:'',qty:'',from:'',to:'',method:'',ref:'',courier:'',tracking:'',cost:''}){
+
+function addShipRow(v={kind:'Leg',date:'',qty:'',parts:'',from:'',to:'',method:'',ref:'',courier:'',tracking:'',cost:''}){
   const tr=document.createElement('tr');
   tr.innerHTML=`
     <td><select class="select mini"><option ${v.kind==='Leg'?'selected':''}>Leg</option><option ${v.kind==='Inbound'?'selected':''}>Inbound</option><option ${v.kind==='Outbound'?'selected':''}>Outbound</option></select></td>
     <td><input type="date" class="input mini" value="${v.date||''}"/></td>
     <td><input type="number" step="1" class="input mini mono" value="${v.qty||''}"/></td>
+    <td><input class="input mini" placeholder="e.g. 42TL009-RC, SST25VF080B…" value="${esc(v.parts||'')}"/></td>
     <td><input class="input mini" value="${esc(v.from||'')}"/></td>
     <td><input class="input mini" value="${esc(v.to||'')}"/></td>
     <td><input class="input mini" value="${esc(v.method||'')}"/></td>
@@ -426,9 +487,17 @@ function addShipRow(v={kind:'Leg',date:'',qty:'',from:'',to:'',method:'',ref:'',
     <td class="right"><button class="btn mini ghost" type="button" onclick="this.closest('tr').remove()">−</button></td>`;
   $('shipBody').appendChild(tr);
 }
-function shipsFromDOM(){return[...$('shipBody').querySelectorAll('tr')].map(tr=>{const kind=tr.querySelector('select').value;const [date,qty,from,to,method,ref,courier,tracking,cost]=[...tr.querySelectorAll('input')].map(i=>i.value.trim());if(!kind&&!date&&!qty&&!from&&!to&&!method&&!ref&&!courier&&!tracking&&!cost){return null;}return{kind,date,qty:+qty||0,from,to,method,ref,courier,tracking,cost:+cost||0};}).filter(Boolean);}
+function shipsFromDOM(){
+  return[...$('shipBody').querySelectorAll('tr')].map(tr=>{
+    const kind=tr.querySelector('select').value;
+    const ins=[...tr.querySelectorAll('input')];
+    const [date,qty,parts,from,to,method,ref,courier,tracking,cost]=ins.map(i=>i.value.trim());
+    if(!kind && !date && !qty && !parts && !from && !to && !method && !ref && !courier && !tracking && !cost){return null;}
+    return{kind,date,qty:+qty||0,parts:parts||null,from,to,method,ref,courier,tracking,cost:+cost||0};
+  }).filter(Boolean);
+}
 
-/* ===== CRUD ===== */
+/* CRUD */
 function openModalById(id){openModal(supa.state.orders.find(x=>x.id===id));}
 function openModal(o){
   window.openModal=openModal;
@@ -461,14 +530,39 @@ function openModal(o){
 async function cloneById(id){const o=supa.state.orders.find(x=>x.id===id);if(!o)return;const c=structuredClone(o);delete c.id;delete c.files;delete c.generated_docs;delete c.staff_notes;c.status='Open';c.order_date=todayStr();c.invoice_date=null;c.due_date=null;c.is_shipped=false;c.is_invoiced=false;c.shipments=[];await supa.save(c,{});await supa.load();render();}
 async function delById(id){if(!confirm('Delete this order?'))return;await supa.del(id);await supa.load();render();}
 
-/* ===== view ===== */
+/* view */
 let OPEN_VIEW_ID=null;
 function openViewById(id){const o=supa.state.orders.find(x=>x.id===id);if(o)openView(o);}
 function renderOpenViewIfSame(){if(!OPEN_VIEW_ID)return;const o=supa.state.orders.find(x=>x.id===OPEN_VIEW_ID);if(o)openView(o,true);}
 function openView(o,keep=false){
   OPEN_VIEW_ID=o.id;const t=totals(o),sym=curSym(o.currency);
-  const parts=(o.items||[]).map(i=>`<tr><td>${esc(i.part_number)}</td><td>${esc(i.date_codes||'')}</td><td class="mono">${fmtInt(i.qty)}</td><td class="mono">${fmtInt(i.qty_shipped||0)}</td><td class="mono">${sym}${fmt(i.unit_sell)}</td><td class="mono">${sym}${fmt(i.unit_cost)}</td><td>${esc(i.delivery_date||'-')}</td><td>${esc(i.vendor_line||'-')}</td></tr>`).join('');
-  const ships=(o.shipments||[]).map(s=>`<tr><td>${s.kind}</td><td class="mono">${esc(s.date||'')}</td><td class="mono">${fmtInt(s.qty||'')}</td><td>${esc(s.from||'')}</td><td>${esc(s.to||'')}</td><td>${esc(s.method||'')}</td><td>${esc(s.ref||'')}</td><td>${esc(s.courier||'')}</td><td>${esc(s.tracking||'')}</td><td class="mono">${s.cost? sym+fmt(s.cost):''}</td></tr>`).join('');
+  const parts=(o.items||[]).map(i=>`<tr>
+    <td>${esc(i.part_number)}</td>
+    <td>${esc(i.date_codes||'')}</td>
+    <td class="mono">${fmtInt(i.qty)}</td>
+    <td class="mono">${fmtInt(i.qty_shipped||0)}</td>
+    <td class="mono">${sym}${fmt(i.unit_sell)}</td>
+    <td class="mono">${sym}${fmt(i.unit_cost)}</td>
+    <td>${esc(i.delivery_date||'-')}</td>
+    <td>${esc(i.vendor_line||'-')}</td>
+    <td>${esc(i.test_center_line||'-')}</td>
+    <td>${esc(i.vendor_po||'-')}</td>
+  </tr>`).join('');
+
+  const ships=(o.shipments||[]).map(s=>`<tr>
+    <td>${s.kind}</td>
+    <td class="mono">${esc(s.date||'')}</td>
+    <td class="mono">${fmtInt(s.qty||'')}</td>
+    <td>${esc(s.parts||'All')}</td>
+    <td>${esc(s.from||'')}</td>
+    <td>${esc(s.to||'')}</td>
+    <td>${esc(s.method||'')}</td>
+    <td>${esc(s.ref||'')}</td>
+    <td>${esc(s.courier||'')}</td>
+    <td>${esc(s.tracking||'')}</td>
+    <td class="mono">${s.cost? sym+fmt(s.cost):''}</td>
+  </tr>`).join('');
+
   const notesList=(o.staff_notes||[]).map(n=>`<div class="note-item"><div class="note-head"><b>${esc(n.author)}</b><span>${new Date(n.created_at).toLocaleString()}</span></div><div>${esc(n.body)}</div></div>`).join('')||'<div class="muted">No notes</div>';
   const genRows=(o.generated_docs||[]).slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).map(g=>`<tr><td>${g.kind.replace('_pdf','').toUpperCase()}</td><td class="mono">${new Date(g.created_at).toLocaleString()}</td><td><button class="btn smini" onclick="openSigned('${o.id}','${g.path}')">View</button></td></tr>`).join('')||'<tr><td colspan="3" class="muted">No generated documents yet</td></tr>';
 
@@ -504,14 +598,14 @@ function openView(o,keep=false){
     </div></div></div>
 
     <div class="card" style="grid-column:1/-1"><h3>Line Items</h3><div class="pad"><div class="hscroll">
-      <table class="tbl" style="min-width:1080px">
-        <thead><tr><th>Part</th><th>Date Codes</th><th>Qty</th><th>Shipped Qty</th><th>Unit Sell</th><th>Unit Cost</th><th>Delivery</th><th>Vendor</th></tr></thead>
-        <tbody>${parts || '<tr><td colspan="8" class="muted">No items</td></tr>'}</tbody>
+      <table class="tbl" style="min-width:1180px">
+        <thead><tr><th>Part</th><th>Date Codes</th><th>Qty</th><th>Shipped Qty</th><th>Unit Sell</th><th>Unit Cost</th><th>Delivery</th><th>Vendor</th><th>Test Center</th><th>Vendor PO</th></tr></thead>
+        <tbody>${parts || '<tr><td colspan="10" class="muted">No items</td></tr>'}</tbody>
       </table>
     </div></div></div>
 
     <div class="card" style="grid-column:1/-1"><h3>Shipments</h3><div class="pad"><div class="hscroll">
-      <table class="tbl" style="min-width:1100px"><thead><tr><th>Kind</th><th>Date</th><th>Qty</th><th>From</th><th>To</th><th>Method</th><th>Ref</th><th>Courier</th><th>Tracking</th><th>Cost</th></tr></thead><tbody>${ships || '<tr><td colspan="10" class="muted">No shipments</td></tr>'}</tbody></table>
+      <table class="tbl" style="min-width:1200px"><thead><tr><th>Kind</th><th>Date</th><th>Qty</th><th>Parts</th><th>From</th><th>To</th><th>Method</th><th>Ref</th><th>Courier</th><th>Tracking</th><th>Cost</th></tr></thead><tbody>${ships || '<tr><td colspan="11" class="muted">No shipments</td></tr>'}</tbody></table>
     </div></div></div>
 
     <div class="card"><h3>Totals</h3><div class="pad"><div class="kv">
@@ -546,12 +640,12 @@ function openView(o,keep=false){
   if(!keep)showDlg('viewDlg');
 }
 
-/* ===== notes & files ===== */
+/* notes & files */
 async function addNote(order_id){const author=$('noteAuthor').value;const body=$('noteBody').value.trim();if(!body)return;try{await supa.addNote(order_id,author,body);$('noteBody').value='';await supa.load();renderOpenViewIfSame();setToast('Note added');}catch(e){setToast('Failed to add note',true);}}
 async function addNoteFromEdit(){const id=$('orderId').value;const body=$('editNoteBody').value.trim();if(!id||!body)return;const author=$('editNoteAuthor').value;try{await supa.addNote(id,author,body);$('editNoteBody').value='';await supa.load();const o=supa.state.orders.find(x=>x.id===id);const list=(o?.staff_notes||[]).map(n=>`<div class="note-item"><div class="note-head"><b>${esc(n.author)}</b><span>${new Date(n.created_at).toLocaleString()}</span></div><div>${esc(n.body)}</div></div>`).join('')||'No notes yet';$('editNotesList').innerHTML=list;setToast('Note added');}catch(e){setToast('Failed to add note',true);}}
 async function openSigned(orderId,path){const {data:signed,error}=await supabase.storage.from('order-files').createSignedUrl(path,3600);if(error||!signed?.signedUrl){console.error('Signed URL error',error,path);alert('Could not open file.');return;}window.open(signed.signedUrl,'_blank');}
 
-/* ===== generator (unchanged infra) ===== */
+/* doc generator (unchanged infra) */
 const PREFIX=location.pathname.includes('/order-tracker/')?'../':'';
 const DOC_ROUTES={so:PREFIX+'so-confirmation/index.html',invoice:PREFIX+'so-confirmation/index.html#invoice',pt:PREFIX+'commercial-invoice/index.html#pt',ci:PREFIX+'commercial-invoice/index.html',rma:PREFIX+'rma/index.html'};
 let GEN_CTX=null;
@@ -559,11 +653,11 @@ function openGenById(id,type){const o=supa.state.orders.find(x=>x.id===id);if(!o
 window.addEventListener('message',async ev=>{if(!ev?.data||ev.data?.source!=='VE_DOC_GENERATOR')return;const msg=ev.data;if(msg.type==='ready'){GEN_CTX?.port?.postMessage({type:'payload',source:'VE_ORDER_TRACKER',order:GEN_CTX.order,docType:GEN_CTX.type});}else if(msg.type==='generated'){clearTimeout(GEN_CTX.timeout);$('genStatus').textContent='Uploading…';const bin=atob(msg.base64);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);const blob=new Blob([u8],{type:'application/pdf'});try{await supa.uploadGenerated(GEN_CTX.order.id,GEN_CTX.type,new File([blob],msg.filename||`${GEN_CTX.type}.pdf`,{type:'application/pdf'}));$('genStatus').textContent='Saved to Supabase ✓';await supa.load();renderOpenViewIfSame();render();}catch(e){console.error(e);$('genStatus').textContent='Upload failed';}}else if(msg.type==='error'){clearTimeout(GEN_CTX.timeout);$('genStatus').textContent='Generator error';}});
 async function generateDoc(order,type){$('genStatus').textContent='Opening generator…';const frame=$('genFrame');frame.src=DOC_ROUTES[type];const channel=new MessageChannel();GEN_CTX=GEN_CTX||{};GEN_CTX.port=channel.port1;frame.onload=()=>{$('genStatus').textContent='Preparing…';frame.contentWindow.postMessage({type:'init',source:'VE_ORDER_TRACKER'},'*',[channel.port2]);};GEN_CTX.timeout=setTimeout(()=>{$('genStatus').textContent='Generator timed out. Open doc page directly to debug.';},25000);}
 
-/* ===== filters & csv ===== */
+/* filters & csv */
 function initFilters(){ $('fltSales').innerHTML='<option value="">All salespeople</option>'+SALESTEAM.map(n=>`<option>${n}</option>`).join(''); $('btnCsv').onclick=exportCsv; $('q').oninput=render; $('fltSales').onchange=render; $('fltStatus').onchange=render; $('fltPriority').onchange=render; $('btnNew').onclick=()=>openModal(null);}
 function exportCsv(){const header=['id','customer','salesperson','status','priority','order_date','requested_by','currency','incoterm','payment_terms','vendor','total_qty','sell','gp','gp_pct','tests','notes'];const rows=supa.state.orders.map(o=>{const t=totals(o);return [o.id,o.customer||'',o.salesperson||'',o.status||'',o.priority||'',o.order_date||'',o.requested_by||'',o.currency||'',o.incoterm||'',o.payment_terms||'',o.vendor||'',t.qty,t.revenue.toFixed(2),t.gp.toFixed(2),t.gpPct.toFixed(2),o.tests||'',(o.notes||'').replace(/\n/g,' ')].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');});const csv=[header.join(','),...rows].join('\n');const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='orders.csv';a.click();}
 
-/* ===== boot ===== */
+/* boot */
 window.onload=async()=>{try{initFilters();await supa.load();render();supa.rt();}catch(e){console.error('Init error',e);}};
 </script>
 </body>
