@@ -100,8 +100,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     /* ====== CONFIG ====== */
-    const SUPABASE_URL = "https://YOUR_PROJECT_REF.supabase.co";  <!-- use your actual Supabase project URL -->
-    const SUPABASE_ANON_KEY = "YOUR-ANON-KEY";  <!-- use your actual Supabase anon API key -->
+    const SUPABASE_URL = 'https://ijzroisggstqkfhpjndq.supabase.co';  <!-- use your actual Supabase project URL -->
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';  <!-- use your actual Supabase anon API key -->
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     /* Ensure anon headers on Supabase fetches */
@@ -1546,6 +1546,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   supa.rt();
   render();
 });
+</script>
+
+<script>
+window.onload = async () => {
+  try {
+    if (typeof supa?.load === 'function') { await supa.load(); }
+    if (typeof render === 'function') { render(); }
+    if (typeof supa?.rt === 'function') { supa.rt(); }
+  } catch (e) { console.error('Init error:', e); }
+};
 </script>
 </body>
 </html>
