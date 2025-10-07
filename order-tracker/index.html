@@ -55,7 +55,10 @@
     .note-item{padding:10px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:#fafafa}
     .note-head{font-size:13px;margin-bottom:3px;display:flex;justify-content:space-between;color:#6d7486} .note-head b{color:#1f2432}
     .bordered{border:1px solid #d9daf0;border-radius:12px;padding:8px}
-  </style>
+  
+dialog[open]{ display:block; }
+
+</style>
 
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -83,6 +86,26 @@
 </head>
 
 <body>
+
+<script>
+// Robust dialog open/close (works even if <dialog> unsupported)
+(function(){
+  const support = !!window.HTMLDialogElement && !!HTMLDialogElement.prototype.showModal;
+  function showDlg(id){
+    const el=document.getElementById(id); if(!el) return;
+    if (support) { try{ el.showModal(); }catch(e){ el.setAttribute('open',''); el.style.display='block'; } }
+    else { el.setAttribute('open',''); el.style.display='block'; document.documentElement.style.overflow='hidden'; }
+  }
+  function closeDlg(id){
+    const el=document.getElementById(id); if(!el) return;
+    if (support) { try{ el.close(); }catch(e){ el.removeAttribute('open'); el.style.display='none'; } }
+    else { el.removeAttribute('open'); el.style.display='none'; document.documentElement.style.overflow=''; }
+  }
+  window.showDlg = showDlg;
+  window.closeDlg = closeDlg;
+})();
+</script>
+
 <div class="wrap">
   <header>
     <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified"/>
@@ -97,7 +120,7 @@
     <select id="fltSales" class="select"><option value="">All salespeople</option></select>
     <select id="fltStatus" class="select"><option value="">All status</option><option>Open</option><option>Closed</option><option>Problem</option></select>
     <select id="fltPriority" class="select"><option value="">All priorities</option><option>High</option><option selected>Normal</option><option>Low</option></select>
-    <button class="btn" onclick="openModal(null)">+ New Order</button>
+    <button class="btn" onclick="openModal(null); return false;">+ New Order</button>
     <button class="btn ghost" id="btnCsv">Export CSV</button>
   </div>
 
@@ -126,7 +149,7 @@
   <header>
     <div class="head">
       <strong id="dlgTitle">New Order</strong>
-      <button class="btn ghost mini" type="button" onclick="$('dlg').close()">✕</button>
+      <button class="btn ghost mini" type="button" onclick="closeDlg('dlg')">✕</button>
     </div>
   </header>
   <div class="content">
@@ -212,20 +235,20 @@
 
 <!-- View Dialog -->
 <dialog id="viewDlg"><div class="modal">
-  <header><div class="head"><strong>Order Summary</strong><button class="btn ghost mini" type="button" onclick="$('viewDlg').close()">✕</button></div></header>
+  <header><div class="head"><strong>Order Summary</strong><button class="btn ghost mini" type="button" onclick="closeDlg('viewDlg')">✕</button></div></header>
   <div class="content"><div id="viewBody" class="summary"></div></div>
 </div></dialog>
 
 <!-- Generator Dialog -->
 <dialog id="genDlg"><div class="modal">
-  <header><div class="head"><strong>Generate Document</strong><button class="btn ghost mini" type="button" onclick="$('genDlg').close()">✕</button></div></header>
+  <header><div class="head"><strong>Generate Document</strong><button class="btn ghost mini" type="button" onclick="closeDlg('genDlg')">✕</button></div></header>
   <div class="content">
     <div id="stepForm" style="padding:16px">
       <div class="note" style="margin-bottom:8px">Document type</div>
       <div class="chips" id="docTypeChips"></div>
       <div id="missingWrap" style="margin-top:16px"></div>
       <div id="extraWrap" style="margin-top:10px"></div>
-      <div class="right"><button class="btn ghost mini" type="button" onclick="$('genDlg').close()">Cancel</button><button class="btn primary mini" id="genGo">Generate…</button></div>
+      <div class="right"><button class="btn ghost mini" type="button" onclick="closeDlg('genDlg')">Cancel</button><button class="btn primary mini" id="genGo">Generate…</button></div>
       <div class="hint" id="genStatus" style="margin-top:8px"></div>
     </div>
     <iframe id="genFrame" title="Generator"></iframe>
@@ -488,6 +511,7 @@ function shipsFromDOM(){
 /* ========= open/clone/delete ========= */
 function openModalById(id){ openModal(supa.state.orders.find(x=>x.id===id)); }
 function openModal(o){
+  window.openModal = openModal;
   $('dlgTitle').textContent = o ? 'Edit Order' : 'New Order';
   $('orderId').value = o?.id || '';
   $('salesperson').innerHTML = SALESTEAM.map(n=>`<option>${n}</option>`).join('');
@@ -516,15 +540,15 @@ function openModal(o){
       items:itemsFromDOM(), shipments:shipsFromDOM()
     };
     const uploads = { po:$('file_po').files[0]??null, test_report:$('file_test').files[0]??null };
-    try{ await supa.save(orderData,uploads); $('dlg').close(); await supa.load(); render(); setToast('Saved'); }catch(e){ console.error(e); alert('Save failed: '+(e.message||e)); }
+    try{ await supa.save(orderData,uploads); closeDlg('dlg'); await supa.load(); render(); setToast('Saved'); }catch(e){ console.error(e); alert('Save failed: '+(e.message||e)); }
   };
   $('btnDelete').onclick = async ()=>{
-    if(!o?.id){ $('dlg').close(); return; }
+    if(!o?.id){ closeDlg('dlg'); return; }
     if(!confirm('Delete this order?')) return;
-    await supa.del(o.id); await supa.load(); render(); $('dlg').close();
+    await supa.del(o.id); await supa.load(); render(); closeDlg('dlg');
   };
 
-  $('dlg').showModal();
+  showDlg('dlg');
 }
 async function cloneById(id){
   const o=supa.state.orders.find(x=>x.id===id); if(!o) return;
@@ -624,7 +648,7 @@ function openView(o, keep=false){
       <table class="tbl" style="min-width:560px"><thead><tr><th>Type</th><th>Created</th><th>Open</th></tr></thead><tbody>${genRows}</tbody></table>
     </div></div></div>
   `;
-  if(!keep) $('viewDlg').showModal();
+  if(!keep) showDlg('viewDlg');
   bindDocUploaders(o.id);
 }
 async function addNote(order_id){
@@ -665,7 +689,7 @@ function openGenById(id, type){
   $('missingWrap').innerHTML='';
   $('genStatus').textContent='';
   $('genGo').onclick=()=>generateDoc(o, GEN_CTX.type);
-  $('genDlg').showModal();
+  showDlg('genDlg');
 }
 function selectDocType(k){ GEN_CTX.type=k; [...document.querySelectorAll('#docTypeChips .chipbtn')].forEach(b=>b.classList.toggle('active', b.textContent.toLowerCase().includes(k==='so'?'order':k))); }
 
@@ -750,4 +774,3 @@ window.onload = async ()=>{
 </script>
 </body>
 </html>
-
