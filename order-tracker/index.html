@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Verified — Order Tracker</title>
 <link rel="icon" href="data:;base64,iVBORw0KGgo="/>
 <style>
@@ -20,7 +20,7 @@ header img{height:44px}h1{margin:0;font-size:26px;font-weight:800}.sub{color:var
 .table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:1320px}
 thead th{position:sticky;top:0;background:#fafaff;border-bottom:1px solid var(--line);text-align:left;font-size:13px;color:#4a4f64;padding:12px}
 tbody td{border-bottom:1px solid var(--line);padding:12px;vertical-align:top}tbody tr:hover{background:#fcfbff}
-.mono{font-variant-numeric:tabular-nums}.muted{color:var(--muted)}
+.mono{font-variant-numeric:tabular-nums}.muted{color:var(--muted)}.right{display:flex;gap:10px;justify-content:flex-end}
 .chip{display:inline-block;border-radius:999px;padding:3px 10px;border:1px solid #eee;background:#fafafa;font-size:12px;color:#5d6480}
 .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #e6f2ec;padding:3px 10px;border-radius:999px;background:#f0fbf7;color:var(--green);font-weight:800}
 .ie{display:inline-flex;align-items:center;gap:6px}.ie button{border:0;background:transparent;color:#6d6fe5;cursor:pointer;padding:0 6px;border-radius:6px}.ie button:hover{background:#f0efff}.ie select{display:none;height:30px;border-radius:10px}.ie.editing select{display:inline-block}.ie.editing .chip{display:none}
@@ -32,12 +32,9 @@ dialog{border:0;padding:0;margin:0 auto;max-width:1500px;width:98vw}dialog::back
 .grid2,.grid3{display:grid;gap:12px}.grid2{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr 1fr 1fr}
 .section{margin:16px 0 8px;font-weight:900;color:#262b3a}.note{font-size:12px;color:var(--muted);margin-bottom:6px}
 .tbl{width:100%;border-collapse:collapse;table-layout:fixed}.tbl th,.tbl td{border:1px solid #ececf3;padding:10px;text-align:left;white-space:nowrap}
-.hscroll{overflow:auto;border:1px solid #ececf3;border-radius:12px;background:#fff}.right{display:flex;gap:10px;justify-content:flex-end;margin:12px 0 2px}
-.summary{display:grid;grid-template-columns:1.05fr .95fr;gap:14px}.card{border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow)}
-.card h3{margin:0;padding:10px 12px;border-bottom:1px solid var(--line);background:#fafaff;font-size:15px}.card .pad{padding:12px}
+.hscroll{overflow:auto;border:1px solid #ececf3;border-radius:12px;background:#fff}
+.card{border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow)}.card h3{margin:0;padding:10px 12px;border-bottom:1px solid var(--line);background:#fafaff;font-size:15px}.card .pad{padding:12px}
 .kv{display:grid;grid-template-columns:170px 1fr;gap:8px 14px}
-.chips{display:flex;gap:10px;flex-wrap:wrap}.chipbtn{height:36px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:#fff;cursor:pointer;font-weight:800}.chipbtn.active{background:var(--brand);border-color:var(--brand);color:#fff}
-.badge-miss{display:inline-block;padding:2px 8px;border-radius:8px;background:#ffe9e9;color:#b21a1a;font-size:12px;margin-left:8px}.hint{color:#6b6ea0;font-size:12px}
 #genFrame{position:absolute;left:-100000px;top:-100000px;width:0;height:0;visibility:hidden;border:0}
 .note-item{padding:10px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:#fafafa}
 .note-head{font-size:13px;margin-bottom:3px;display:flex;justify-content:space-between;color:var(--muted)}.note-head b{color:#1f2432}
@@ -49,14 +46,12 @@ dialog[open]{display:block}
 const SUPABASE_URL='https://ijzroisggstqkfhpjndq.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
 const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-// add auth headers for any direct fetch to your supabase URL
 (function(){const f=fetch.bind(window);window.fetch=(i,init={})=>{const u=typeof i==='string'?i:i?.url||'';if(u.startsWith(SUPABASE_URL)){const h=new Headers(init.headers||{});if(!h.has('apikey'))h.set('apikey',SUPABASE_ANON_KEY);if(!h.has('Authorization'))h.set('Authorization','Bearer '+SUPABASE_ANON_KEY);init={...init,headers:h};}return f(i,init);};})();
 </script>
 </head>
 <body>
 
 <script>
-// dialog helpers (robust)
 (function(){const supported=!!window.HTMLDialogElement&&!!HTMLDialogElement.prototype.showModal;window.showDlg=id=>{const el=document.getElementById(id);if(!el)return;if(supported){try{el.showModal();}catch(e){el.setAttribute('open','');el.style.display='block';}}else{el.setAttribute('open','');el.style.display='block';document.documentElement.style.overflow='hidden';}};window.closeDlg=id=>{const el=document.getElementById(id);if(!el)return;if(supported){try{el.close();}catch(e){el.removeAttribute('open');el.style.display='none';}}else{el.removeAttribute('open');el.style.display='none';document.documentElement.style.overflow='';}};})();
 </script>
 
@@ -80,7 +75,7 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
   <div class="table-card">
     <div class="table-wrap">
-      <table id="tbl">
+      <table>
         <thead>
         <tr>
           <th>View</th><th>Customer</th><th>Part(s)</th><th>Sales</th>
@@ -138,11 +133,16 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
     <div class="section">Items</div>
     <div class="hscroll">
       <table class="tbl">
-        <thead><tr><th>Part</th><th>Date Codes</th><th>Qty</th><th>Shipped Qty</th><th>Unit Sell</th><th>Unit Cost</th><th></th></tr></thead>
+        <thead>
+          <tr>
+            <th>Part</th><th>Date Codes</th><th>Qty</th><th>Shipped Qty</th>
+            <th>Unit Sell</th><th>Unit Cost</th><th>Delivery</th><th>Vendor (line)</th><th></th>
+          </tr>
+        </thead>
         <tbody id="itemsBody"></tbody>
       </table>
     </div>
-    <div class="right"><button class="btn mini" type="button" onclick="addItemRow()">+ Add item</button></div>
+    <div class="right" style="margin:8px 0 0"><button class="btn mini" type="button" onclick="addItemRow()">+ Add item</button></div>
 
     <div class="section">Shipments / Legs</div>
     <div class="hscroll">
@@ -151,7 +151,7 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
         <tbody id="shipBody"></tbody>
       </table>
     </div>
-    <div class="right"><button class="btn mini" type="button" onclick="addShipRow()">+ Add</button></div>
+    <div class="right" style="margin:8px 0 0"><button class="btn mini" type="button" onclick="addShipRow()">+ Add</button></div>
 
     <div class="grid3" style="margin-top:12px">
       <div><div class="note">Extra shipping cost</div><input id="shipping_cost_extra" type="number" step="0.01" class="input mini mono" placeholder="0.00"/></div>
@@ -182,23 +182,22 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
   <div class="content"><div id="viewBody" class="summary"></div></div>
 </div></dialog>
 
-<!-- Generator (kept; no changes needed now) -->
+<!-- Generator (kept) -->
 <dialog id="genDlg"><div class="modal">
   <header><div class="head"><strong>Generate Document</strong><button class="btn ghost mini" type="button" onclick="closeDlg('genDlg')">✕</button></div></header>
   <div class="content">
-    <div id="stepForm" style="padding:16px">
+    <div style="padding:16px">
       <div class="note" style="margin-bottom:8px">Document type</div>
       <div class="chips" id="docTypeChips"></div>
       <div id="missingWrap" style="margin-top:16px"></div>
       <div id="extraWrap" style="margin-top:10px"></div>
       <div class="right"><button class="btn ghost mini" type="button" onclick="closeDlg('genDlg')">Cancel</button><button class="btn primary mini" id="genGo">Generate…</button></div>
-      <div class="hint" id="genStatus" style="margin-top:8px"></div>
+      <div class="muted" id="genStatus" style="margin-top:8px"></div>
     </div>
     <iframe id="genFrame" title="Generator"></iframe>
   </div>
 </div></dialog>
 
-<!-- Toast -->
 <div id="toast" style="position:fixed;right:16px;bottom:16px;background:#111;color:#fff;padding:10px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s"></div>
 
 <script>
@@ -212,7 +211,7 @@ const esc=s=>(s??'').toString().replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;',
 const age=d=>d?(Math.max(0,Math.floor((Date.now()-new Date(d))/86400000))+' d'):'-';
 function setToast(msg,d=false){const t=$('toast');t.textContent=msg;t.style.background=d?'#b21a1a':'#111';t.style.opacity='1';setTimeout(()=>t.style.opacity='0',1500);}
 
-/* ===== Supabase data layer ===== */
+/* ===== Supabase layer ===== */
 const supa={
   state:{orders:[]},
 
@@ -225,15 +224,18 @@ const supa={
         supabase.from('ship_legs').select('*').eq('order_id',r.id),
         supabase.from('shipments_inbound').select('*').eq('order_id',r.id),
         supabase.from('shipments_outbound').select('*').eq('order_id',r.id),
-        supabase.from('order_files').select('id,kind,path,created_at').eq('order_id',r.id).order('created_at',{ascending:true}),
+        supabase.from('order_files').select('id,kind,path,created_at,updated_at').eq('order_id',r.id).order('created_at',{ascending:true}),
         supabase.from('order_notes').select('*').eq('order_id',r.id).order('created_at',{ascending:true})
       ]);
-      const items=(itemsRes.data||[]).map(i=>({part_number:i.part_number,date_codes:i.date_codes,qty:i.qty,qty_shipped:i.qty_shipped||0,unit_sell:i.unit_sell,unit_cost:i.unit_cost}));
+      const items=(itemsRes.data||[]).map(i=>({
+        part_number:i.part_number,date_codes:i.date_codes,qty:i.qty,qty_shipped:i.qty_shipped||0,
+        unit_sell:i.unit_sell,unit_cost:i.unit_cost,delivery_date:i.delivery_date||null,vendor_line:i.vendor_line||null
+      }));
       const legs=(legsRes.data||[]).map(l=>({kind:'Leg',date:'',qty:'',from:l.from_loc,to:l.to_loc,method:l.method,ref:l.ref,courier:'',tracking:'',cost:l.cost}));
       const inbound=(inbRes.data||[]).map(s=>({kind:'Inbound',date:s.ship_date,qty:s.qty,courier:s.courier,tracking:s.tracking}));
       const outbound=(outRes.data||[]).map(s=>({kind:'Outbound',date:s.ship_date,qty:s.qty,courier:s.courier,tracking:s.tracking}));
       const filesMap=(filesRes.data||[]).reduce((a,f)=>{a[f.kind]=f.path;return a;},{}); // { po, test_report, so_pdf, ... }
-      const genList=(filesRes.data||[]).filter(f=>/_pdf$/.test(f.kind)).map(f=>({kind:f.kind,path:f.path,created_at:f.created_at}));
+      const genList=(filesRes.data||[]).filter(f=>/_pdf$/.test(f.kind)).map(f=>({kind:f.kind,path:f.path,created_at:f.created_at||f.updated_at}));
       return {...r,items,shipments:[...legs,...inbound,...outbound],files:filesMap,staff_notes:notesRes.data||[],generated_docs:genList};
     }));
   },
@@ -249,7 +251,11 @@ const supa={
     await supabase.from('shipments_outbound').delete().eq('order_id',order_id);
 
     if(items?.length){
-      await supabase.from('order_items').insert(items.map(i=>({order_id,part_number:i.part_number,date_codes:i.date_codes,qty:i.qty,qty_shipped:i.qty_shipped||0,unit_sell:i.unit_sell,unit_cost:i.unit_cost})));
+      await supabase.from('order_items').insert(items.map(i=>({
+        order_id,
+        part_number:i.part_number,date_codes:i.date_codes,qty:i.qty,qty_shipped:i.qty_shipped||0,
+        unit_sell:i.unit_sell,unit_cost:i.unit_cost,delivery_date:i.delivery_date||null,vendor_line:i.vendor_line||null
+      })));
     }
     const legs=(shipments||[]).filter(s=>s.kind==='Leg');
     const inbound=(shipments||[]).filter(s=>s.kind==='Inbound');
@@ -279,25 +285,15 @@ const supa={
     await supabase.from('order_files').insert({order_id:orderId,kind:`${docType}_pdf`,path});
   },
 
-  async quickUpdate(id,field,value){
-    const {error}=await supabase.from('orders').update({[field]:value}).eq('id',id);
-    if(error)throw error;
-  },
-
-  async addNote(order_id,author,body){
-    const {error}=await supabase.from('order_notes').insert({order_id,author,body});
-    if(error)throw error;
-  },
-
+  async quickUpdate(id,field,value){const {error}=await supabase.from('orders').update({[field]:value}).eq('id',id);if(error)throw error;},
+  async addNote(order_id,author,body){const {error}=await supabase.from('order_notes').insert({order_id,author,body});if(error)throw error;},
   async del(id){await supabase.from('orders').delete().eq('id',id);},
 
-  rt(){
-    supabase.channel('tracker')
-      .on('postgres_changes',{event:'*',schema:'public',table:'orders'},async()=>{await supa.load();render();})
-      .on('postgres_changes',{event:'*',schema:'public',table:'order_notes'},async()=>{await supa.load();renderOpenViewIfSame();})
-      .on('postgres_changes',{event:'*',schema:'public',table:'order_files'},async()=>{await supa.load();renderOpenViewIfSame();render();})
-      .subscribe();
-  }
+  rt(){supabase.channel('tracker')
+    .on('postgres_changes',{event:'*',schema:'public',table:'orders'},async()=>{await supa.load();render();})
+    .on('postgres_changes',{event:'*',schema:'public',table:'order_notes'},async()=>{await supa.load();renderOpenViewIfSame();})
+    .on('postgres_changes',{event:'*',schema:'public',table:'order_files'},async()=>{await supa.load();renderOpenViewIfSame();render();})
+    .subscribe();}
 };
 
 /* ===== totals ===== */
@@ -314,7 +310,25 @@ function totals(o){
   return {revenue,qty,shipped,shippedPct,avgUnit,itemCost,shipCost,testCost,cost,gp,gpPct};
 }
 
-/* ===== render table ===== */
+/* ===== parts summary ===== */
+function summarizeItems(items){
+  if(!items || !items.length) return '-';
+  const lines = items.length;
+  const dates = [...new Set(items.map(i=>i.delivery_date).filter(Boolean))];
+  const vends = [...new Set(items.map(i=>i.vendor_line).filter(Boolean))];
+  const chips = [
+    `${lines} line${lines>1?'s':''}`,
+    dates.length ? `${dates.length} deliver${dates.length>1?'ies':'y'}` : null,
+    vends.length ? `Vendors: ${vends.slice(0,3).join(', ')}${vends.length>3?'…':''}` : null
+  ].filter(Boolean).join(' • ');
+  const tip = items.map(i=>{
+    const d=i.delivery_date?` (${i.delivery_date})`:''; const v=i.vendor_line?` [${i.vendor_line}]`:''; const q=i.qty?` × ${i.qty}`:'';
+    return `${i.part_number}${q}${d}${v}`;
+  }).join('\n');
+  return `<span class="chip" title="${esc(tip)}">${esc(chips)}</span>`;
+}
+
+/* ===== table render ===== */
 function inlineSelect(o,field,options){
   const w=document.createElement('div');w.className='ie';
   const chip=document.createElement('span');chip.className='chip';chip.textContent=o[field]||'-';
@@ -339,9 +353,8 @@ function render(){
     const t=totals(o),sym=curSym(o.currency);const tr=document.createElement('tr');
 
     let td=document.createElement('td');const vb=document.createElement('button');vb.className='btn smini';vb.textContent='View';vb.onclick=()=>openViewById(o.id);td.appendChild(vb);tr.appendChild(td);
-
     [esc(o.customer||'-'),
-     esc((o.items||[]).map(i=>i.part_number).join(', ')||'-'),
+     summarizeItems(o.items||[]),
      esc(o.salesperson||'-'),
      `<span class="mono">${fmtInt(t.qty)}</span>`,
      `<span class="mono">${sym}${fmt(t.avgUnit)}</span>`,
@@ -355,7 +368,7 @@ function render(){
     td=document.createElement('td');td.textContent=o.incoterm||'-';tr.appendChild(td);
     td=document.createElement('td');td.appendChild(inlineSelect(o,'payment_terms',['Net 5','Net 10','Net 15','Net 20','Net 30','Net 40','Net 50','Net 60','Net 90']));tr.appendChild(td);
 
-    td=document.createElement('td'); // generated docs tags
+    td=document.createElement('td'); // generated doc tags
     const tagKinds=['so','invoice','pt','ci','rma'];
     const tagLinks=tagKinds.filter(k=>o.files?.[`${k}_pdf`]).map(k=>`<a href="#" class="link" onclick="openSigned('${o.id}','${o.files[`${k}_pdf`]}');return false;">${k.toUpperCase()}</a>`).join(' · ');
     td.innerHTML=tagLinks||'<span class="muted">None</span>';tr.appendChild(td);
@@ -364,7 +377,6 @@ function render(){
     td=document.createElement('td');td.appendChild(mk('is_shipped'));tr.appendChild(td);
     td=document.createElement('td');td.appendChild(mk('is_invoiced'));tr.appendChild(td);
 
-    // FILES: clickable, signed on demand (robust)
     const hasPO=!!o.files?.po,hasTR=!!o.files?.test_report;
     td=document.createElement('td');
     td.innerHTML=[hasPO?`<a href="#" class="link" onclick="openSigned('${o.id}','${o.files.po}');return false;">PO</a>`:'',hasTR?`<a href="#" class="link" onclick="openSigned('${o.id}','${o.files.test_report}');return false;">Test</a>`:''].filter(Boolean).join(' · ')||'<span class="muted">-</span>';
@@ -377,36 +389,46 @@ function render(){
 }
 
 /* ===== edit form ===== */
-function addItemRow(v={part_number:'',date_codes:'',qty:'',qty_shipped:'',unit_sell:'',unit_cost:''}){
+function addItemRow(v={part_number:'',date_codes:'',qty:'',qty_shipped:'',unit_sell:'',unit_cost:'',delivery_date:'',vendor_line:''}){
   const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input class="input mini" value="${esc(v.part_number)}"/></td>
-  <td><input class="input mini" value="${esc(v.date_codes||'')}"/></td>
-  <td><input type="number" step="1" class="input mini mono" value="${v.qty||''}"/></td>
-  <td><input type="number" step="1" class="input mini mono" value="${v.qty_shipped||0}"/></td>
-  <td><input type="number" step="0.01" class="input mini mono" value="${v.unit_sell||''}"/></td>
-  <td><input type="number" step="0.01" class="input mini mono" value="${v.unit_cost||''}"/></td>
-  <td class="right"><button class="btn mini ghost" type="button" onclick="this.closest('tr').remove()">−</button></td>`;
+  tr.innerHTML=`
+    <td><input class="input mini" value="${esc(v.part_number)}"/></td>
+    <td><input class="input mini" value="${esc(v.date_codes||'')}"/></td>
+    <td><input type="number" step="1" class="input mini mono" value="${v.qty||''}"/></td>
+    <td><input type="number" step="1" class="input mini mono" value="${v.qty_shipped||0}"/></td>
+    <td><input type="number" step="0.01" class="input mini mono" value="${v.unit_sell||''}"/></td>
+    <td><input type="number" step="0.01" class="input mini mono" value="${v.unit_cost||''}"/></td>
+    <td><input type="date" class="input mini" value="${v.delivery_date||''}"/></td>
+    <td><input class="input mini" value="${esc(v.vendor_line||'')}"/></td>
+    <td class="right"><button class="btn mini ghost" type="button" onclick="this.closest('tr').remove()">−</button></td>`;
   $('itemsBody').appendChild(tr);
 }
-function itemsFromDOM(){return[...$('itemsBody').querySelectorAll('tr')].map(tr=>{const [pn,dc,qty,qs,us,uc]=[...tr.querySelectorAll('input')].map(i=>i.value.trim());if(!pn)return null;return{part_number:pn,date_codes:dc,qty:+qty||0,qty_shipped:+qs||0,unit_sell:+us||0,unit_cost:+uc||0};}).filter(Boolean);}
+function itemsFromDOM(){
+  return[...$('itemsBody').querySelectorAll('tr')].map(tr=>{
+    const [pn,dc,qty,qs,us,uc,dd,vn]=[...tr.querySelectorAll('input')].map(i=>i.value.trim());
+    if(!pn) return null;
+    return {part_number:pn,date_codes:dc,qty:+qty||0,qty_shipped:+qs||0,unit_sell:+us||0,unit_cost:+uc||0,delivery_date:dd||null,vendor_line:vn||null};
+  }).filter(Boolean);
+}
 function addShipRow(v={kind:'Leg',date:'',qty:'',from:'',to:'',method:'',ref:'',courier:'',tracking:'',cost:''}){
   const tr=document.createElement('tr');
-  tr.innerHTML=`<td><select class="select mini"><option ${v.kind==='Leg'?'selected':''}>Leg</option><option ${v.kind==='Inbound'?'selected':''}>Inbound</option><option ${v.kind==='Outbound'?'selected':''}>Outbound</option></select></td>
-  <td><input type="date" class="input mini" value="${v.date||''}"/></td>
-  <td><input type="number" step="1" class="input mini mono" value="${v.qty||''}"/></td>
-  <td><input class="input mini" value="${esc(v.from||'')}"/></td>
-  <td><input class="input mini" value="${esc(v.to||'')}"/></td>
-  <td><input class="input mini" value="${esc(v.method||'')}"/></td>
-  <td><input class="input mini" value="${esc(v.ref||'')}"/></td>
-  <td><input class="input mini" value="${esc(v.courier||'')}"/></td>
-  <td><input class="input mini" value="${esc(v.tracking||'')}"/></td>
-  <td><input type="number" step="0.01" class="input mini mono" value="${v.cost||''}"/></td>
-  <td class="right"><button class="btn mini ghost" type="button" onclick="this.closest('tr').remove()">−</button></td>`;
+  tr.innerHTML=`
+    <td><select class="select mini"><option ${v.kind==='Leg'?'selected':''}>Leg</option><option ${v.kind==='Inbound'?'selected':''}>Inbound</option><option ${v.kind==='Outbound'?'selected':''}>Outbound</option></select></td>
+    <td><input type="date" class="input mini" value="${v.date||''}"/></td>
+    <td><input type="number" step="1" class="input mini mono" value="${v.qty||''}"/></td>
+    <td><input class="input mini" value="${esc(v.from||'')}"/></td>
+    <td><input class="input mini" value="${esc(v.to||'')}"/></td>
+    <td><input class="input mini" value="${esc(v.method||'')}"/></td>
+    <td><input class="input mini" value="${esc(v.ref||'')}"/></td>
+    <td><input class="input mini" value="${esc(v.courier||'')}"/></td>
+    <td><input class="input mini" value="${esc(v.tracking||'')}"/></td>
+    <td><input type="number" step="0.01" class="input mini mono" value="${v.cost||''}"/></td>
+    <td class="right"><button class="btn mini ghost" type="button" onclick="this.closest('tr').remove()">−</button></td>`;
   $('shipBody').appendChild(tr);
 }
 function shipsFromDOM(){return[...$('shipBody').querySelectorAll('tr')].map(tr=>{const kind=tr.querySelector('select').value;const [date,qty,from,to,method,ref,courier,tracking,cost]=[...tr.querySelectorAll('input')].map(i=>i.value.trim());if(!kind&&!date&&!qty&&!from&&!to&&!method&&!ref&&!courier&&!tracking&&!cost){return null;}return{kind,date,qty:+qty||0,from,to,method,ref,courier,tracking,cost:+cost||0};}).filter(Boolean);}
 
-/* ===== open/clone/delete ===== */
+/* ===== CRUD ===== */
 function openModalById(id){openModal(supa.state.orders.find(x=>x.id===id));}
 function openModal(o){
   window.openModal=openModal;
@@ -415,12 +437,25 @@ function openModal(o){
   $('salesperson').innerHTML=SALESTEAM.map(n=>`<option>${n}</option>`).join('');
   $('editNoteAuthor').innerHTML=SALESTEAM.map(n=>`<option>${n}</option>`).join('');
   ['status','salesperson','customer','priority','order_date','requested_by','payment_terms','payment_method','incoterm','invoice_date','due_date','currency','tests','test_center','supplier_lead_time','vendor','shipping_cost_extra','test_cost','notes','bill_to','ship_to'].forEach(id=>{$(id).value=o?.[id]??'';});
-  $('itemsBody').innerHTML='';(o?.items||[]).forEach(addItemRow);$('shipBody').innerHTML='';(o?.shipments||[]).forEach(addShipRow);
+  $('itemsBody').innerHTML='';(o?.items||[]).forEach(addItemRow);
+  $('shipBody').innerHTML='';(o?.shipments||[]).forEach(addShipRow);
   const list=(o?.staff_notes||[]).map(n=>`<div class="note-item"><div class="note-head"><b>${esc(n.author)}</b><span>${new Date(n.created_at).toLocaleString()}</span></div><div>${esc(n.body)}</div></div>`).join('')||'No notes yet';$('editNotesList').innerHTML=list;
 
-  $('btnSave').onclick=async()=>{const orderData={id:$('orderId').value||undefined,status:$('status').value,salesperson:$('salesperson').value,customer:$('customer').value,priority:$('priority').value,order_date:$('order_date').value||null,requested_by:$('requested_by').value||null,payment_terms:$('payment_terms').value,payment_method:$('payment_method').value,incoterm:$('incoterm').value,invoice_date:$('invoice_date').value||null,due_date:$('due_date').value||null,currency:$('currency').value,tests:$('tests').value,test_center:$('test_center').value,supplier_lead_time:$('supplier_lead_time').value||null,vendor:$('vendor').value,shipping_cost_extra:parseFloat($('shipping_cost_extra').value)||0,test_cost:parseFloat($('test_cost').value)||0,notes:$('notes').value,bill_to:$('bill_to').value,ship_to:$('ship_to').value,items:itemsFromDOM(),shipments:shipsFromDOM()};const uploads={po:$('file_po').files[0]??null,test_report:$('file_test').files[0]??null};try{await supa.save(orderData,uploads);closeDlg('dlg');await supa.load();render();setToast('Saved');}catch(e){console.error(e);alert('Save failed: '+(e.message||e));}};
+  $('btnSave').onclick=async()=>{
+    const orderData={
+      id:$('orderId').value||undefined,
+      status:$('status').value,salesperson:$('salesperson').value,customer:$('customer').value,priority:$('priority').value,
+      order_date:$('order_date').value||null,requested_by:$('requested_by').value||null,payment_terms:$('payment_terms').value,
+      payment_method:$('payment_method').value,incoterm:$('incoterm').value,invoice_date:$('invoice_date').value||null,
+      due_date:$('due_date').value||null,currency:$('currency').value,tests:$('tests').value,test_center:$('test_center').value,
+      supplier_lead_time:$('supplier_lead_time').value||null,vendor:$('vendor').value,shipping_cost_extra:parseFloat($('shipping_cost_extra').value)||0,
+      test_cost:parseFloat($('test_cost').value)||0,notes:$('notes').value,bill_to:$('bill_to').value,ship_to:$('ship_to').value,
+      items:itemsFromDOM(),shipments:shipsFromDOM()
+    };
+    const uploads={po:$('file_po').files[0]??null,test_report:$('file_test').files[0]??null};
+    try{await supa.save(orderData,uploads);closeDlg('dlg');await supa.load();render();setToast('Saved');}catch(e){console.error(e);alert('Save failed: '+(e.message||e));}
+  };
   $('btnDelete').onclick=async()=>{if(!o?.id){closeDlg('dlg');return;}if(!confirm('Delete this order?'))return;await supa.del(o.id);await supa.load();render();closeDlg('dlg');};
-
   showDlg('dlg');
 }
 async function cloneById(id){const o=supa.state.orders.find(x=>x.id===id);if(!o)return;const c=structuredClone(o);delete c.id;delete c.files;delete c.generated_docs;delete c.staff_notes;c.status='Open';c.order_date=todayStr();c.invoice_date=null;c.due_date=null;c.is_shipped=false;c.is_invoiced=false;c.shipments=[];await supa.save(c,{});await supa.load();render();}
@@ -432,7 +467,7 @@ function openViewById(id){const o=supa.state.orders.find(x=>x.id===id);if(o)open
 function renderOpenViewIfSame(){if(!OPEN_VIEW_ID)return;const o=supa.state.orders.find(x=>x.id===OPEN_VIEW_ID);if(o)openView(o,true);}
 function openView(o,keep=false){
   OPEN_VIEW_ID=o.id;const t=totals(o),sym=curSym(o.currency);
-  const parts=(o.items||[]).map(i=>`<tr><td>${esc(i.part_number)}</td><td>${esc(i.date_codes||'')}</td><td class="mono">${fmtInt(i.qty)}</td><td class="mono">${fmtInt(i.qty_shipped||0)}</td><td class="mono">${sym}${fmt(i.unit_sell)}</td><td class="mono">${sym}${fmt(i.unit_cost)}</td></tr>`).join('');
+  const parts=(o.items||[]).map(i=>`<tr><td>${esc(i.part_number)}</td><td>${esc(i.date_codes||'')}</td><td class="mono">${fmtInt(i.qty)}</td><td class="mono">${fmtInt(i.qty_shipped||0)}</td><td class="mono">${sym}${fmt(i.unit_sell)}</td><td class="mono">${sym}${fmt(i.unit_cost)}</td><td>${esc(i.delivery_date||'-')}</td><td>${esc(i.vendor_line||'-')}</td></tr>`).join('');
   const ships=(o.shipments||[]).map(s=>`<tr><td>${s.kind}</td><td class="mono">${esc(s.date||'')}</td><td class="mono">${fmtInt(s.qty||'')}</td><td>${esc(s.from||'')}</td><td>${esc(s.to||'')}</td><td>${esc(s.method||'')}</td><td>${esc(s.ref||'')}</td><td>${esc(s.courier||'')}</td><td>${esc(s.tracking||'')}</td><td class="mono">${s.cost? sym+fmt(s.cost):''}</td></tr>`).join('');
   const notesList=(o.staff_notes||[]).map(n=>`<div class="note-item"><div class="note-head"><b>${esc(n.author)}</b><span>${new Date(n.created_at).toLocaleString()}</span></div><div>${esc(n.body)}</div></div>`).join('')||'<div class="muted">No notes</div>';
   const genRows=(o.generated_docs||[]).slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).map(g=>`<tr><td>${g.kind.replace('_pdf','').toUpperCase()}</td><td class="mono">${new Date(g.created_at).toLocaleString()}</td><td><button class="btn smini" onclick="openSigned('${o.id}','${g.path}')">View</button></td></tr>`).join('')||'<tr><td colspan="3" class="muted">No generated documents yet</td></tr>';
@@ -469,7 +504,10 @@ function openView(o,keep=false){
     </div></div></div>
 
     <div class="card" style="grid-column:1/-1"><h3>Line Items</h3><div class="pad"><div class="hscroll">
-      <table class="tbl" style="min-width:980px"><thead><tr><th>Part</th><th>Date Codes</th><th>Qty</th><th>Shipped Qty</th><th>Unit Sell</th><th>Unit Cost</th></tr></thead><tbody>${parts || '<tr><td colspan="6" class="muted">No items</td></tr>'}</tbody></table>
+      <table class="tbl" style="min-width:1080px">
+        <thead><tr><th>Part</th><th>Date Codes</th><th>Qty</th><th>Shipped Qty</th><th>Unit Sell</th><th>Unit Cost</th><th>Delivery</th><th>Vendor</th></tr></thead>
+        <tbody>${parts || '<tr><td colspan="8" class="muted">No items</td></tr>'}</tbody>
+      </table>
     </div></div></div>
 
     <div class="card" style="grid-column:1/-1"><h3>Shipments</h3><div class="pad"><div class="hscroll">
@@ -506,29 +544,22 @@ function openView(o,keep=false){
     </div></div></div>
   `;
   if(!keep)showDlg('viewDlg');
-  bindDocUploaders(o.id);
 }
+
+/* ===== notes & files ===== */
 async function addNote(order_id){const author=$('noteAuthor').value;const body=$('noteBody').value.trim();if(!body)return;try{await supa.addNote(order_id,author,body);$('noteBody').value='';await supa.load();renderOpenViewIfSame();setToast('Note added');}catch(e){setToast('Failed to add note',true);}}
-function bindDocUploaders(orderId){const po=$('qUpPO'),tr=$('qUpTR');if(po)po.onchange=e=>quickUploadFile(orderId,'po',e.target.files[0]);if(tr)tr.onchange=e=>quickUploadFile(orderId,'test_report',e.target.files[0]);}
+async function addNoteFromEdit(){const id=$('orderId').value;const body=$('editNoteBody').value.trim();if(!id||!body)return;const author=$('editNoteAuthor').value;try{await supa.addNote(id,author,body);$('editNoteBody').value='';await supa.load();const o=supa.state.orders.find(x=>x.id===id);const list=(o?.staff_notes||[]).map(n=>`<div class="note-item"><div class="note-head"><b>${esc(n.author)}</b><span>${new Date(n.created_at).toLocaleString()}</span></div><div>${esc(n.body)}</div></div>`).join('')||'No notes yet';$('editNotesList').innerHTML=list;setToast('Note added');}catch(e){setToast('Failed to add note',true);}}
 async function openSigned(orderId,path){const {data:signed,error}=await supabase.storage.from('order-files').createSignedUrl(path,3600);if(error||!signed?.signedUrl){console.error('Signed URL error',error,path);alert('Could not open file.');return;}window.open(signed.signedUrl,'_blank');}
 
-/* ===== quick uploads ===== */
-async function quickUploadFile(orderId,kind,file){if(!file)return;try{setToast('Uploading '+kind+' …');await supa.upload(orderId,kind,file);await supa.load();renderOpenViewIfSame();render();setToast('Uploaded');}catch(e){console.error(e);setToast('Upload failed',true);}}
-
-/* ===== generator (kept) ===== */
+/* ===== generator (unchanged infra) ===== */
 const PREFIX=location.pathname.includes('/order-tracker/')?'../':'';
 const DOC_ROUTES={so:PREFIX+'so-confirmation/index.html',invoice:PREFIX+'so-confirmation/index.html#invoice',pt:PREFIX+'commercial-invoice/index.html#pt',ci:PREFIX+'commercial-invoice/index.html',rma:PREFIX+'rma/index.html'};
 let GEN_CTX=null;
-function openGenById(id,type){const o=supa.state.orders.find(x=>x.id===id);if(!o)return;GEN_CTX={order:o,type};$('docTypeChips').innerHTML=['so','invoice','pt','ci','rma'].map(k=>`<button class="chipbtn ${k===type?'active':''}" onclick="selectDocType('${k}')">${k==='so'?'Order Confirmation':k==='pt'?'Picking Ticket':k==='ci'?'Commercial Invoice':k.toUpperCase()}</button>`).join('');$('missingWrap').innerHTML='';$('genStatus').textContent='';$('genGo').onclick=()=>generateDoc(o,GEN_CTX.type);showDlg('genDlg');}
-function selectDocType(k){GEN_CTX.type=k;[...document.querySelectorAll('#docTypeChips .chipbtn')].forEach(b=>b.classList.toggle('active',b.textContent.toLowerCase().includes(k==='so'?'order':k)));}
+function openGenById(id,type){const o=supa.state.orders.find(x=>x.id===id);if(!o)return;GEN_CTX={order:o,type};$('docTypeChips').innerHTML=['so','invoice','pt','ci','rma'].map(k=>`<button class="chipbtn ${k===type?'active':''}" onclick="GEN_CTX.type='${k}'">${k==='so'?'Order Confirmation':k==='pt'?'Picking Ticket':k==='ci'?'Commercial Invoice':k.toUpperCase()}</button>`).join('');$('missingWrap').innerHTML='';$('genStatus').textContent='';$('genGo').onclick=()=>generateDoc(o,GEN_CTX.type);showDlg('genDlg');}
+window.addEventListener('message',async ev=>{if(!ev?.data||ev.data?.source!=='VE_DOC_GENERATOR')return;const msg=ev.data;if(msg.type==='ready'){GEN_CTX?.port?.postMessage({type:'payload',source:'VE_ORDER_TRACKER',order:GEN_CTX.order,docType:GEN_CTX.type});}else if(msg.type==='generated'){clearTimeout(GEN_CTX.timeout);$('genStatus').textContent='Uploading…';const bin=atob(msg.base64);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);const blob=new Blob([u8],{type:'application/pdf'});try{await supa.uploadGenerated(GEN_CTX.order.id,GEN_CTX.type,new File([blob],msg.filename||`${GEN_CTX.type}.pdf`,{type:'application/pdf'}));$('genStatus').textContent='Saved to Supabase ✓';await supa.load();renderOpenViewIfSame();render();}catch(e){console.error(e);$('genStatus').textContent='Upload failed';}}else if(msg.type==='error'){clearTimeout(GEN_CTX.timeout);$('genStatus').textContent='Generator error';}});
+async function generateDoc(order,type){$('genStatus').textContent='Opening generator…';const frame=$('genFrame');frame.src=DOC_ROUTES[type];const channel=new MessageChannel();GEN_CTX=GEN_CTX||{};GEN_CTX.port=channel.port1;frame.onload=()=>{$('genStatus').textContent='Preparing…';frame.contentWindow.postMessage({type:'init',source:'VE_ORDER_TRACKER'},'*',[channel.port2]);};GEN_CTX.timeout=setTimeout(()=>{$('genStatus').textContent='Generator timed out. Open doc page directly to debug.';},25000);}
 
-window.addEventListener('message',async ev=>{if(!ev?.data||ev.data?.source!=='VE_DOC_GENERATOR')return;const msg=ev.data;if(msg.type==='ready'){GEN_CTX?.port?.postMessage({type:'payload',source:'VE_ORDER_TRACKER',order:GEN_CTX.order,docType:GEN_CTX.type});}else if(msg.type==='generated'){clearTimeout(GEN_CTX.timeout);$('genStatus').textContent='Uploading…';const b64=msg.base64;const fname=msg.filename||`${GEN_CTX.type}.pdf`;const bin=atob(b64);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);const blob=new Blob([u8],{type:'application/pdf'});try{await supa.uploadGenerated(GEN_CTX.order.id,GEN_CTX.type,new File([blob],fname,{type:'application/pdf'}));$('genStatus').textContent='Saved to Supabase ✓';await supa.load();renderOpenViewIfSame();render();}catch(e){console.error(e);$('genStatus').textContent='Upload failed';}}else if(msg.type==='error'){clearTimeout(GEN_CTX.timeout);$('genStatus').textContent='Generator error';}});
-async function generateDoc(order,type){$('genStatus').textContent='Opening generator…';const route=DOC_ROUTES[type];const frame=$('genFrame');frame.src=route;const channel=new MessageChannel();GEN_CTX=GEN_CTX||{};GEN_CTX.port=channel.port1;frame.onload=()=>{$('genStatus').textContent='Preparing…';frame.contentWindow.postMessage({type:'init',source:'VE_ORDER_TRACKER'},'*',[channel.port2]);};GEN_CTX.timeout=setTimeout(()=>{$('genStatus').textContent='Generator timed out. Open doc page directly to debug.';},25000);}
-
-/* ===== editor note adder ===== */
-async function addNoteFromEdit(){const id=$('orderId').value;const body=$('editNoteBody').value.trim();if(!id||!body)return;const author=$('editNoteAuthor').value;try{await supa.addNote(id,author,body);$('editNoteBody').value='';await supa.load();const o=supa.state.orders.find(x=>x.id===id);const list=(o?.staff_notes||[]).map(n=>`<div class="note-item"><div class="note-head"><b>${esc(n.author)}</b><span>${new Date(n.created_at).toLocaleString()}</span></div><div>${esc(n.body)}</div></div>`).join('')||'No notes yet';$('editNotesList').innerHTML=list;setToast('Note added');}catch(e){setToast('Failed to add note',true);}}
-
-/* ===== filters init & csv ===== */
+/* ===== filters & csv ===== */
 function initFilters(){ $('fltSales').innerHTML='<option value="">All salespeople</option>'+SALESTEAM.map(n=>`<option>${n}</option>`).join(''); $('btnCsv').onclick=exportCsv; $('q').oninput=render; $('fltSales').onchange=render; $('fltStatus').onchange=render; $('fltPriority').onchange=render; $('btnNew').onclick=()=>openModal(null);}
 function exportCsv(){const header=['id','customer','salesperson','status','priority','order_date','requested_by','currency','incoterm','payment_terms','vendor','total_qty','sell','gp','gp_pct','tests','notes'];const rows=supa.state.orders.map(o=>{const t=totals(o);return [o.id,o.customer||'',o.salesperson||'',o.status||'',o.priority||'',o.order_date||'',o.requested_by||'',o.currency||'',o.incoterm||'',o.payment_terms||'',o.vendor||'',t.qty,t.revenue.toFixed(2),t.gp.toFixed(2),t.gpPct.toFixed(2),o.tests||'',(o.notes||'').replace(/\n/g,' ')].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');});const csv=[header.join(','),...rows].join('\n');const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='orders.csv';a.click();}
 
