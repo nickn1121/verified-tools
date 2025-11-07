@@ -7,96 +7,123 @@
 <link rel="icon" href="data:;base64,iVBORw0KGgo="/>
 <style>
 :root{
-  --brand:#6f57e9;--ink:#1f2432;--muted:#6d7486;--bg:#f6f7fb;--card:#fff;--line:#e9e9ef;
-  --green:#12a274;--shadow:0 12px 30px rgba(23,20,68,.08),0 1px 0 rgba(0,0,0,.04)
+  --bg:#0f1220; --panel:#13172a; --elev:#171c34; --line:#21284a;
+  --ink:#e7e9f7; --muted:#9aa3c7; --brand:#7c6cff; --brand2:#5a4cf1;
+  --good:#2ecc71; --warn:#ffcc66; --bad:#ff6b6b;
+  --chip:#1b2140; --shadow:0 10px 30px rgba(8,12,34,.35);
 }
-*{box-sizing:border-box}html,body{height:100%}
-body{margin:0;font:15px/1.56 ui-sans-serif,system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial;color:var(--ink);background:var(--bg)}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;font:14.5px/1.55 ui-sans-serif,system-ui,Inter,Segoe UI,Roboto,Helvetica,Arial;
+  background:
+    radial-gradient(900px 420px at -10% -10%, rgba(124,108,255,.12), transparent 40%),
+    radial-gradient(700px 360px at 110% 0%, rgba(90,76,241,.10), transparent 40%),
+    var(--bg);
+  color:var(--ink);
+}
+a{color:inherit}
 .wrap{max-width:1600px;margin:26px auto;padding:0 16px}
-header{display:flex;gap:16px;align-items:center;padding:18px;border:1px solid var(--line);border-radius:20px;background:#fff;box-shadow:var(--shadow)}
-header img{height:44px}
-h1{margin:0;font-size:26px;font-weight:800}
+
+/* Header */
+header{
+  display:flex;gap:16px;align-items:center;
+  padding:18px;border:1px solid var(--line);border-radius:18px;
+  background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));
+  backdrop-filter: blur(6px);
+  box-shadow:var(--shadow)
+}
+header img{height:44px;filter:drop-shadow(0 2px 8px rgba(124,108,255,.35))}
+h1{margin:0;font-size:24px;font-weight:800}
 .sub{color:var(--muted)}
 
-.toolbar{position:sticky;top:8px;z-index:3;background:var(--bg);
-  display:grid;grid-template-columns:1fr 180px 180px 160px auto auto auto;gap:12px;margin:18px 0}
-.input,.select,.btn,textarea{height:40px;border:1px solid #d9daf0;border-radius:12px;background:#fff;padding:0 12px;font:inherit;outline:none;transition:.15s}
-.input,textarea{box-shadow:inset 0 0 0 1px rgba(0,0,0,0)}
-.input:focus,textarea:focus,.select:focus{border-color:#cfc9ff;box-shadow:0 0 0 3px #efeaff, inset 0 0 0 1px rgba(0,0,0,0)}
-.input{width:100%}textarea{padding:12px;resize:vertical;min-height:84px}
+/* Controls */
+.toolbar{
+  position:sticky;top:10px;z-index:3;
+  display:grid;grid-template-columns:1fr 200px 160px 170px auto auto auto;gap:10px;margin:16px 0
+}
+.input,.select,.btn,textarea{
+  height:40px;border:1px solid var(--line);border-radius:12px;
+  background:var(--panel);color:var(--ink);padding:0 12px;font:inherit;outline:none;transition:.15s
+}
+.input::placeholder,textarea::placeholder{color:#7e86a8}
+.input:focus,textarea:focus,.select:focus{border-color:#4b54a3;box-shadow:0 0 0 3px rgba(124,108,255,.25)}
+textarea{min-height:96px;padding:10px;resize:vertical}
 .select{appearance:none;padding-right:28px}
-.btn{background:#f6f4ff;color:#3d35d1;border-color:#ece8ff;font-weight:700;cursor:pointer}
-.btn:hover{background:#eee8ff}.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
-.btn.ghost{background:#fff;color:#1f2432}.mini{height:32px}.smini{height:28px;padding:0 10px;border-radius:999px}
+.btn{background:linear-gradient(135deg,var(--brand),var(--brand2));border:0;color:#fff;font-weight:800;cursor:pointer}
+.btn.ghost{background:var(--panel);border:1px solid var(--line);color:var(--ink)}
+.mini{height:32px}.smini{height:28px;border-radius:999px;padding:0 12px}
 
-.stats{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin:14px 0}
-.stat{grid-column:span 3;min-height:68px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow);padding:10px 12px;display:flex;justify-content:space-between;align-items:center}
+/* Stat cards */
+.stats{display:grid;grid-template-columns:repeat(12,1fr);gap:10px;margin:14px 0}
+.stat{
+  grid-column:span 3;min-height:72px;border:1px solid var(--line);border-radius:16px;
+  background:linear-gradient(180deg,var(--panel),var(--elev));box-shadow:var(--shadow);padding:12px;
+  display:flex;justify-content:space-between;align-items:center
+}
 .stat b{font-size:22px}
-.badge{border:1px solid #ece8ff;background:#f7f5ff;border-radius:999px;padding:2px 8px;font-size:12px;color:#5a53e6}
+.badge{border:1px solid var(--line);background:var(--chip);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--muted)}
 
-.table-card{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden;box-shadow:var(--shadow)}
-.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:1320px}
-thead th{position:sticky;top:0;background:#fafaff;border-bottom:1px solid var(--line);text-align:left;font-size:13px;color:#4a4f64;padding:12px}
+/* Table */
+.card{border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,var(--panel),var(--elev));box-shadow:var(--shadow)}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:1250px}
+thead th{
+  position:sticky;top:0;background:linear-gradient(180deg,#161b31,#141a32);
+  border-bottom:1px solid var(--line);text-align:left;font-size:12.5px;color:#aab3d8;padding:12px
+}
 tbody td{border-bottom:1px solid var(--line);padding:12px;vertical-align:top}
-tbody tr:hover{background:#fcfbff}
+tbody tr:hover{background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.02))}
 .mono{font-variant-numeric:tabular-nums}.muted{color:var(--muted)}.right{display:flex;gap:10px;justify-content:flex-end}
-.chip{display:inline-block;border-radius:999px;padding:3px 10px;border:1px solid #eee;background:#fafafa;font-size:12px;color:#5d6480}
-.ie{display:inline-flex;align-items:center;gap:6px}
-.ie button{border:0;background:transparent;color:#6d6fe5;cursor:pointer;padding:0 6px;border-radius:6px}
-.ie button:hover{background:#f0efff}.ie select{display:none;height:30px;border-radius:10px}
-.ie.editing select{display:inline-block}.ie.editing .chip{display:none}
-.actions{display:flex;gap:8px;flex-wrap:wrap}.link{color:#362dc7;text-decoration:none}.link:hover{text-decoration:underline}
-
-.group{margin:18px 0}.group h3{margin:0 0 8px;font-size:16px}
-.card{border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:var(--shadow)}
-.card .pad{padding:12px}
-
-dialog{border:0;padding:0;margin:0 auto;max-width:1500px;width:98vw}
-dialog::backdrop{background:rgba(17,17,33,.35)}
-.modal{display:flex;flex-direction:column;max-height:92vh;border-radius:20px;overflow:hidden;background:#fff;box-shadow:var(--shadow)}
-.modal header{position:sticky;top:0;z-index:2;border-bottom:1px solid var(--line);border-radius:20px 20px 0 0;background:#fff}
-.modal .head{padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
-.content{padding:16px;overflow:auto;max-height:calc(92vh - 56px)}
-
-.grid2,.grid3{display:grid;gap:12px}.grid2{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr 1fr 1fr}
-.section{margin:16px 0 8px;font-weight:900;color:#262b3a}
-.tbl{width:100%;border-collapse:collapse;table-layout:fixed}
-.tbl th,.tbl td{border:1px solid #ececf3;padding:10px;text-align:left;white-space:nowrap}
-.hscroll{overflow:auto;border:1px solid #ececf3;border-radius:12px;background:#fff}
+.tag{display:inline-block;padding:3px 10px;border-radius:999px;background:var(--chip);border:1px solid var(--line);color:#cfd6ff;font-size:12px}
+.block{display:inline-block}
 .note{font-size:12px;color:var(--muted);margin-bottom:6px}
-.bordered{border:1px solid #d9daf0;border-radius:12px;padding:8px}
-.note-item{padding:10px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:#fafafa}
-.note-head{font-size:13px;margin-bottom:3px;display:flex;justify-content:space-between;color:var(--muted)}.note-head b{color:#1f2432}
+.hscroll{overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+
+/* Chips + inline edit */
+.ie{display:inline-flex;align-items:center;gap:8px}
+.ie .chip{display:inline-block;padding:3px 10px;border:1px dashed #48508a;border-radius:999px;color:#cfd6ff;background:#1a1f3b}
+.ie button{border:0;background:transparent;color:#bdb7ff;cursor:pointer;padding:0 6px;border-radius:8px}
+.ie button:hover{background:#1b2050}
+.ie select{display:none;height:30px;border-radius:10px;background:var(--panel);color:var(--ink);border:1px solid var(--line)}
+.ie.editing select{display:inline-block}.ie.editing .chip{display:none}
+
+/* Dialogs */
+dialog{border:0;padding:0;margin:0 auto;max-width:1500px;width:98vw}
+dialog::backdrop{background:rgba(2,3,10,.55);backdrop-filter:blur(2px)}
+.modal{display:flex;flex-direction:column;max-height:92vh;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,var(--panel),var(--elev));border:1px solid var(--line);box-shadow:var(--shadow)}
+.modal header{position:sticky;top:0;z-index:2;border-bottom:1px solid var(--line)}
+.modal .head{padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
+.content{padding:14px;overflow:auto;max-height:calc(92vh - 56px)}
+.grid2,.grid3{display:grid;gap:10px}.grid2{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr 1fr 1fr}
+
+/* Line items + vendors */
+.tbl{width:100%;border-collapse:collapse;table-layout:fixed}
+.tbl th,.tbl td{border:1px solid var(--line);padding:10px;text-align:left;white-space:nowrap}
+.item-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.item-tab{padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--chip);cursor:pointer}
+.item-tab.active{background:linear-gradient(135deg,var(--brand),var(--brand2));border-color:transparent;color:#fff}
 
 #toast{position:fixed;right:16px;bottom:16px;background:#111;color:#fff;padding:10px 12px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s}
 dialog[open]{display:block}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* Supabase details (rotate later) */
+/* ===== Supabase (set your real URL/key) ===== */
 const SUPABASE_URL='https://ijzroisggstqkfhpjndq.supabase.co';
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenJvaXNnZ3N0cWtmaHBqbmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NzYzMjEsImV4cCI6MjA3MDA1MjMyMX0.ZqI2EiNNROR3Y7MflOeHlAY49N7b89oHA_VcEHVEwjc';
 const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
-/* ensure apikey headers for direct fetches */
-(function(){const f=fetch.bind(window);window.fetch=(i,init={})=>{const u=typeof i==='string'?i:i?.url||'';if(u.startsWith(SUPABASE_URL)){const h=new Headers(init.headers||{});if(!h.has('apikey'))h.set('apikey',SUPABASE_ANON_KEY);if(!h.has('Authorization'))h.set('Authorization','Bearer '+SUPABASE_ANON_KEY);init={...init,headers:h};}return f(i,init);};})();
+(function(){const f=fetch.bind(window);window.fetch=(i,init={})=>{const u=typeof i==='string'?i:i?.url||'';if(u.startsWith(SUPABASE_URL)){const h=new Headers(init.headers||{});h.set('apikey',SUPABASE_ANON_KEY);h.set('Authorization','Bearer '+SUPABASE_ANON_KEY);init={...init,headers:h};}return f(i,init);};})();
 </script>
 </head>
 <body>
 
 <script>
-/* dialog helpers (fixed) */
+/* ===== Dialog helpers (cross-browser) ===== */
 (function(){
   const ok=!!window.HTMLDialogElement&&!!HTMLDialogElement.prototype.showModal;
-  window.showDlg=id=>{
-    const el=document.getElementById(id); if(!el) return;
-    if(ok){ try{ el.showModal(); } catch{ el.setAttribute('open',''); el.style.display='block'; } }
-    else { el.setAttribute('open',''); el.style.display='block'; document.documentElement.style.overflow='hidden'; }
-  };
-  window.closeDlg=id=>{
-    const el=document.getElementById(id); if(!el) return;
-    if(ok){ try{ el.close(); } catch{ el.removeAttribute('open'); el.style.display='none'; } }
-    else { el.removeAttribute('open'); el.style.display='none'; document.documentElement.style.overflow=''; }
-  };
+  window.showDlg=id=>{const el=$(id);if(ok){try{el.showModal()}catch{el.setAttribute('open','');el.style.display='block'}}else{el.setAttribute('open','');el.style.display='block';document.documentElement.style.overflow='hidden'}};
+  window.closeDlg=id=>{const el=$(id);if(ok){try{el.close()}catch{el.removeAttribute('open');el.style.display='none'}}else{el.removeAttribute('open');el.style.display='none';document.documentElement.style.overflow=''}};
 })();
 </script>
 
@@ -105,12 +132,12 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
     <img src="https://raw.githubusercontent.com/nickn1121/verified-excess-checker/b600d705df19191f9bd1cc2e2b80930cb37259e9/logo.png" alt="Verified"/>
     <div>
       <h1>Request a Quote</h1>
-      <div class="sub">Log RFQs, set target prices, capture vendor quotes, and track quoting progress by salesperson.</div>
+      <div class="sub">Log RFQs across multiple parts per customer, capture vendor quotes per line, and track progress by salesperson.</div>
     </div>
   </header>
 
   <!-- Stats -->
-  <div class="stats" id="stats">
+  <div class="stats">
     <div class="stat"><div><div class="muted">Total RFQs</div><b id="s_total">0</b></div><span class="badge">All</span></div>
     <div class="stat"><div><div class="muted">Quoted</div><b id="s_quoted">0</b></div><span class="badge">✓ sent</span></div>
     <div class="stat"><div><div class="muted">Pending</div><b id="s_pending">0</b></div><span class="badge">Open</span></div>
@@ -123,23 +150,19 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
     <select id="fltSales" class="select"><option value="">All salespeople</option></select>
     <select id="fltStatus" class="select"><option value="">All status</option><option>Open</option><option>Quoted</option><option>Abandoned</option></select>
     <select id="fltGroup" class="select"><option value="none">No grouping</option><option value="sales">Group by salesperson</option></select>
-    <button id="btnNew" class="btn" type="button">+ New RFQ</button>
-    <button id="btnLeads" class="btn ghost" type="button">Leaderboard</button>
-    <button class="btn ghost" id="btnCsv">Export CSV</button>
+    <button id="btnNew" class="btn">+ New RFQ</button>
+    <button id="btnLeads" class="btn ghost">Leaderboard</button>
+    <button id="btnCsv" class="btn ghost">Export CSV</button>
   </div>
 
-  <!-- Grouped view -->
-  <div id="groupWrap"></div>
-
-  <!-- Flat table -->
-  <div class="table-card" id="tableCard">
+  <!-- Table -->
+  <div class="card">
     <div class="table-wrap">
       <table>
         <thead>
         <tr>
-          <th>View</th><th>Customer</th><th>Part</th><th>Qty</th><th>Target</th>
-          <th>Sales</th><th>Status</th><th>Quoted</th><th>Need Better</th>
-          <th>Best Vendor</th><th>Best Price</th><th>Age</th><th>Notes</th><th>Actions</th>
+          <th>View</th><th>Customer</th><th>Items</th><th>Sales</th><th>Status</th>
+          <th>Quoted</th><th>Need Better</th><th>Best Vendor</th><th>Best Price</th><th>Age</th><th>Notes</th><th>Actions</th>
         </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -148,7 +171,7 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
   </div>
 </div>
 
-<!-- Create/Edit RFQ -->
+<!-- Create/Edit RFQ (Header + Items) -->
 <dialog id="dlg"><div class="modal">
   <header><div class="head"><strong id="dlgTitle">New RFQ</strong>
     <div>
@@ -163,45 +186,50 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
       <div><div class="note">Customer</div><input id="customer" class="input mini"/></div>
       <div><div class="note">Priority</div><select id="priority" class="select mini"><option>High</option><option selected>Normal</option><option>Low</option></select></div>
 
-      <div><div class="note">Part Number</div><input id="part_number" class="input mini"/></div>
-      <div><div class="note">Quantity</div><input id="quantity" type="number" class="input mini mono" placeholder="e.g. 1000"/></div>
-      <div><div class="note">Target Price (unit)</div><input id="target_price" type="number" step="0.0001" class="input mini mono" placeholder="0.00"/></div>
-
       <div><div class="note">Status</div><select id="status" class="select mini"><option>Open</option><option>Quoted</option><option>Abandoned</option></select></div>
       <div><div class="note">Quoted to Customer?</div><select id="quoted_to_customer" class="select mini"><option value="false">No</option><option value="true">Yes</option></select></div>
       <div><div class="note">Needs Better Price?</div><select id="needs_better_price" class="select mini"><option value="false">No</option><option value="true">Yes</option></select></div>
     </div>
 
-    <div class="section">Notes</div>
-    <textarea id="notes" class="input bordered" rows="4" placeholder="Any context from the customer…"></textarea>
+    <div class="note" style="margin-top:8px">Header Notes</div>
+    <textarea id="notes" class="input" placeholder="Any context from the customer…"></textarea>
 
-    <div class="section">Vendor Quotes (Purchasing)</div>
+    <div class="section">Line Items</div>
+    <div class="hscroll">
+      <table class="tbl" style="min-width:1100px">
+        <thead><tr><th>#</th><th>Part Number</th><th>Quantity</th><th>Target (unit)</th><th>Item Note</th><th></th></tr></thead>
+        <tbody id="itemBody"></tbody>
+      </table>
+    </div>
+    <div class="right" style="margin-top:8px"><button class="btn mini" type="button" onclick="addItemRow()">+ Add item</button></div>
+
+    <div class="section">Vendor Quotes (per selected item)</div>
+    <div class="item-tabs" id="itemTabs"></div>
     <div class="hscroll">
       <table class="tbl" style="min-width:1200px">
         <thead>
         <tr>
-          <th>Vendor</th><th>Available Qty</th><th>Unit Price</th><th>Currency</th>
+          <th>Vendor</th><th>Avail Qty</th><th>Unit Price</th><th>Currency</th>
           <th>Lead (d)</th><th>MOQ</th><th>SPQ</th><th>Chosen</th><th>Notes</th><th></th>
-        </tr>
-        </thead>
+        </tr></thead>
         <tbody id="venBody"></tbody>
       </table>
     </div>
-    <div class="right" style="margin:8px 0 0"><button class="btn mini" type="button" onclick="addVendorRow()">+ Add vendor</button></div>
+    <div class="right" style="margin-top:8px"><button class="btn mini" type="button" onclick="addVendorRow()">+ Add vendor</button></div>
 
     <div class="section">Internal Comments</div>
-    <div class="bordered">
-      <div id="editNotesList" class="muted" style="margin-bottom:8px">No comments yet</div>
-      <div class="actions">
-        <select id="editNoteAuthor" class="select mini"></select>
-        <input id="editNoteBody" class="input mini" placeholder="Post an update…"/>
+    <div class="hscroll" style="padding:8px">
+      <div id="editNotesList" class="muted">No comments yet</div>
+      <div class="right" style="margin-top:8px">
+        <select id="editNoteAuthor" class="select mini" style="width:220px"></select>
+        <input id="editNoteBody" class="input mini" placeholder="Post an update…" style="width:100%"/>
         <button class="btn mini" type="button" onclick="addNoteFromEdit()">Add</button>
       </div>
     </div>
 
     <div class="right" style="margin-top:10px">
       <button id="btnDelete" class="btn ghost" type="button">Delete</button>
-      <button id="btnSave" class="btn primary" type="button">Save</button>
+      <button id="btnSave" class="btn" type="button">Save</button>
     </div>
   </div>
 </div></dialog>
@@ -216,10 +244,9 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 <dialog id="salesDlg"><div class="modal">
   <header><div class="head"><strong>Manage Salespeople</strong><button class="btn ghost mini" type="button" onclick="closeDlg('salesDlg')">✕</button></div></header>
   <div class="content">
-    <div class="note">Add or remove sales team members. Changes update the filters and forms immediately.</div>
-    <div id="salesList" class="bordered" style="margin-bottom:10px"></div>
-    <div class="actions">
-      <input id="newSalesName" class="input mini" placeholder="e.g. Jane D"/>
+    <div id="salesList" class="hscroll" style="padding:8px;margin-bottom:10px"></div>
+    <div class="right">
+      <input id="newSalesName" class="input mini" placeholder="e.g. Jane D" style="width:260px"/>
       <button id="btnSalesAdd" class="btn mini">Add</button>
     </div>
   </div>
@@ -229,7 +256,7 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 <dialog id="boardDlg"><div class="modal">
   <header><div class="head"><strong>RFQ Leaderboard</strong><button class="btn ghost mini" type="button" onclick="closeDlg('boardDlg')">✕</button></div></header>
   <div class="content">
-    <div class="actions" style="gap:8px;margin-bottom:10px">
+    <div class="right" style="gap:8px;margin-bottom:10px">
       <div class="note">From</div><input type="date" id="lbFrom" class="input mini"/>
       <div class="note">To</div><input type="date" id="lbTo" class="input mini"/>
       <button class="btn mini" id="lbApply">Apply</button>
@@ -249,62 +276,90 @@ const supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 <div id="toast"></div>
 
 <script>
-/* utils */
+/* ===== utils ===== */
 const $=id=>document.getElementById(id);
-let SALESTEAM=[]; // loaded from Supabase (seeded with 4 names)
+let SALESTEAM=[]; // from supabase (seed: Dan C, Jake B, Nick K, Emir B)
 const todayStr=()=>new Date().toISOString().slice(0,10);
 const fmt=n=>(n==null||isNaN(n))?'-':Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:4});
 const fmtInt=n=>(n==null||isNaN(n))?'-':Number(n).toLocaleString();
 const esc=s=>(s??'').toString().replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const age=d=>d?(Math.max(0,Math.floor((Date.now()-new Date(d))/86400000))+' d'):'-';
-function setToast(msg,d=false){const t=$('toast');t.textContent=msg;t.style.background=d?'#b21a1a':'#111';t.style.opacity='1';setTimeout(()=>t.style.opacity='0',1500);}
+function toast(msg,err=false){const t=$('toast');t.textContent=msg;t.style.background=err?'#b21a1a':'#111';t.style.opacity='1';setTimeout(()=>t.style.opacity='0',1500);}
 
-/* inline select */
+/* inline select chip */
 function inlineSelect(o,field,options){
   const w=document.createElement('div');w.className='ie';
   const chip=document.createElement('span');chip.className='chip';chip.textContent=o[field]||'-';
   const btn=document.createElement('button');btn.textContent='✎';
   const sel=document.createElement('select');options.forEach(v=>{const op=document.createElement('option');op.value=v;op.textContent=v;sel.appendChild(op);});sel.value=o[field]||options[0];
   const start=()=>{w.classList.add('editing');sel.focus();};btn.onclick=start;chip.onclick=start;chip.style.cursor='pointer';
-  sel.onchange=async()=>{try{await supa.rfqQuickUpdate(o.id,field,sel.value);chip.textContent=sel.value;setToast('Saved');}catch(e){setToast('Save failed',true);}finally{w.classList.remove('editing');}};
+  sel.onchange=async()=>{try{await api.headerQuickUpdate(o.id,field,sel.value);chip.textContent=sel.value;toast('Saved')}catch(e){toast('Save failed',true)}finally{w.classList.remove('editing');}};
   sel.onblur=()=>w.classList.remove('editing'); w.append(chip,btn,sel); return w;
 }
 
-/* supabase data layer */
-const supa={
-  state:{rfqs:[]},
+/* ===== Data layer (headers + items + vendors + notes) ===== */
+const api={
+  state:{headers:[]}, // each header has items[], vendors per item, comments[]
 
   async load(){
-    const {data,error}=await supabase.from('rfqs').select('*').order('created_at',{ascending:false});
-    if(error){console.error(error);this.state.rfqs=[];return;}
-    this.state.rfqs=await Promise.all((data||[]).map(async r=>{
-      const [vendorsRes,notesRes]=await Promise.all([
-        supabase.from('rfq_vendor_quotes').select('*').eq('rfq_id',r.id).order('unit_price',{ascending:true,nullsFirst:true}),
-        supabase.from('rfq_notes').select('*').eq('rfq_id',r.id).order('created_at',{ascending:true})
-      ]);
-      return {...r,vendors:vendorsRes.data||[],comments:notesRes.data||[]};
-    }));
+    // headers
+    const {data:heads,error:hErr}=await supabase.from('rfq_headers').select('*').order('created_at',{ascending:false});
+    if(hErr){console.error(hErr);this.state.headers=[];return;}
+    const headerIds=(heads||[]).map(h=>h.id);
+    // items
+    const {data:items}=await supabase.from('rfq_items').select('*').in('rfq_id',headerIds);
+    // vendor quotes per item
+    const itemIds=(items||[]).map(i=>i.id);
+    const {data:vqs}=itemIds.length?await supabase.from('rfq_vendor_quotes').select('*').in('rfq_item_id',itemIds):{data:[]};
+    // notes
+    const {data:notes}=await supabase.from('rfq_notes').select('*').in('rfq_id',headerIds).order('created_at',{ascending:true});
+
+    // stitch
+    const byItem={}; (vqs||[]).forEach(v=>{(byItem[v.rfq_item_id] ||= []).push(v);});
+    const byHeaderItems={}; (items||[]).forEach(it=>{(byHeaderItems[it.rfq_id] ||= []).push({...it, vendors: byItem[it.id]||[]});});
+    const byHeaderNotes={}; (notes||[]).forEach(n=>{(byHeaderNotes[n.rfq_id] ||= []).push(n);});
+    this.state.headers=(heads||[]).map(h=>({...h, items: byHeaderItems[h.id]||[], comments: byHeaderNotes[h.id]||[]}));
   },
 
-  async save(header){
-    const vendors=header.vendors||[]; const {vendors:_,comments:__,...rfqData}=header;
-    const {data:up,error:e0}=await supabase.from('rfqs').upsert(rfqData).select().single();
-    if(e0)throw e0; const id=up.id;
-    await supabase.from('rfq_vendor_quotes').delete().eq('rfq_id',id);
-    if(vendors.length){
-      await supabase.from('rfq_vendor_quotes').insert(vendors.map(v=>({
-        rfq_id:id,vendor:v.vendor,available_qty:+(v.available_qty||0)||0,unit_price:+(v.unit_price||0)||0,
-        currency:v.currency||'USD',lead_time_days:+(v.lead_time_days||0)||0,moq:+(v.moq||0)||0,spq:+(v.spq||0)||0,
-        chosen:!!v.chosen,notes:v.notes||null
-      })));
+  async saveHeaderWithItems(header){
+    const {items,comments,...hdr}=header;
+    // upsert header
+    const {data:up,error:e0}=await supabase.from('rfq_headers').upsert(hdr).select().single();
+    if(e0) throw e0; const id=up.id;
+
+    // replace items
+    await supabase.from('rfq_items').delete().eq('rfq_id',id);
+    const insertedItems=[];
+    for(const it of (items||[])){
+      const {data:irow,error:e1}=await supabase.from('rfq_items')
+        .insert({rfq_id:id, part_number:it.part_number, quantity:+(it.quantity||0)||0, target_price:+(it.target_price||0)||0, note:it.note||null})
+        .select().single();
+      if(e1) throw e1;
+      // vendor quotes for this item
+      if(it.vendors && it.vendors.length){
+        await supabase.from('rfq_vendor_quotes').insert(it.vendors.map(v=>({
+          rfq_item_id:irow.id, vendor:v.vendor, available_qty:+(v.available_qty||0)||0, unit_price:+(v.unit_price||0)||0,
+          currency:v.currency||'USD', lead_time_days:+(v.lead_time_days||0)||0, moq:+(v.moq||0)||0, spq:+(v.spq||0)||0,
+          chosen:!!v.chosen, notes:v.notes||null
+        })));
+      }
+      insertedItems.push(irow);
     }
+    return id;
   },
 
-  async del(id){await supabase.from('rfqs').delete().eq('id',id);},
-  async addNote(rfq_id,author,body){const {error}=await supabase.from('rfq_notes').insert({rfq_id,author,body});if(error)throw error;},
-  async rfqQuickUpdate(id,field,value){const {error}=await supabase.from('rfqs').update({[field]:value}).eq('id',id);if(error)throw error;},
+  async deleteHeader(id){
+    await supabase.from('rfq_headers').delete().eq('id',id);
+  },
 
-  // salespeople
+  async addNote(rfq_id,author,body){
+    const {error}=await supabase.from('rfq_notes').insert({rfq_id,author,body}); if(error) throw error;
+  },
+
+  async headerQuickUpdate(id,field,value){
+    const {error}=await supabase.from('rfq_headers').update({[field]:value}).eq('id',id); if(error) throw error;
+  },
+
   async loadSales(){
     const {data,error}=await supabase.from('salespeople').select('*').order('name');
     if(error){console.error(error); SALESTEAM=[]; return;}
@@ -312,39 +367,44 @@ const supa={
       const seed=['Dan C','Jake B','Nick K','Emir B'].map(n=>({name:n}));
       await supabase.from('salespeople').insert(seed);
       SALESTEAM=seed.map(s=>s.name);
-    }else{
-      SALESTEAM=data.map(r=>r.name);
-    }
+    }else SALESTEAM=data.map(r=>r.name);
   },
-  async addSales(name){await supabase.from('salespeople').insert({name});await this.loadSales();},
-  async delSales(name){await supabase.from('salespeople').delete().eq('name',name);await this.loadSales();},
+  async addSales(name){await supabase.from('salespeople').insert({name}); await this.loadSales();},
+  async delSales(name){await supabase.from('salespeople').delete().eq('name',name); await this.loadSales();},
 
-  rt(){supabase.channel('rfq-rt')
-    .on('postgres_changes',{event:'*',schema:'public',table:'rfqs'},async()=>{await supa.load();render();})
-    .on('postgres_changes',{event:'*',schema:'public',table:'rfq_vendor_quotes'},async()=>{await supa.load();render();})
-    .on('postgres_changes',{event:'*',schema:'public',table:'rfq_notes'},async()=>{await supa.load();renderOpenIfSame();})
-    .on('postgres_changes',{event:'*',schema:'public',table:'salespeople'},async()=>{await supa.loadSales();refreshSalesUI();})
+  rt(){supabase.channel('rfq-rt2')
+    .on('postgres_changes',{event:'*',schema:'public',table:'rfq_headers'},async()=>{await api.load();render();})
+    .on('postgres_changes',{event:'*',schema:'public',table:'rfq_items'},async()=>{await api.load();render();})
+    .on('postgres_changes',{event:'*',schema:'public',table:'rfq_vendor_quotes'},async()=>{await api.load();render();})
+    .on('postgres_changes',{event:'*',schema:'public',table:'rfq_notes'},async()=>{await api.load();renderOpenIfSame();})
+    .on('postgres_changes',{event:'*',schema:'public',table:'salespeople'},async()=>{await api.loadSales();refreshSalesUI();})
     .subscribe();}
 };
 
-/* UI render */
-function bestVendor(vs){if(!vs||!vs.length)return ['-','-'];const s=vs.slice().sort((a,b)=>(a.unit_price??1e12)-(b.unit_price??1e12));const top=s.find(x=>(x.available_qty||0)>0)||s[0];return [top.vendor||'-',top.unit_price!=null?fmt(top.unit_price):'-'];}
-
+/* ===== Render list ===== */
+function bestAcross(header){
+  // pick minimum unit price from all items' vendor quotes
+  const prices=[];
+  header.items.forEach(it=>(it.vendors||[]).forEach(v=>prices.push({vendor:v.vendor,price:v.unit_price})));
+  if(!prices.length) return ['-','-'];
+  prices.sort((a,b)=>(a.price??1e12)-(b.price??1e12));
+  const top=prices[0]; return [top.vendor||'-',fmt(top.price)];
+}
 function computeStats(rows){
   const total=rows.length;
-  const quoted=rows.filter(r=>!!r.quoted_to_customer||r.status==='Quoted').length;
-  const need=rows.filter(r=>!!r.needs_better_price).length;
+  const quoted=rows.filter(r=>r.quoted_to_customer || r.status==='Quoted').length;
+  const need=rows.filter(r=>r.needs_better_price).length;
   const pending=total-quoted;
   return {total,quoted,need,pending};
 }
 
 function render(){
   const q=$('q').value.toLowerCase(),s1=$('fltSales').value,s2=$('fltStatus').value,g=$('fltGroup').value;
-  const rows=supa.state.rfqs.filter(r=>{
-    const txt=[r.customer,r.part_number,r.salesperson,r.notes,...(r.vendors||[]).map(v=>`${v.vendor} ${v.notes}`)].join(' ').toLowerCase();
+  const rows=api.state.headers.filter(h=>{
+    const txt=[h.customer,h.salesperson,h.notes,...h.items.map(i=>`${i.part_number} ${i.note||''}`)].join(' ').toLowerCase();
     if(q && !txt.includes(q))return false;
-    if(s1 && r.salesperson!==s1)return false;
-    if(s2 && (r.status||'')!==s2)return false;
+    if(s1 && h.salesperson!==s1)return false;
+    if(s2 && (h.status||'')!==s2)return false;
     return true;
   });
 
@@ -352,80 +412,98 @@ function render(){
   const st=computeStats(rows);
   $('s_total').textContent=st.total; $('s_quoted').textContent=st.quoted; $('s_pending').textContent=st.pending; $('s_need').textContent=st.need;
 
-  // grouping?
-  $('groupWrap').innerHTML=''; $('tableCard').style.display=(g==='none')?'block':'none';
-  if(g==='sales'){
-    const by={}; rows.forEach(r=>{(by[r.salesperson||'Unknown'] ||= []).push(r);});
-    const wrap=$('groupWrap');
-    Object.keys(by).sort().forEach(name=>{
-      const group=document.createElement('div');group.className='group';
-      group.innerHTML=`<h3>${esc(name)} <span class="muted">(${by[name].length})</span></h3>`;
-      const card=document.createElement('div');card.className='table-card';
-      const tw=document.createElement('div');tw.className='table-wrap';
-      tw.innerHTML=`<table><thead>
-        <tr><th>View</th><th>Customer</th><th>Part</th><th>Qty</th><th>Target</th>
-        <th>Status</th><th>Quoted</th><th>Need Better</th><th>Best Vendor</th><th>Best Price</th><th>Age</th><th>Notes</th><th>Actions</th></tr>
-      </thead><tbody></tbody></table>`;
-      card.appendChild(tw);group.appendChild(card);wrap.appendChild(group);
-      fillBody(tw.querySelector('tbody'),by[name],false);
-    });
-  } else {
-    fillBody($('tbody'),rows,true);
-  }
-}
-
-function fillBody(tb,rows,withSales){
-  tb.innerHTML='';
-  if(!rows.length){tb.innerHTML='<tr><td colspan="13" class="muted" style="text-align:center;padding:40px">No RFQs</td></tr>';return;}
-  rows.forEach(r=>{
+  const tb=$('tbody'); tb.innerHTML='';
+  if(!rows.length){tb.innerHTML='<tr><td colspan="12" class="muted" style="text-align:center;padding:40px">No RFQs</td></tr>';return;}
+  rows.forEach(h=>{
+    const [bv,bp]=bestAcross(h);
+    const viewBtn=`<button class="smini btn ghost" onclick="openViewById('${h.id}')">View</button>`;
+    const partsPreview=h.items.length? h.items.slice(0,2).map(i=>`<span class="tag">${esc(i.part_number)} × ${fmtInt(i.quantity||0)}</span>`).join(' ') + (h.items.length>2? ` <span class="muted">+${h.items.length-2} more</span>`:'' ) : '<span class="muted">No items</span>';
     const tr=document.createElement('tr');
-    const [bv,bp]=bestVendor(r.vendors||[]);
-    const mk=f=>{const c=document.createElement('input');c.type='checkbox';c.checked=!!r[f];c.onchange=async()=>{const prev=r[f];r[f]=c.checked;try{await supa.rfqQuickUpdate(r.id,f,c.checked);setToast('Saved');}catch(e){r[f]=prev;c.checked=prev;setToast('Save failed',true);}};return c;};
-    const actions=`<button class="btn mini ghost" onclick="openModalById('${r.id}')">Edit</button>
-                   <button class="btn mini ghost" onclick="delById('${r.id}')">Delete</button>`;
-    const tdv=document.createElement('td');const vb=document.createElement('button');vb.className='btn smini';vb.textContent='View';vb.onclick=()=>openViewById(r.id);tdv.appendChild(vb);
-    tr.appendChild(tdv);
-    [esc(r.customer||'-'),esc(r.part_number||'-'),fmtInt(r.quantity||0),fmt(r.target_price)].forEach(html=>{const td=document.createElement('td');td.innerHTML=html;tr.appendChild(td);});
-    if(withSales){const td=document.createElement('td');td.textContent=r.salesperson||'-';tr.appendChild(td);}
-    let td=document.createElement('td');td.appendChild(inlineSelect(r,'status',['Open','Quoted','Abandoned']));tr.appendChild(td);
-    td=document.createElement('td');td.appendChild(mk('quoted_to_customer'));tr.appendChild(td);
-    td=document.createElement('td');td.appendChild(mk('needs_better_price'));tr.appendChild(td);
-    [esc(bv),bp,age(r.created_at),esc(r.notes||'-')].forEach(html=>{const td=document.createElement('td');td.innerHTML=html;tr.appendChild(td);});
-    td=document.createElement('td');td.className='actions';td.innerHTML=actions;tr.appendChild(td);
+    tr.innerHTML=`
+      <td>${viewBtn}</td>
+      <td><b>${esc(h.customer||'-')}</b></td>
+      <td>${partsPreview}</td>
+      <td>${esc(h.salesperson||'-')}</td>
+      <td></td>
+      <td><input type="checkbox" ${h.quoted_to_customer?'checked':''} onchange="quickBool('${h.id}','quoted_to_customer',this.checked)"></td>
+      <td><input type="checkbox" ${h.needs_better_price?'checked':''} onchange="quickBool('${h.id}','needs_better_price',this.checked)"></td>
+      <td>${esc(bv)}</td>
+      <td class="mono">${bp}</td>
+      <td>${age(h.created_at)}</td>
+      <td>${esc(h.notes||'-')}</td>
+      <td class="right">
+        <button class="smini btn ghost" onclick="openModalById('${h.id}')">Edit</button>
+        <button class="smini btn ghost" onclick="delHeader('${h.id}')">Delete</button>
+      </td>`;
+    // inline select for status
+    const tdStatus=tr.children[4]; tdStatus.appendChild(inlineSelect(h,'status',['Open','Quoted','Abandoned']));
     tb.appendChild(tr);
   });
 }
 
-/* CSV */
-function exportCSV(rows){
-  const cols=['id','created_at','salesperson','customer','part_number','quantity','target_price','status','quoted_to_customer','needs_better_price','priority','notes'];
+async function quickBool(id,field,val){try{await api.headerQuickUpdate(id,field,val);}catch(e){toast('Save failed',true);render();}}
+
+/* ===== CSV export (headers) ===== */
+$('btnCsv').onclick=()=>{
+  const cols=['id','created_at','salesperson','customer','status','quoted_to_customer','needs_better_price','priority','notes','items_count'];
   const head=cols.join(',');
-  const lines=rows.map(r=>cols.map(c=>{
-    let v=r[c]; if(typeof v==='string'){v=v.replace(/"/g,'""'); return `"${v}"`;}
-    return v==null?'':String(v);
-  }).join(','));
-  const blob=new Blob([head+'\n'+lines.join('\n')],{type:'text/csv'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='rfqs.csv';a.click();
+  const rows=api.state.headers.map(h=>{
+    const obj={...h,items_count:h.items.length};
+    return cols.map(c=>{let v=obj[c]; if(typeof v==='string'){v=v.replace(/"/g,'""'); return `"${v}"`;} return v==null?'':String(v)}).join(',');
+  });
+  const blob=new Blob([head+'\n'+rows.join('\n')],{type:'text/csv'}); const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='rfqs.csv'; a.click();
+};
+
+/* ===== Modal: items + vendors ===== */
+let CURRENT_ITEM_IDX=0; // index within edit modal
+
+function addItemRow(it={part_number:'',quantity:'',target_price:'',note:''}){
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td class="mono"></td>
+    <td><input class="input mini" value="${esc(it.part_number)}"/></td>
+    <td><input type="number" class="input mini mono" value="${it.quantity||''}"/></td>
+    <td><input type="number" step="0.0001" class="input mini mono" value="${it.target_price||''}"/></td>
+    <td><input class="input mini" value="${esc(it.note||'')}"/></td>
+    <td class="right"><button class="btn ghost mini" type="button" onclick="removeItemRow(this)">−</button></td>`;
+  $('itemBody').appendChild(tr);
+  renumberItems();
+  renderItemTabs();
+}
+function removeItemRow(btn){btn.closest('tr').remove();renumberItems();renderItemTabs();renderVendorsForSelected();}
+function renumberItems(){[...$('itemBody').children].forEach((tr,i)=>tr.children[0].textContent=i+1);}
+function itemsFromDOM(){
+  return[...$('itemBody').querySelectorAll('tr')].map(tr=>{
+    const ins=[...tr.querySelectorAll('input')];
+    return {part_number:ins[0].value.trim(), quantity:+(ins[1].value||0)||0, target_price:+(ins[2].value||0)||0, note:ins[3].value.trim()||null, vendors:[]};
+  }).filter(x=>x.part_number);
 }
 
-/* modal helpers */
+/* vendor table is bound to CURRENT_ITEM_IDX */
+function renderItemTabs(){
+  const tabs=$('itemTabs'); tabs.innerHTML='';
+  const rows=[...$('itemBody').children]; if(!rows.length){CURRENT_ITEM_IDX=0; tabs.innerHTML='<div class="muted">Add an item to manage quotes</div>'; $('venBody').innerHTML=''; return;}
+  rows.forEach((_,i)=>{
+    const b=document.createElement('button'); b.className='item-tab'+(i===CURRENT_ITEM_IDX?' active':''); b.textContent='Item '+(i+1);
+    b.onclick=()=>{CURRENT_ITEM_IDX=i; renderItemTabs(); renderVendorsForSelected();};
+    tabs.appendChild(b);
+  });
+}
+
 function addVendorRow(v={vendor:'',available_qty:'',unit_price:'',currency:'USD',lead_time_days:'',moq:'',spq:'',chosen:false,notes:''}){
   const tr=document.createElement('tr');
   tr.innerHTML=`
     <td><input class="input mini" value="${esc(v.vendor)}"/></td>
-    <td><input type="number" step="1" class="input mini mono" value="${v.available_qty||''}"/></td>
+    <td><input type="number" class="input mini mono" value="${v.available_qty||''}"/></td>
     <td><input type="number" step="0.0001" class="input mini mono" value="${v.unit_price||''}"/></td>
-    <td>
-      <select class="select mini">
-        ${['USD','GBP','EUR','CNY','HKD'].map(x=>`<option ${v.currency===x?'selected':''}>${x}</option>`).join('')}
-      </select>
-    </td>
-    <td><input type="number" step="1" class="input mini mono" value="${v.lead_time_days||''}"/></td>
-    <td><input type="number" step="1" class="input mini mono" value="${v.moq||''}"/></td>
-    <td><input type="number" step="1" class="input mini mono" value="${v.spq||''}"/></td>
+    <td><select class="select mini">${['USD','GBP','EUR','CNY','HKD'].map(x=>`<option ${v.currency===x?'selected':''}>${x}</option>`).join('')}</select></td>
+    <td><input type="number" class="input mini mono" value="${v.lead_time_days||''}"/></td>
+    <td><input type="number" class="input mini mono" value="${v.moq||''}"/></td>
+    <td><input type="number" class="input mini mono" value="${v.spq||''}"/></td>
     <td><select class="select mini"><option ${v.chosen?'':'selected'}>No</option><option ${v.chosen?'selected':''}>Yes</option></select></td>
     <td><input class="input mini" value="${esc(v.notes||'')}"/></td>
-    <td class="right"><button class="btn mini ghost" type="button" onclick="this.closest('tr').remove()">−</button></td>`;
+    <td class="right"><button class="btn ghost mini" type="button" onclick="this.closest('tr').remove()">−</button></td>`;
   $('venBody').appendChild(tr);
 }
 function vendorsFromDOM(){
@@ -448,132 +526,153 @@ function vendorsFromDOM(){
   }).filter(Boolean);
 }
 
-/* CRUD */
-function openModalById(id){openModal(supa.state.rfqs.find(x=>x.id===id));}
-function openModal(r){
-  $('dlgTitle').textContent=r?'Edit RFQ':'New RFQ';
-  $('rfqId').value=r?.id||'';
-  refreshSalesUI(); // fills selects from SALESTEAM
-  ['customer','part_number','quantity','target_price','status','notes','priority'].forEach(id=>{$(id).value=r?.[id]??'';});
-  $('salesperson').value=r?.salesperson||SALESTEAM[0]||'';
-  $('editNoteAuthor').value=SALESTEAM[0]||'';
-  $('quoted_to_customer').value=String(!!r?.quoted_to_customer);
-  $('needs_better_price').value=String(!!r?.needs_better_price);
-
-  $('venBody').innerHTML=''; (r?.vendors||[]).forEach(addVendorRow);
-  const list=(r?.comments||[]).map(n=>`<div class="note-item"><div class="note-head"><b>${esc(n.author)}</b><span>${new Date(n.created_at).toLocaleString()}</span></div><div>${esc(n.body)}</div></div>`).join('')||'No comments yet';
-  $('editNotesList').innerHTML=list;
-
-  $('btnSave').onclick=async()=>{
-    const header={
-      id:$('rfqId').value||undefined,
-      salesperson:$('salesperson').value,
-      customer:$('customer').value,
-      part_number:$('part_number').value,
-      quantity:+($('quantity').value||0)||0,
-      target_price:parseFloat($('target_price').value)||0,
-      status:$('status').value,
-      quoted_to_customer: $('quoted_to_customer').value==='true',
-      needs_better_price: $('needs_better_price').value==='true',
-      priority:$('priority').value,
-      notes:$('notes').value,
-      vendors:vendorsFromDOM()
-    };
-    try{await supa.save(header);closeDlg('dlg');await supa.load();render();setToast('Saved');}catch(e){console.error(e);alert('Save failed: '+(e.message||e));}
-  };
-  $('btnDelete').onclick=async()=>{if(!r?.id){closeDlg('dlg');return;}if(!confirm('Delete this RFQ?'))return;await supa.del(r.id);await supa.load();render();closeDlg('dlg');};
-  $('btnSalesMgr').onclick=()=>{renderSalesMgr();showDlg('salesDlg');};
-  showDlg('dlg');
+/* link vendor rows to selected item in-memory during save */
+function renderVendorsForSelected(existing=[]){
+  $('venBody').innerHTML='';
+  (existing||[]).forEach(addVendorRow);
 }
 
-async function delById(id){if(!confirm('Delete this RFQ?'))return;await supa.del(id);await supa.load();render();}
-
-let OPEN_VIEW_ID=null;
-function openViewById(id){const r=supa.state.rfqs.find(x=>x.id===id);if(r)openView(r);}
-function renderOpenIfSame(){if(!OPEN_VIEW_ID)return;const r=supa.state.rfqs.find(x=>x.id===OPEN_VIEW_ID);if(r)openView(r,true);}
-function openView(r,keep=false){
-  OPEN_VIEW_ID=r.id;
-  const vendRows=(r.vendors||[]).map(v=>`<tr>
-    <td>${esc(v.vendor||'-')}</td>
-    <td class="mono">${fmtInt(v.available_qty||0)}</td>
-    <td class="mono">${fmt(v.unit_price||0)} ${esc(v.currency||'USD')}</td>
-    <td class="mono">${fmtInt(v.lead_time_days||0)}</td>
-    <td class="mono">${fmtInt(v.moq||0)}</td>
-    <td class="mono">${fmtInt(v.spq||0)}</td>
-    <td>${v.chosen?'✔':''}</td>
-    <td>${esc(v.notes||'-')}</td>
-  </tr>`).join('') || '<tr><td colspan="8" class="muted">No vendor quotes yet</td></tr>';
-
-  const notesList=(r.comments||[]).map(n=>`<div class="note-item"><div class="note-head"><b>${esc(n.author)}</b><span>${new Date(n.created_at).toLocaleString()}</span></div><div>${esc(n.body)}</div></div>`).join('')||'<div class="muted">No comments</div>';
-
-  $('viewBody').innerHTML=`
-    <div class="card" style="grid-column:1/-1"><div class="pad">
-      <div class="grid3">
-        <div><div class="note">Salesperson</div><div class="chip">${esc(r.salesperson||'-')}</div></div>
-        <div><div class="note">Customer</div><b>${esc(r.customer||'-')}</b></div>
-        <div><div class="note">Priority</div><div class="chip">${esc(r.priority||'-')}</div></div>
-
-        <div><div class="note">Part</div><b>${esc(r.part_number||'-')}</b></div>
-        <div><div class="note">Quantity</div><div class="mono">${fmtInt(r.quantity||0)}</div></div>
-        <div><div class="note">Target Price</div><div class="mono">$ ${fmt(r.target_price||0)}</div></div>
-
-        <div><div class="note">Status</div><div class="chip">${esc(r.status||'-')}</div></div>
-        <div><div class="note">Quoted to Customer</div><div class="chip">${r.quoted_to_customer?'Yes':'No'}</div></div>
-        <div><div class="note">Needs Better Price</div><div class="chip">${r.needs_better_price?'Yes':'No'}</div></div>
-      </div>
-      <div class="section">Notes</div>
-      <div class="bordered" style="white-space:pre-wrap">${esc(r.notes||'-')}</div>
-    </div></div>
-
-    <div class="card" style="grid-column:1/-1">
-      <div class="pad">
-        <div class="section" style="margin-top:0">Vendor Quotes</div>
-        <div class="hscroll">
-          <table class="tbl" style="min-width:1000px">
-            <thead><tr><th>Vendor</th><th>Avail Qty</th><th>Unit Price</th><th>Lead</th><th>MOQ</th><th>SPQ</th><th>Chosen</th><th>Notes</th></tr></thead>
-            <tbody>${vendRows}</tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" style="grid-column:1/-1"><div class="pad">
-      <div class="section" style="margin-top:0">Internal Comments</div>
-      ${notesList}
-      <div class="actions" style="margin-top:10px">
-        <select id="noteAuthor" class="select mini">${SALESTEAM.map(n=>`<option>${n}</option>`).join('')}</select>
-        <input id="noteBody" class="input mini" placeholder="Write a note…"/>
-        <button class="btn mini" onclick="addNote('${r.id}')">Add</button>
-      </div>
-    </div></div>
-  `;
-  if(!keep)showDlg('viewDlg');
-}
-
-/* notes */
-async function addNote(rfq_id){const author=$('noteAuthor').value;const body=$('noteBody').value.trim();if(!body)return;await supa.addNote(rfq_id,author,body);$('noteBody').value='';await supa.load();renderOpenIfSame();}
-
-/* salespeople manager */
+/* ===== CRUD wiring ===== */
 function refreshSalesUI(){
-  // Populate selects
   $('salesperson').innerHTML=SALESTEAM.map(n=>`<option>${n}</option>`).join('');
   $('editNoteAuthor').innerHTML=SALESTEAM.map(n=>`<option>${n}</option>`).join('');
   $('fltSales').innerHTML=['',...SALESTEAM].map(n=>n?`<option>${n}</option>`:'<option value="">All salespeople</option>').join('');
 }
-function renderSalesMgr(){
-  const c=$('salesList');
-  c.innerHTML=SALESTEAM.map(n=>`<div class="note-item" style="display:flex;justify-content:space-between;align-items:center">
-    <div><b>${esc(n)}</b></div>
-    <button class="btn mini ghost" onclick="removeSales('${n.replace(/'/g,'&#39;')}')">Remove</button>
-  </div>`).join('') || '<div class="muted">No salespeople yet</div>';
-}
-async function removeSales(name){if(!confirm('Remove '+name+'?'))return;await supa.delSales(name);renderSalesMgr();refreshSalesUI();setToast('Removed');}
-$('btnSalesAdd')?.addEventListener('click', async ()=>{
-  const name=$('newSalesName').value.trim(); if(!name) return;
-  await supa.addSales(name); $('newSalesName').value=''; renderSalesMgr(); refreshSalesUI(); setToast('Added');
-});
 
-/* leaderboard */
+function openModalById(id){
+  const h=api.state.headers.find(x=>x.id===id);
+  openModal(h);
+}
+function openModal(h){
+  $('dlgTitle').textContent=h?'Edit RFQ':'New RFQ';
+  $('rfqId').value=h?.id||'';
+  refreshSalesUI();
+  $('salesperson').value=h?.salesperson||SALESTEAM[0]||'';
+  $('customer').value=h?.customer||'';
+  $('priority').value=h?.priority||'Normal';
+  $('status').value=h?.status||'Open';
+  $('quoted_to_customer').value=String(!!h?.quoted_to_customer);
+  $('needs_better_price').value=String(!!h?.needs_better_price);
+  $('notes').value=h?.notes||'';
+
+  // items
+  $('itemBody').innerHTML=''; (h?.items||[]).forEach(it=>addItemRow(it));
+  if(!(h?.items||[]).length) addItemRow(); // at least one row
+  CURRENT_ITEM_IDX=0; renderItemTabs();
+  // vendor rows for first item
+  renderVendorsForSelected((h?.items?.[0]?.vendors)||[]);
+
+  // comments
+  const list=(h?.comments||[]).map(n=>`<div class="note" style="border-bottom:1px solid var(--line);padding:6px 0">
+      <b>${esc(n.author)}</b> · ${new Date(n.created_at).toLocaleString()}<br/>${esc(n.body)}
+    </div>`).join('') || 'No comments yet';
+  $('editNotesList').innerHTML=list;
+
+  $('btnSave').onclick=async()=>{
+    // gather items + attach vendor quotes to CURRENT view
+    const items=itemsFromDOM();
+    // attach vendor rows to the currently selected item index
+    if(items[CURRENT_ITEM_IDX]) items[CURRENT_ITEM_IDX].vendors = vendorsFromDOM();
+
+    const header={
+      id:$('rfqId').value||undefined,
+      salesperson:$('salesperson').value,
+      customer:$('customer').value,
+      priority:$('priority').value,
+      status:$('status').value,
+      quoted_to_customer: $('quoted_to_customer').value==='true',
+      needs_better_price: $('needs_better_price').value==='true',
+      notes:$('notes').value,
+      items
+    };
+    try{
+      await api.saveHeaderWithItems(header);
+      closeDlg('dlg'); await api.load(); render(); toast('Saved');
+    }catch(e){console.error(e); alert('Save failed: '+(e.message||e));}
+  };
+
+  $('btnDelete').onclick=async()=>{
+    if(!h?.id){closeDlg('dlg');return;}
+    if(!confirm('Delete this RFQ?')) return;
+    await api.deleteHeader(h.id); await api.load(); render(); closeDlg('dlg');
+  };
+
+  $('btnSalesMgr').onclick=()=>{renderSalesMgr(); showDlg('salesDlg');};
+
+  showDlg('dlg');
+}
+
+async function delHeader(id){ if(!confirm('Delete this RFQ?'))return; await api.deleteHeader(id); await api.load(); render(); }
+
+let OPEN_VIEW_ID=null;
+function openViewById(id){const h=api.state.headers.find(x=>x.id===id); if(h) openView(h);}
+function renderOpenIfSame(){if(!OPEN_VIEW_ID)return; const h=api.state.headers.find(x=>x.id===OPEN_VIEW_ID); if(h) openView(h,true);}
+function openView(h,keep=false){
+  OPEN_VIEW_ID=h.id;
+  const items = h.items.map((it,i)=>`<tr>
+    <td>${i+1}</td><td><b>${esc(it.part_number)}</b></td>
+    <td class="mono">${fmtInt(it.quantity||0)}</td><td class="mono">${fmt(it.target_price||0)}</td><td>${esc(it.note||'-')}</td>
+  </tr>`).join('') || '<tr><td colspan="5" class="muted">No items</td></tr>';
+
+  const vendors = h.items.map((it,i)=>{
+    const rows=(it.vendors||[]).map(v=>`<tr>
+      <td>${esc(v.vendor||'-')}</td><td class="mono">${fmtInt(v.available_qty||0)}</td>
+      <td class="mono">${fmt(v.unit_price||0)} ${esc(v.currency||'USD')}</td>
+      <td class="mono">${fmtInt(v.lead_time_days||0)}</td><td class="mono">${fmtInt(v.moq||0)}</td><td class="mono">${fmtInt(v.spq||0)}</td>
+      <td>${v.chosen?'✔':''}</td><td>${esc(v.notes||'-')}</td>
+    </tr>`).join('') || '<tr><td colspan="8" class="muted">No quotes yet</td></tr>';
+    return `<div class="note" style="margin-top:8px"><b>Item ${i+1}: ${esc(it.part_number)}</b></div>
+      <div class="hscroll"><table class="tbl" style="min-width:900px">
+        <thead><tr><th>Vendor</th><th>Avail Qty</th><th>Unit Price</th><th>Lead</th><th>MOQ</th><th>SPQ</th><th>Chosen</th><th>Notes</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`;
+  }).join('');
+
+  const notes = (h.comments||[]).map(n=>`<div class="note" style="border-top:1px solid var(--line);padding-top:6px"><b>${esc(n.author)}</b> · ${new Date(n.created_at).toLocaleString()}<br/>${esc(n.body)}</div>`).join('') || '<div class="muted">No comments</div>';
+
+  $('viewBody').innerHTML=`
+    <div class="grid3">
+      <div><div class="note">Salesperson</div><span class="tag">${esc(h.salesperson||'-')}</span></div>
+      <div><div class="note">Customer</div><b>${esc(h.customer||'-')}</b></div>
+      <div><div class="note">Priority</div><span class="tag">${esc(h.priority||'-')}</span></div>
+
+      <div><div class="note">Status</div><span class="tag">${esc(h.status||'-')}</span></div>
+      <div><div class="note">Quoted to Customer</div><span class="tag">${h.quoted_to_customer?'Yes':'No'}</span></div>
+      <div><div class="note">Needs Better Price</div><span class="tag">${h.needs_better_price?'Yes':'No'}</span></div>
+    </div>
+
+    <div class="note" style="margin-top:10px">Header Notes</div>
+    <div class="hscroll" style="padding:8px;white-space:pre-wrap">${esc(h.notes||'-')}</div>
+
+    <div class="note" style="margin-top:12px"><b>Line Items</b></div>
+    <div class="hscroll"><table class="tbl" style="min-width:700px">
+      <thead><tr><th>#</th><th>Part</th><th>Qty</th><th>Target</th><th>Note</th></tr></thead>
+      <tbody>${items}</tbody></table></div>
+
+    ${vendors}
+
+    <div class="note" style="margin-top:12px"><b>Internal Comments</b></div>
+    ${notes}
+    <div class="right" style="margin-top:8px">
+      <select id="noteAuthor" class="select mini">${SALESTEAM.map(n=>`<option>${n}</option>`).join('')}</select>
+      <input id="noteBody" class="input mini" placeholder="Write a note…"/>
+      <button class="btn mini" onclick="addNote('${h.id}')">Add</button>
+    </div>
+  `;
+  if(!keep) showDlg('viewDlg');
+}
+
+async function addNote(rfq_id){const author=$('noteAuthor').value;const body=$('noteBody').value.trim();if(!body)return;await api.addNote(rfq_id,author,body);$('noteBody').value='';await api.load();renderOpenIfSame();}
+
+/* Salespeople manager */
+function renderSalesMgr(){
+  $('salesList').innerHTML=SALESTEAM.map(n=>`<div class="note" style="display:flex;justify-content:space-between;align-items:center">
+    <div><b>${esc(n)}</b></div><button class="btn ghost mini" onclick="removeSales('${n.replace(/'/g,'&#39;')}')">Remove</button>
+  </div>`).join('') || '<div class="muted">No salespeople</div>';
+}
+async function removeSales(name){if(!confirm('Remove '+name+'?'))return;await api.delSales(name);await api.loadSales();refreshSalesUI();renderSalesMgr();toast('Removed');}
+$('btnSalesAdd')?.addEventListener('click',async()=>{const name=$('newSalesName').value.trim();if(!name)return;await api.addSales(name);$('newSalesName').value='';await api.loadSales();refreshSalesUI();renderSalesMgr();toast('Added');});
+
+/* Leaderboard */
 function openLeaderboard(){
   const d=new Date(), y=d.getFullYear(), m=d.getMonth();
   $('lbFrom').value=new Date(y,m,1).toISOString().slice(0,10);
@@ -582,56 +681,42 @@ function openLeaderboard(){
 }
 function filterByDate(list,from,to){
   const f=from?new Date(from+'T00:00:00Z'):null, t=to?new Date(to+'T23:59:59Z'):null;
-  return list.filter(r=>{
-    const dt=new Date(r.created_at);
-    return (!f||dt>=f)&&(!t||dt<=t);
-  });
+  return list.filter(r=>{const dt=new Date(r.created_at);return(!f||dt>=f)&&(!t||dt<=t);});
 }
 function applyLeaderboard(){
-  const from=$('lbFrom').value, to=$('lbTo').value;
-  const rows=filterByDate(supa.state.rfqs,from,to);
+  const from=$('lbFrom').value,to=$('lbTo').value;
+  const rows=filterByDate(api.state.headers,from,to);
   const by={}; rows.forEach(r=>{(by[r.salesperson||'Unknown'] ||= []).push(r);});
   const body=$('lbBody'); body.innerHTML='';
   Object.keys(by).sort().forEach(name=>{
     const list=by[name];
     const st=computeStats(list);
-    const avg=list.length? (list.reduce((s,r)=>s+(+r.target_price||0),0)/list.length) : 0;
+    const allTargets=list.flatMap(h=>h.items.map(i=>+i.target_price||0)).filter(x=>x>0);
+    const avg=allTargets.length? allTargets.reduce((a,b)=>a+b,0)/allTargets.length : 0;
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${esc(name)}</td>
-      <td class="mono">${fmtInt(st.total)}</td>
-      <td class="mono">${fmtInt(st.quoted)}</td>
-      <td class="mono">${fmtInt(st.pending)}</td>
-      <td class="mono">${fmtInt(st.need)}</td>
-      <td class="mono">${fmt(avg)}</td>`;
+    tr.innerHTML=`<td>${esc(name)}</td><td class="mono">${fmtInt(st.total)}</td>
+      <td class="mono">${fmtInt(st.quoted)}</td><td class="mono">${fmtInt(st.pending)}</td>
+      <td class="mono">${fmtInt(st.need)}</td><td class="mono">${fmt(avg)}</td>`;
     body.appendChild(tr);
   });
   if(!body.children.length) body.innerHTML='<tr><td colspan="6" class="muted">No RFQs in this range</td></tr>';
 }
-$('lbApply')?.addEventListener('click',applyLeaderboard);
-$('lbQuickWeek')?.addEventListener('click',()=>{
-  const d=new Date(); const day=d.getDay()||7; const from=new Date(d); from.setDate(d.getDate()-day+1);
-  $('lbFrom').value=from.toISOString().slice(0,10); $('lbTo').value=todayStr(); applyLeaderboard();
-});
-$('lbQuickMonth')?.addEventListener('click',()=>{
-  const d=new Date(), y=d.getFullYear(), m=d.getMonth();
-  $('lbFrom').value=new Date(y,m,1).toISOString().slice(0,10); $('lbTo').value=new Date(y,m+1,0).toISOString().slice(0,10); applyLeaderboard();
-});
-$('lbQuick3M')?.addEventListener('click',()=>{
-  const d=new Date(); const from=new Date(d); from.setMonth(d.getMonth()-3); $('lbFrom').value=from.toISOString().slice(0,10); $('lbTo').value=todayStr(); applyLeaderboard();
-});
+$('lbApply').addEventListener('click',applyLeaderboard);
+$('lbQuickWeek').addEventListener('click',()=>{const d=new Date();const day=d.getDay()||7;const from=new Date(d);from.setDate(d.getDate()-day+1);$('lbFrom').value=from.toISOString().slice(0,10);$('lbTo').value=todayStr();applyLeaderboard();});
+$('lbQuickMonth').addEventListener('click',()=>{const d=new Date(),y=d.getFullYear(),m=d.getMonth();$('lbFrom').value=new Date(y,m,1).toISOString().slice(0,10);$('lbTo').value=new Date(y,m+1,0).toISOString().slice(0,10);applyLeaderboard();});
+$('lbQuick3M').addEventListener('click',()=>{const d=new Date();const from=new Date(d);from.setMonth(d.getMonth()-3);$('lbFrom').value=from.toISOString().slice(0,10);$('lbTo').value=todayStr();applyLeaderboard();});
 
-/* init + events */
+/* Events */
 $('btnNew').onclick=()=>openModal();
 $('btnLeads').onclick=()=>openLeaderboard();
 $('q').addEventListener('input',render);
 $('fltSales').onchange=render; $('fltStatus').onchange=render; $('fltGroup').onchange=render;
-$('btnCsv').onclick=()=>exportCSV(supa.state.rfqs);
 window.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='f'){e.preventDefault();$('q').focus();}});
 
+/* Boot */
 (async function start(){
-  await supa.loadSales();            // fills SALESTEAM (seeds 4 names if empty)
-  refreshSalesUI();
-  await supa.load(); supa.rt(); render();
+  await api.loadSales(); refreshSalesUI();
+  await api.load(); api.rt(); render();
 })();
 </script>
 </body>
