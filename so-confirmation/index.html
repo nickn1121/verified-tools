@@ -36,12 +36,14 @@
 
     <!-- Top options -->
     <section class="bg-white rounded-2xl p-4 md:p-5 shadow-sm ring-1 ring-slate-100">
-      <div class="grid md:grid-cols-4 gap-4">
+      <!-- changed from 4 to 5 columns to add expiry date -->
+      <div class="grid md:grid-cols-5 gap-4">
         <div>
           <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Document Type</label>
           <select id="docType" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value="so" selected>Sales Order Confirmation</option>
             <option value="invoice">Invoice</option>
+            <option value="quote">Sales Quote</option>
           </select>
         </div>
         <div>
@@ -51,6 +53,11 @@
             <option value="GBP">GBP</option>
             <option value="EUR">EUR</option>
           </select>
+        </div>
+        <!-- NEW: Quote expiry date (used only for Sales Quote) -->
+        <div id="expiryWrapper" class="hidden">
+          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Quote Expiry Date</label>
+          <input id="expiryDate" type="date" class="w-full border rounded-lg px-3 py-2">
         </div>
         <div>
           <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">Global VAT % (optional)</label>
@@ -106,7 +113,7 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-sm mb-1">Number</label>
-            <input id="docNumber" class="w-full border rounded-lg px-3 py-2" placeholder="SO- / INV-" />
+            <input id="docNumber" class="w-full border rounded-lg px-3 py-2" placeholder="SO- / INV- / QU-" />
           </div>
           <div>
             <label class="block text-sm mb-1">Customer PO #</label>
@@ -130,7 +137,7 @@
             </select>
           </div>
         </div>
-        <!-- NEW: Payment Terms -->
+        <!-- Payment Terms -->
         <div class="mt-3">
           <label class="block text-sm mb-1">Payment Terms</label>
           <input id="paymentTerms" class="w-full border rounded-lg px-3 py-2" placeholder="e.g., NET 30" />
@@ -271,6 +278,13 @@
       }
     };
 
+    // ===== Terms of Sale (quote only) =====
+    const QUOTE_TERMS_OF_SALE =
+      'Terms Of Sale: Unless otherwise specified, the parts quoted are NEW, UNUSED, incident free surplus from surplus sales, manufacturers\\\' excess stock or various other commercial sources. ' +
+      'Where we cannot provide MFR\\\'s C.O.C we will provide our Company C.O.C. ' +
+      'All Orders have option for Third Party Test Reports available upon prior request. ' +
+      'All parts are subject to prior sale.';
+
     $('sellerPreset')?.addEventListener('change', (e)=>{
       const key = e.target.value;
       const p = SELLER_PRESETS[key];
@@ -279,6 +293,16 @@
       $('sellerAddress').value = p.address || '';
       $('sellerVat').value = p.vat || '';
     });
+
+    // ===== Show/hide expiry field based on document type =====
+    function updateExpiryVisibility() {
+      const isQuote = $('docType')?.value === 'quote';
+      const wrap = $('expiryWrapper');
+      if (!wrap) return;
+      if (isQuote) wrap.classList.remove('hidden');
+      else wrap.classList.add('hidden');
+    }
+    $('docType')?.addEventListener('change', updateExpiryVisibility);
 
     // ===== Items table =====
     function addRow(d={}) {
@@ -361,24 +385,39 @@
       const poNumber = $('poNumber').value;
       const salesperson = $('salesperson').value;
       const incoterms = $('incoterms').value;
-      const paymentTerms = $('paymentTerms').value; // NEW
+      const paymentTerms = $('paymentTerms').value;
       const leadTime = $('leadTime').value;
       const cooHts = $('cooHts').value;
       const shipping = nf($('shipping').value);
       const notes = $('notes').value;
+      const expiryDate = $('expiryDate') ? $('expiryDate').value : '';
 
       const {items, subtotal, vatTotal} = gatherItems();
       const total = subtotal + vatTotal + shipping;
 
       // Header
       drawLogoFitted(doc, left, 28, 160, 90);
+
       doc.setFont('helvetica','bold'); doc.setFontSize(18);
-      doc.text(docType==='invoice'?'TAX INVOICE':'Sales Order Confirmation', right, 42, {align:'right'});
+      let titleText = 'Sales Order Confirmation';
+      if (docType === 'invoice') titleText = 'TAX INVOICE';
+      else if (docType === 'quote') titleText = 'Sales Quote';
+      doc.text(titleText, right, 42, {align:'right'});
+
       doc.setFont('helvetica','normal'); doc.setFontSize(10);
-      if (docNumber) doc.text(`${docType==='invoice'?'Invoice':'SO'} Number: ${docNumber}`, right, 58, {align:'right'});
+
+      let numberLabel = 'SO';
+      if (docType === 'invoice') numberLabel = 'Invoice';
+      else if (docType === 'quote') numberLabel = 'Quote';
+
+      if (docNumber) doc.text(`${numberLabel} Number: ${docNumber}`, right, 58, {align:'right'});
       if (docDate) doc.text(`Date: ${docDate}`, right, 72, {align:'right'});
       if (poNumber) doc.text(`Reference / PO: ${poNumber}`, right, 86, {align:'right'});
       if (sellerVat) doc.text(`VAT / Tax ID: ${sellerVat}`, right, 100, {align:'right'});
+      // Quote-only expiry line
+      if (docType === 'quote' && expiryDate) {
+        doc.text(`Quote Expiry: ${expiryDate}`, right, 114, {align:'right'});
+      }
 
       // Seller / Buyer blocks
       let y=132;
@@ -396,12 +435,13 @@
       doc.setFont('helvetica','bold'); doc.text('Commercial Terms', left, y);
       doc.setFont('helvetica','normal');
 
-      const termsLine = [
+      const termsParts = [
         `Currency: ${currency}`,
         `Incoterms: ${incoterms||'-'}`,
         `Salesperson: ${salesperson||'-'}`,
         `Payment Terms: ${paymentTerms || '-'}`
-      ].join('   ');
+      ];
+      const termsLine = termsParts.join('   ');
       doc.text(termsLine, left, y+14);
 
       doc.setFont('helvetica','bold'); doc.text('Bill To', left, y+38);
@@ -455,14 +495,28 @@
 
       // Optional extra sections
       let blockY = after + 120;
-      if (leadTime) { doc.setFont('helvetica','bold'); doc.text('Lead Time / Delivery', left, blockY);
-        doc.setFont('helvetica','normal'); doc.text(leadTime, left, blockY+14, {maxWidth: contentWidth}); blockY += 34; }
-      if (cooHts) { doc.setFont('helvetica','bold'); doc.text('COO/HTS', left, blockY);
-        doc.setFont('helvetica','normal'); doc.text(cooHts, left, blockY+14, {maxWidth: contentWidth}); blockY += 34; }
-      if (notes)  { doc.setFont('helvetica','bold'); doc.text('Notes', left, blockY);
-        doc.setFont('helvetica','normal'); doc.text(notes, left, blockY+14, {maxWidth: contentWidth}); blockY += 54; }
+      if (leadTime) {
+        doc.setFont('helvetica','bold'); doc.text('Lead Time / Delivery', left, blockY);
+        doc.setFont('helvetica','normal'); doc.text(leadTime, left, blockY+14, {maxWidth: contentWidth}); blockY += 34;
+      }
+      if (cooHts) {
+        doc.setFont('helvetica','bold'); doc.text('COO/HTS', left, blockY);
+        doc.setFont('helvetica','normal'); doc.text(cooHts, left, blockY+14, {maxWidth: contentWidth}); blockY += 34;
+      }
+      if (notes)  {
+        doc.setFont('helvetica','bold'); doc.text('Notes', left, blockY);
+        doc.setFont('helvetica','normal'); doc.text(notes, left, blockY+14, {maxWidth: contentWidth}); blockY += 54;
+      }
 
-      // Signatures for SO
+      // Quote-only Terms Of Sale block
+      if (docType === 'quote') {
+        doc.setFont('helvetica','bold'); doc.text('Terms Of Sale', left, blockY);
+        doc.setFont('helvetica','normal');
+        doc.text(QUOTE_TERMS_OF_SALE, left, blockY+14, {maxWidth: contentWidth});
+        blockY += 54;
+      }
+
+      // Signatures for SO only
       if (docType==='so') {
         doc.setFont('helvetica','bold'); doc.text('Authorised Signature (Seller):', left, blockY+120);
         doc.line(left, blockY+132, left+220, blockY+132);
@@ -470,15 +524,16 @@
         doc.line(300, blockY+132, 520, blockY+132);
       }
 
-      const fn = (docType==='invoice'?'Invoice-':'SO-') + (docNumber||'Document') + '.pdf';
+      const prefix = docType === 'invoice'
+        ? 'Invoice-'
+        : (docType === 'quote' ? 'Quote-' : 'SO-');
+      const fn = prefix + (docNumber||'Document') + '.pdf';
       doc.save(fn);
     });
 
     // Start
     loadRepoLogo();
+    updateExpiryVisibility();
   </script>
 </body>
 </html>
-
-
-
